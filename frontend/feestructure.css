@@ -1,0 +1,121 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.fee-container {
+  max-width: 900px;
+  padding: 28px 32px;
+  margin: auto;
+  text-align: center;
+}
+
+.fee-container h2 {
+  color: #0d47a1;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.fee-card {
+  background: transparent;
+  border-radius: 15px;
+  padding: 40px 40px;
+  box-shadow: 0 24px 30px rgba(27, 48, 239, 0.865);
+}
+
+table {
+  width: 900px;
+ border-top-color: #555;
+  border-bottom-color: #555;
+
+}
+
+th, td {
+  padding: 48px 48px;
+  text-align: center;
+  background: #fff;
+  margin: auto;
+}
+
+thead th {
+  background: #0d47a1;
+  color: #fff;
+}
+
+tbody tr:nth-child(even) {
+  background: #f5f7fa;
+}
+
+tfoot th {
+  background: #e3f2fd;
+  color: #0d47a1;
+  font-weight: bold;
+}
+
+@media (max-width: 800px) {
+  th, td {
+    font-size: 14px;
+  }
+}
+
+.school-name {
+    font-size: 1.6rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.dashboard-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.dashboard-nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.dashboard-nav a.active, .dashboard-nav a:hover {
+    background: #1565c0;
+    color: #fff;
+}
+.finance-main {
+    flex: 1;
+    padding: 32px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.finance-header {
+    background: rgba(255,255,255,0.97);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(26,35,126,0.06);
+    padding: 24px 32px;
+    margin-bottom: 32px;
+    text-align: center;
+    max-width: 600px;
+}
+
+.finance-header h2 {
+    color: #1a237e;
+    margin-bottom: 10px;
+}
+
+.finance-header p {
+    color: #333;
+    font-size: 1.1rem;
+}
+/* logo styling for headers */
+.site-logo { max-height: 60px; margin-right: 10px; }
+

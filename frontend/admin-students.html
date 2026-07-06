@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students - Admin Portal</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="admin-dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Student administration</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="admin-applications.html">Applications</a>
+        <a class="sidebar-link active" href="admin-students.html">Students</a>
+        <a class="sidebar-link" href="admin-academics.html">Academics</a>
+        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link" href="admin-finance.html">Finance</a>
+        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
+        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
+        <a class="sidebar-link" href="admin-reports.html">Reports</a>
+        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
+        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Students</p>
+            <h2>Student administration</h2>
+          </div>
+          <button class="primary-button" data-admin-action="export-students">Export list</button>
+        </div>
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Register a student</h3>
+            <span class="panel-pill">Create accounts</span>
+          </div>
+          <form id="studentForm" class="admin-form">
+            <div class="form-row">
+              <label>Full name<input name="name" required></label>
+              <label>Username<input name="username" required></label>
+            </div>
+            <div class="form-row">
+              <label>Admission number<input name="admissionNumber" required></label>
+              <label>Email<input name="email" type="email"></label>
+            </div>
+            <div class="form-row">
+              <label>Class<input name="className"></label>
+              <label>Stream<input name="stream"></label>
+            </div>
+            <div class="form-row">
+              <label>Phone<input name="phone"></label>
+              <label>Guardian phone<input name="guardianPhone"></label>
+            </div>
+            <div class="form-row">
+              <label>Guardian name<input name="guardianName"></label>
+              <label>Password<input name="password" placeholder="Leave blank for admission number"></label>
+            </div>
+            <button type="submit" class="primary-button">Create student account</button>
+          </form>
+          <div class="table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr><th>Name</th><th>Username</th><th>Admission</th><th>Class</th><th>Status</th><th>Action</th></tr>
+              </thead>
+              <tbody id="studentsTableBody"><tr><td colspan="6">Loading student records...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>

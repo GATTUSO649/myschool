@@ -1,0 +1,84 @@
+
+.school-name {
+    font-size: 1.6rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.dashboard-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.dashboard-nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.dashboard-nav a.active, .dashboard-nav a:hover {
+    background: #1565c0;
+    color: #fff;
+}
+
+.logout-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-section {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(26,35,126,0.10);
+    padding: 48px 40px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.logout-section h2 {
+    color: #1a237e;
+    margin-bottom: 18px;
+}
+
+.logout-section p {
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 28px;
+}
+
+.login-btn {
+    background: #1565c0;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s;
+    display: inline-block;
+}
+
+.login-btn:hover {
+    background: #1a237e;
+}
+
+.dashboard-footer {
+    background: rgba(255,255,255,0.95);
+    text-align: center;
+    padding: 16px 0;
+    color: #888;
+    font-size: 15px;
+    box-shadow: 0 -2px 8px rgba(26,35,126,0.04);
+}
+
+/* logo styling for headers */
+.site-logo { max-height: 60px; margin-right: 10px; }
+

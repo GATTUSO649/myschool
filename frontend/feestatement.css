@@ -1,0 +1,227 @@
+
+.school-name {
+    font-size: 1.6rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.dashboard-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.dashboard-nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.dashboard-nav a.active, .dashboard-nav a:hover {
+    background: #1565c0;
+    color: #fff;
+}
+
+.finance-main {
+    flex: 1;
+    padding: 32px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.finance-header {
+    background: rgba(255,255,255,0.97);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(26,35,126,0.06);
+    padding: 24px 32px;
+    margin-bottom: 32px;
+    text-align: center;
+    max-width: 600px;
+}
+
+.finance-header h2 {
+    color: #1a237e;
+    margin-bottom: 10px;
+}
+
+.finance-header p {
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.finance-summary {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 32px;
+    justify-content: center;
+}
+
+.summary-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(26,35,126,0.08);
+    padding: 18px 28px;
+    min-width: 140px;
+    text-align: center;
+}
+
+.summary-label {
+    color: #1565c0;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.summary-value {
+    color: #1a237e;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.summary-value.paid {
+    color: #43a047;
+}
+
+.summary-value.balance {
+    color: #e65100;
+}
+
+.finance-table-section {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.finance-table {
+    border-collapse: collapse;
+    width: 90%;
+    max-width: 800px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(26,35,126,0.10);
+    overflow: hidden;
+}
+
+.finance-table th, .finance-table td {
+    padding: 16px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 1rem;
+}
+
+.finance-table th {
+    background: #1565c0;
+    color: #fff;
+    font-weight: 600;
+}
+
+.finance-table tr:last-child td {
+    border-bottom: none;
+}
+
+.dashboard-footer {
+    background: rgba(255,255,255,0.95);
+    text-align: center;
+    padding: 16px 0;
+    color: #888;
+    font-size: 15px;
+    box-shadow: 0 -2px 8px rgba(26,35,126,0.04);
+}
+
+.statement-header {
+    background: #f8fafc;
+    border: 1px solid #d8e1ea;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 3px 10px rgba(15,118,110,.08);
+    width: 90%;
+    max-width: 1200px;
+}
+
+.statement-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.statement-header-side {
+    min-width: 220px;
+    text-align: right;
+    color: #111827;
+}
+
+.statement-header-label {
+    font-weight: 700;
+}
+
+.statement-header-admission {
+    color: #6b7280;
+}
+
+.statement-header-school {
+    margin: 0;
+    color: #0f766e;
+}
+
+.statement-header-subtitle {
+    margin: 4px 0 0;
+    color: #475569;
+}
+
+.live-statement-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    width: 90%;
+    max-width: 1200px;
+}
+
+.statement-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+
+.statement-table-scroll {
+    overflow-x: auto;
+}
+
+.statement-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.statement-table th,
+.statement-table td {
+    text-align: left;
+    border: 1px solid #d8e0ea;
+    padding: 10px;
+}
+
+.statement-cell-right {
+    text-align: right;
+}
+
+.statement-table-heading {
+    text-align: left;
+}
+
+.statement-table-empty {
+    border: 1px solid #d8e0ea;
+    padding: 10px;
+}
+
+/* logo styling for headers */
+.site-logo { max-height: 60px; margin-right: 10px; }
+

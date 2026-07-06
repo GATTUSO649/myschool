@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipts - CRESENT HIGH SCHOOL</title>
+    <link rel="stylesheet" href="academic.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="academic.html">Academics</a>
+            <a href="finance.html">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="notifications.html">Notifications</a>
+            <a href="clearance-request.html">Clearance & Request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>
+        </nav>
+    </header>
+
+    <main class="profile-main">
+        <section class="profile-header">
+            <h2><i class="fas fa-receipt"></i> Payment Receipts</h2>
+            <p>View and download your payment receipts and transaction history</p>
+
+        </section>
+
+        <!-- Search and Filter Bar -->
+        <div class="filter-section">
+            <div class="filter-controls">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="receiptSearch" placeholder="Search receipts...">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="this-month">This Month</button>
+                    <button class="filter-btn" data-filter="last-month">Last Month</button>
+                    <button class="filter-btn" data-filter="this-year">This Year</button>
+                    <button class="filter-btn" data-filter="tuition">Tuition</button>
+                    <button class="filter-btn" data-filter="fees">Other Fees</button>
+                </div>
+                <div class="export-controls">
+                    <button class="export-btn" onclick="exportReceipts()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Statement (auto-generated) -->
+        <div id="feeStatementContainer" class="receipts-container receipt-document hidden"></div>
+
+        <!-- Receipts Container -->
+        <div id="receiptsContainer" class="receipts-container">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading receipts...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script>
+        async function fetchWithAuth(endpoint, options = {}) {
+            const token = getAuthToken();
+            const base = getApiUrl().replace(/\/api$/, '');
+            const url = endpoint.startsWith('/api') ? `${base}${endpoint}` : `${getApiUrl()}${endpoint}`;
+            const headers = { ...(options.headers || {}) };
+            if (!(options.body instanceof FormData)) headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+            if (token) headers.Authorization = `Bearer ${token}`;
+            return fetch(url, { ...options, headers });
+        }
+
+        let receipts = [];
+        let currentFilter = 'all';
+
+        // Initialize page
+        if (!checkAuth()) {
+            window.location.href = 'login.html';
+        } else {
+            loadReceipts();
+            loadFeeStatement();
+        }
+
+        async function loadFeeStatement() {
+            try {
+                const apiBase = getApiUrl().replace(/\/api$/, '');
+                const res = await fetchWithAuth('/api/finance/docs?type=feestatement&limit=1');
+                if (!res.ok) return; // no statements
+                const data = await res.json();
+                const docs = Array.isArray(data) ? data : (data.docs || []);
+                if (!docs || docs.length === 0) return;
+                const doc = docs[0];
+                const container = document.getElementById('feeStatementContainer');
+                container.classList.remove('hidden');
+                container.innerHTML = `
+                    <div class="receipt-summary-row">
+                        <div>
+                            <h3 class="receipt-summary-title">${doc.title || 'Fee Statement'}</h3>
+                            <div class="receipt-summary-meta">Uploaded: ${new Date(doc.uploaded_at).toLocaleString ? new Date(doc.uploaded_at).toLocaleString() : doc.uploaded_at}</div>
+                        </div>
+                        <div class="receipt-summary-actions">
+                            <a class="action-btn" href="${apiBase}/api/finance/files/${doc.filename}" target="_blank"><i class="fas fa-eye"></i> View</a>
+                            <a class="action-btn" href="${apiBase}/api/finance/files/${doc.filename}" download><i class="fas fa-download"></i> Download</a>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Error loading fee statement:', err);
+            }
+        }
+
+        async function loadReceipts() {
+            try {
+                const response = await fetchWithAuth('/api/payments/receipts');
+                if (response.ok) {
+                    receipts = await response.json();
+                    renderReceipts();
+                } else {
+                    showError('Failed to load receipts');
+                }
+            } catch (error) {
+                console.error('Error loading receipts:', error);
+                showError('Error loading receipts');
+            }
+        }
+
+
+        function renderReceipts() {
+            const container = document.getElementById('receiptsContainer');
+            const filteredReceipts = filterReceipts(receipts, currentFilter);
+
+            if (filteredReceipts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No receipts found</h3>
+                        <p>${getEmptyMessage(currentFilter)}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="receipts-list">
+                    ${filteredReceipts.map(receipt => `
+                        <div class="receipt-card ${receipt.status}" data-id="${receipt.id}">
+                            <div class="receipt-header">
+                                <div class="receipt-icon">
+                                    <i class="fas ${getReceiptIcon(receipt.type)}"></i>
+                                </div>
+                                <div class="receipt-info">
+                                    <h4>${receipt.description || 'Payment Receipt'}</h4>
+                                    <div class="receipt-meta">
+                                        <span class="receipt-date">${formatDate(receipt.payment_date)}</span>
+                                        <span class="receipt-id">#${receipt.receipt_number || receipt.id}</span>
+                                    </div>
+                                </div>
+                                <div class="receipt-amount">
+                                    <div class="amount">KSh ${parseFloat(receipt.amount).toLocaleString()}</div>
+                                    <div class="status-badge ${receipt.status || 'completed'}">${(receipt.status || 'completed').charAt(0).toUpperCase() + (receipt.status || 'completed').slice(1)}</div>
+                                </div>
+                                <div class="receipt-toggle">
+                                    <button class="action-btn" onclick="event.stopPropagation(); toggleDetails(${receipt.id})">
+                                        <i class="fas fa-list"></i> Details
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="receipt-details">
+                                <div class="detail-item">
+                                    <span class="label">Payment Method:</span>
+                                    <span class="value">${receipt.payment_method || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Reference:</span>
+                                    <span class="value">${receipt.reference || 'N/A'}</span>
+                                </div>
+                                ${receipt.due_date ? `
+                                    <div class="detail-item">
+                                        <span class="label">Due Date:</span>
+                                        <span class="value">${formatDate(receipt.due_date)}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div class="receipt-actions">
+                                <button class="action-btn" onclick="event.stopPropagation(); openReceiptPage(${receipt.id}, 'view')">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="action-btn" onclick="event.stopPropagation(); openReceiptPage(${receipt.id}, 'pdf')">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button class="action-btn" onclick="event.stopPropagation(); emailReceipt(${receipt.id})">
+                                    <i class="fas fa-envelope"></i> Email
+                                </button>
+                                ${receipt.status === 'pending' ? `
+                                    <button class="action-btn primary" onclick="event.stopPropagation(); payNow(${receipt.id})">
+                                        <i class="fas fa-credit-card"></i> Pay Now
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function toggleDetails(receiptId) {
+            const card = Array.from(document.querySelectorAll('.receipt-card')).find(c => c.dataset.id == receiptId);
+            if (!card) return;
+            card.classList.toggle('expanded');
+        }
+
+        function filterReceipts(receipts, filter) {
+            const now = new Date();
+            return receipts.filter(receipt => {
+                const paymentDate = new Date(receipt.payment_date);
+
+                switch (filter) {
+                    case 'this-month':
+                        return paymentDate.getMonth() === now.getMonth() &&
+                               paymentDate.getFullYear() === now.getFullYear();
+                    case 'last-month':
+                        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+                        return paymentDate.getMonth() === lastMonth.getMonth() &&
+                               paymentDate.getFullYear() === lastMonth.getFullYear();
+                    case 'this-year':
+                        return paymentDate.getFullYear() === now.getFullYear();
+                    case 'tuition':
+                        return receipt.type === 'tuition' || receipt.description.toLowerCase().includes('tuition');
+                    case 'fees':
+                        return receipt.type !== 'tuition' && !receipt.description.toLowerCase().includes('tuition');
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        function getReceiptIcon(type) {
+            const icons = {
+                tuition: 'fa-graduation-cap',
+                fee: 'fa-money-bill-wave',
+                exam: 'fa-file-alt',
+                activity: 'fa-users',
+                transport: 'fa-bus',
+                boarding: 'fa-home'
+            };
+            return icons[type] || 'fa-receipt';
+        }
+
+        function getEmptyMessage(filter) {
+            switch (filter) {
+                case 'this-month': return 'No payments made this month.';
+                case 'last-month': return 'No payments made last month.';
+                case 'this-year': return 'No payments made this year.';
+                case 'tuition': return 'No tuition payments found.';
+                case 'fees': return 'No other fee payments found.';
+                default: return 'No receipts available.';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function getReceiptQrDataUrl(receipt) {
+            const adm = receipt.admission_number || receipt.admissionNumber || receipt.admission || receipt.admissionNo || 'N/A';
+            const className = receipt.class || receipt.class_name || receipt.className || 'N/A';
+            const qrPayload = JSON.stringify({
+                receipt: receipt.receipt_number || receipt.id,
+                student: receipt.student_name || receipt.name || '',
+                admission: adm,
+                class: className,
+                amount: receipt.amount,
+                date: receipt.payment_date
+            });
+            return new QRious({ value: qrPayload, size: 180 }).toDataURL();
+        }
+
+        function viewReceipt(receiptId) {
+            openReceiptPage(receiptId, 'view');
+        }
+
+        function openReceiptPage(receiptId, mode = 'view') {
+            window.open(`receipt_view.html?receiptId=${receiptId}&mode=${mode}`, '_blank');
+        }
+
+
+        async function downloadReceipt(receiptId) {
+            try {
+                const response = await fetchWithAuth(`/api/payments/receipts/${receiptId}/download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `receipt_${receiptId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Failed to download receipt');
+                }
+            } catch (error) {
+                console.error('Error downloading receipt:', error);
+                alert('Failed to download receipt');
+            }
+        }
+
+        async function downloadReceiptHtml(receiptId) {
+            openReceiptPage(receiptId, 'pdf');
+        }
+
+        async function emailReceipt(receiptId) {
+            const email = prompt('Enter email address to send receipt:');
+            if (!email) return;
+
+            try {
+                const response = await fetchWithAuth(`/api/payments/receipts/${receiptId}/email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (response.ok) {
+                    alert('Receipt sent successfully!');
+                } else {
+                    alert('Failed to send receipt');
+                }
+            } catch (error) {
+                console.error('Error sending receipt:', error);
+                alert('Failed to send receipt');
+            }
+        }
+
+        function payNow(receiptId) {
+            // Redirect to payment page or open payment modal
+            window.location.href = `finance.html?pay=${receiptId}`;
+        }
+
+        function exportReceipts() {
+            const filteredReceipts = filterReceipts(receipts, currentFilter);
+            if (filteredReceipts.length === 0) {
+                alert('No receipts to export');
+                return;
+            }
+
+            // Create CSV content
+            const csvContent = [
+                ['Receipt No', 'Date', 'Description', 'Amount', 'Method', 'Status'],
+                ...filteredReceipts.map(receipt => [
+                    receipt.receipt_number || receipt.id,
+                    formatDate(receipt.payment_date),
+                    receipt.description || 'School Fees',
+                    receipt.amount,
+                    receipt.payment_method || 'N/A',
+                    receipt.status
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `payment_receipts_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Search functionality
+        document.getElementById('receiptSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredReceipts = receipts.filter(receipt =>
+                (receipt.description && receipt.description.toLowerCase().includes(searchTerm)) ||
+                (receipt.receipt_number && receipt.receipt_number.toLowerCase().includes(searchTerm)) ||
+                (receipt.reference && receipt.reference.toLowerCase().includes(searchTerm)) ||
+                formatDate(receipt.payment_date).toLowerCase().includes(searchTerm)
+            );
+            renderFilteredReceipts(filteredReceipts);
+        });
+
+        function renderFilteredReceipts(filteredReceipts) {
+            const container = document.getElementById('receiptsContainer');
+            const displayReceipts = filterReceipts(filteredReceipts, currentFilter);
+
+            if (displayReceipts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No receipts found</h3>
+                        <p>Try adjusting your search or filter criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render filtered receipts (similar to renderReceipts but with passed array)
+            container.innerHTML = `
+                <div class="receipts-list">
+                    ${displayReceipts.map(receipt => `
+                        <div class="receipt-card ${receipt.status}" onclick="openReceiptPage(${receipt.id}, 'view')">
+                            <div class="receipt-header">
+                                <div class="receipt-icon">
+                                    <i class="fas ${getReceiptIcon(receipt.type)}"></i>
+                                </div>
+                                <div class="receipt-info">
+                                    <h4>${receipt.description || 'Payment Receipt'}</h4>
+                                    <div class="receipt-meta">
+                                        <span class="receipt-date">${formatDate(receipt.payment_date)}</span>
+                                        <span class="receipt-id">#${receipt.receipt_number || receipt.id}</span>
+                                    </div>
+                                </div>
+                                <div class="receipt-amount">
+                                    <div class="amount">KSh ${parseFloat(receipt.amount).toLocaleString()}</div>
+                                    <div class="status-badge ${receipt.status || 'completed'}">${(receipt.status || 'completed').charAt(0).toUpperCase() + (receipt.status || 'completed').slice(1)}</div>
+                                </div>
+                            </div>
+
+                            <div class="receipt-details">
+                                <div class="detail-item">
+                                    <span class="label">Payment Method:</span>
+                                    <span class="value">${receipt.payment_method || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Reference:</span>
+                                    <span class="value">${receipt.reference || 'N/A'}</span>
+                                </div>
+                            </div>
+
+                            <div class="receipt-actions">
+                                <button class="action-btn" onclick="event.stopPropagation(); openReceiptPage(${receipt.id}, 'pdf')">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button class="action-btn" onclick="event.stopPropagation(); emailReceipt(${receipt.id})">
+                                    <i class="fas fa-envelope"></i> Email
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderReceipts();
+            });
+        });
+
+        function showError(message) {
+            const container = document.getElementById('receiptsContainer');
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error Loading Receipts</h3>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="loadReceipts()">Try Again</button>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('student');
+            localStorage.removeItem('rememberMe');
+            window.location.href = 'login.html';
+        }
+
+    </script>
+
+    <style>
+
+        .filter-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(26,35,126,0.06);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #1a237e;
+            box-shadow: 0 0 0 2px rgba(26,35,126,0.1);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: #1a237e;
+            color: white;
+            border-color: #1a237e;
+        }
+
+        .export-controls {
+            margin-left: auto;
+        }
+
+        .export-btn {
+            padding: 8px 16px;
+            border: 1px solid #1a237e;
+            background: #1a237e;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #1565c0;
+            border-color: #1565c0;
+        }
+
+        .receipts-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
+            overflow: hidden;
+        }
+
+        .receipts-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(260px, 1fr));
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .receipt-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(15,23,42,0.08);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid rgba(14,20,30,0.04);
+        }
+
+        .receipt-card:hover {
+            background: #f8f9fa;
+        }
+
+        .receipt-card:last-child {
+            border-bottom: none;
+        }
+
+        .receipt-card.pending {
+            border-left: 4px solid #ff9800;
+        }
+
+        .receipt-card.completed {
+            border-left: 4px solid #4caf50;
+        }
+
+        .receipt-card.failed {
+            border-left: 4px solid #f44336;
+        }
+
+        .receipt-header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 8px 6px;
+        }
+
+        .receipt-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 10px;
+            background: linear-gradient(135deg,#1a237e,#3f51b5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 6px 18px rgba(26,35,126,0.12);
+        }
+
+        .receipt-info {
+            flex: 1;
+        }
+
+        .receipt-info h4 {
+            margin: 0 0 5px 0;
+            color: #1a237e;
+            font-size: 16px;
+        }
+
+        .receipt-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .receipt-amount {
+            text-align: right;
+        }
+
+        .receipt-amount .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a237e;
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-badge.completed {
+            background: #e8f5e8;
+            color: #4caf50;
+        }
+
+        .status-badge.pending {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .status-badge.failed {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .receipt-details {
+            padding: 10px 12px 14px 12px;
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            background: #fafbfd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .detail-item .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-item .value {
+            color: #333;
+        }
+
+        .receipt-actions {
+            padding: 0 20px 20px 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* expanded state shows details and actions */
+        .receipt-card.expanded .receipt-details,
+        .receipt-card.expanded .receipt-actions {
+            display: block;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn:hover {
+            background: #f5f5f5;
+            border-color: #1a237e;
+            color: #1a237e;
+        }
+
+        .action-btn.primary {
+            background: #1a237e;
+            color: white;
+            border-color: #1a237e;
+        }
+
+        .action-btn.primary:hover {
+            background: #1565c0;
+            border-color: #1565c0;
+        }
+
+        .receipt-detail {
+            max-width: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .receipt-header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #1a237e;
+        }
+
+        .school-info h3 {
+            color: #1a237e;
+            margin-bottom: 5px;
+        }
+
+        .school-info p {
+            margin: 2px 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .receipt-info {
+            text-align: right;
+        }
+
+        .receipt-info h4 {
+            color: #1a237e;
+            margin-bottom: 10px;
+        }
+
+        .receipt-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .student-info,
+        .payment-details {
+            margin-bottom: 25px;
+        }
+
+        .student-info h4,
+        .payment-details h4 {
+            color: #1a237e;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+
+        .info-grid,
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .info-item,
+        .payment-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .info-item .label,
+        .payment-item .label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-item .value,
+        .payment-item .value {
+            color: #666;
+        }
+
+        .payment-item .value.amount {
+            font-weight: bold;
+            color: #1a237e;
+            font-size: 16px;
+        }
+
+        .payment-item .value.status.completed {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .payment-item .value.status.pending {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .payment-item .value.status.failed {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .payment-notes {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .payment-notes h4 {
+            color: #1a237e;
+            margin-bottom: 10px;
+        }
+
+        .receipt-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .signature-section {
+            margin-bottom: 30px;
+        }
+
+        .signature-line {
+            margin-bottom: 20px;
+        }
+
+        .signature-line span {
+            font-style: italic;
+            color: #666;
+        }
+
+        .receipt-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a237e;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .empty-state,
+        .loading-state,
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state i,
+        .loading-state i,
+        .error-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3,
+        .error-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .receipt-stats {
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .receipt-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .receipt-meta {
+                justify-content: center;
+            }
+
+            .receipt-amount {
+                text-align: center;
+            }
+
+            .receipt-details {
+                grid-template-columns: 1fr;
+            }
+
+            .receipt-actions {
+                justify-content: center;
+            }
+
+            .receipt-header-section {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .receipt-info {
+                text-align: left;
+            }
+
+            .info-grid,
+            .payment-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .receipt-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .receipt-actions .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+  <script src="site-common.js"></script>
+</body>
+</html>

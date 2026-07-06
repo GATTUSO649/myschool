@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - Finance</title>
+    <link rel="stylesheet" href="finance.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+      <div class="header-content">
+        <div class="school-name">
+          <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
+        </div>
+        <nav class="dashboard-nav">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="academic.html">Academics</a>
+          <a href="finance.html" class="active">Finance</a>
+          <a href="exams.html">Exams</a>
+          <a href="calendar.html">Events</a>
+        </nav>
+        <div class="menu-dropdown-wrapper">
+          <button class="menu-toggle" onclick="toggleMenu()">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <div class="menu-dropdown" id="menuDropdown">
+            <a href="notifications.html">Notifications</a>
+            <a href="clearance-request.html">Clearance & Request</a>
+            <a href="lecturer-interaction.html">Lecturer Interaction</a>
+            <button class="logout-button" onclick="logout()">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <main class="dashboard-main">
+        <section class="welcome-section" id="welcomeSection">
+            <h2>Welcome, <span id="studentName">Student</span></h2>
+            <p>View your school fee balance, posted charges, receipts, and finance documents from administration.</p>
+        </section>
+
+        <section class="finance-summary" aria-label="Finance summary">
+            <div class="finance-summary-card">
+                <span>Total Billed</span>
+                <strong id="studentTotalBilled">KSh 0</strong>
+            </div>
+            <div class="finance-summary-card">
+                <span>Total Paid</span>
+                <strong id="studentTotalPaid">KSh 0</strong>
+            </div>
+            <div class="finance-summary-card">
+                <span>Balance</span>
+                <strong id="studentBalance">KSh 0</strong>
+            </div>
+        </section>
+
+        <section class="dashboard-cards finance-cards">
+            <div class="dashboard-card finance-card">
+                <h3>Fee Statement</h3>
+                <p>Review your personalized fee statement when uploaded by admin.</p>
+                <div id="statementRecords" class="card-records">
+                    <p>Loading fee statements...</p>
+                </div>
+                <a href="./feestatement.html">View All Statements</a>
+            </div>
+            <div class="dashboard-card finance-card">
+                <h3>Fee Structure</h3>
+                <p>Check the fee structure documents shared with you.</p>
+                <div id="structureRecords" class="card-records">
+                    <p>Loading fee structures...</p>
+                </div>
+                <a href="./feestructure.html">View All Fee Structures</a>
+            </div>
+            <div class="dashboard-card finance-card">
+                <h3>Payment & Receipts</h3>
+                <p>Check your payment history and generated receipts.</p>
+                <div id="paymentRecords" class="card-records">
+                    <p>Loading recent payments...</p>
+                </div>
+                <a href="./paymentreceipts.html">View Payment Receipts</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="dashboard-footer">
+        &copy; 2025 CRESENT HIGH SCHOOL. All rights reserved.
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="financeAuth.js"></script>
+    <script>
+      async function fetchWithAuth(endpoint, options = {}) {
+        const token = getAuthToken();
+        const base = getApiUrl().replace(/\/api$/, '');
+        const url = endpoint.startsWith('/api') ? `${base}${endpoint}` : `${getApiUrl()}${endpoint}`;
+        const headers = { ...(options.headers || {}) };
+        if (!(options.body instanceof FormData)) headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+        if (token) headers.Authorization = `Bearer ${token}`;
+        return fetch(url, { ...options, headers });
+      }
+
+      function toggleMenu() {
+        const menuDropdown = document.getElementById('menuDropdown');
+        menuDropdown.classList.toggle('active');
+      }
+
+      document.addEventListener('click', (e) => {
+        const menuDropdown = document.getElementById('menuDropdown');
+        const menuToggle = document.querySelector('.menu-toggle');
+        if (menuToggle && !menuToggle.contains(e.target) && !menuDropdown.contains(e.target)) {
+          menuDropdown.classList.remove('active');
+        }
+      });
+
+      // Load student name and initialize page
+      document.addEventListener('DOMContentLoaded', function() {
+        const student = JSON.parse(localStorage.getItem('student') || '{}');
+        if (student.name) {
+          document.getElementById('studentName').textContent = student.name;
+        }
+        
+        // Load student's finance documents
+        loadMyFinanceDocuments();
+        loadFinanceSummary();
+        loadPayments();
+        
+        // Set up upload form
+        const uploadForm = document.getElementById('studentFinanceUploadForm');
+        if (uploadForm) {
+          uploadForm.style.display = 'none'; // Hide upload form for students
+        }
+      });
+
+      // Load student's targeted finance documents
+      async function loadMyFinanceDocuments() {
+        try {
+          const response = await fetchWithAuth('/api/finance/docs');
+          if (response.ok) {
+            const documents = await response.json();
+            renderFinanceDocumentSummaries(documents);
+          } else {
+            console.error('Failed to load finance documents');
+            document.getElementById('statementRecords').innerHTML = '<p>Failed to load fee statements.</p>';
+            document.getElementById('structureRecords').innerHTML = '<p>Failed to load fee structures.</p>';
+          }
+        } catch (error) {
+          console.error('Error loading finance documents:', error);
+          document.getElementById('statementRecords').innerHTML = '<p>Error loading fee statements.</p>';
+          document.getElementById('structureRecords').innerHTML = '<p>Error loading fee structures.</p>';
+        }
+      }
+
+      // Show summary counts in finance dashboard cards
+      function renderFinanceDocumentSummaries(documents) {
+        const statementContainer = document.getElementById('statementRecords');
+        const structureContainer = document.getElementById('structureRecords');
+        const statementDocs = (documents || []).filter(doc => doc.type === 'feestatement');
+        const structureDocs = (documents || []).filter(doc => doc.type === 'feestructure');
+
+        const renderSummary = (items, container, emptyMessage) => {
+          if (!container) return;
+          if (!items || items.length === 0) {
+            container.innerHTML = `<p>${emptyMessage}</p>`;
+            return;
+          }
+          const latest = items[0];
+          const count = items.length;
+          const date = latest.uploaded_at ? new Date(latest.uploaded_at).toLocaleDateString() : 'Unknown date';
+          container.innerHTML = `
+            <div class="document-summary">
+              <p><strong>${count}</strong> document${count > 1 ? 's' : ''} available</p>
+              <p class="small-text">Latest uploaded: ${date}</p>
+            </div>
+          `;
+        };
+
+        renderSummary(statementDocs, statementContainer, 'No fee statements have been uploaded yet.');
+        renderSummary(structureDocs, structureContainer, 'No fee structure documents have been uploaded yet.');
+      }
+
+      function formatMoney(amount) {
+        return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      }
+
+      async function loadFinanceSummary() {
+        try {
+          const response = await fetchWithAuth('/api/finance/balances');
+          if (!response.ok) throw new Error('Failed to load balance');
+          const summary = await response.json();
+          document.getElementById('studentTotalBilled').textContent = formatMoney(summary.total_charges);
+          document.getElementById('studentTotalPaid').textContent = formatMoney(summary.total_paid);
+          document.getElementById('studentBalance').textContent = formatMoney(summary.balance);
+        } catch (error) {
+          console.error('Error loading finance summary:', error);
+        }
+      }
+
+      async function loadPayments() {
+        const container = document.getElementById('paymentRecords');
+        try {
+          const response = await fetchWithAuth('/api/payments/receipts');
+          if (!response.ok) throw new Error('Failed to load payments');
+          const payments = await response.json();
+          if (!payments.length) {
+            container.innerHTML = '<p>No payments have been recorded yet.</p>';
+            return;
+          }
+
+          const latest = payments[0];
+          const count = payments.length;
+          const lastDate = latest.payment_date ? new Date(latest.payment_date).toLocaleDateString() : 'Unknown date';
+          container.innerHTML = `
+            <div class="document-summary">
+              <p><strong>${count}</strong> receipt${count > 1 ? 's' : ''} available</p>
+              <p class="small-text">Latest payment: ${lastDate}</p>
+            </div>
+          `;
+        } catch (error) {
+          console.error('Error loading payments:', error);
+          container.innerHTML = '<p>Error loading payments.</p>';
+        }
+      }
+
+      // Handle finance document upload
+      async function handleFinanceUpload(event) {
+        // This function is disabled for students - only admins can upload
+        event.preventDefault();
+        alert('Document upload is only available for administrators.');
+      }
+
+      // Edit document (disabled for students)
+      async function editDocument(docId, currentTitle, currentType) {
+        alert('Document editing is only available for administrators.');
+      }
+
+      // Delete document (disabled for students)
+      async function deleteDocument(docId) {
+        alert('Document deletion is only available for administrators.');
+      }
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

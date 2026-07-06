@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - Finance</title>
+    <link rel="stylesheet" href="feestatement.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            
+            <a href="academic.html">Academics</a>
+            <a href="finance.html" class="active">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="notifications.html">Notifications</a>
+            <a href="clearance-request.html">clearence & request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>    
+            <a href="help.html">Help</a>
+            <a href="settings.html">Settings</a>
+            <a href="logout.html">Logout</a>
+        </nav>
+    </header>
+    <main class="finance-main">
+        <section class="finance-header">
+            <h2>Fee Statement</h2>
+            <p>Below is your current fee statement and payment history.</p>
+        </section>
+        <section id="statementHeader" class="statement-header">
+            <div class="statement-header-inner">
+                <div>
+                    <h1 class="statement-header-school">CRESENT HIGH SCHOOL</h1>
+                    <p class="statement-header-subtitle">Official Fee Statement</p>
+                </div>
+                <div class="statement-header-side">
+                    <div class="statement-header-label">Student</div>
+                    <div id="statementStudentName">--</div>
+                    <div id="statementAdmissionNumber" class="statement-header-admission">Admission No. --</div>
+                </div>
+            </div>
+        </section>
+        <section id="liveStatementSection" class="live-statement-section">
+            <h3>Current Account Statement</h3>
+            <div id="statementSummary" class="statement-summary"></div>
+            <div class="statement-table-scroll">
+                <table class="statement-table">
+                    <thead>
+                        <tr>
+                            <th class="statement-table-heading">Date</th>
+                            <th class="statement-table-heading">Description</th>
+                            <th class="statement-table-heading">Term</th>
+                            <th class="statement-table-heading">Billed</th>
+                            <th class="statement-table-heading">Paid</th>
+                            <th class="statement-table-heading">Running Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statementLines">
+                        <tr><td colspan="6" class="statement-table-empty">Loading statement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section id="financeDocsSection">
+            <h3>Fee Statement Documents</h3>
+            <p>Below are the fee statements uploaded by your school administrator.</p>
+            <div id="financeDocsContainer"></div>
+        </section>
+    </main>
+    <footer class="dashboard-footer">
+        &copy; 2025 CRESENT HIGH SCHOOL. All rights reserved.
+    </footer>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="financeAuth.js"></script>
+    <script src="financeDocs.js"></script>
+    <script>
+      function statementMoney(amount) {
+        return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+      }
+
+      async function loadLiveStatement() {
+        const summary = document.getElementById('statementSummary');
+        const lines = document.getElementById('statementLines');
+        try {
+          const res = await fetchWithAuth('/finance/statement');
+          if (!res.ok) throw new Error('Statement request failed');
+          const data = await res.json();
+          document.getElementById('statementStudentName').textContent = data.student?.name || '--';
+          document.getElementById('statementAdmissionNumber').textContent = data.student?.admissionNumber || data.student?.admission_number || 'Admission No. --';
+          const totals = data.totals || {};
+          summary.innerHTML = `
+            <div class="summary-card">
+              <div class="summary-label">Total Billed</div>
+              <div class="summary-value">${statementMoney(totals.total_charges)}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Total Paid</div>
+              <div class="summary-value paid">${statementMoney(totals.total_paid)}</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Balance</div>
+              <div class="summary-value balance">${statementMoney(totals.balance)}</div>
+            </div>
+          `;
+
+          let running = 0;
+          const entries = data.entries || [];
+          if (!entries.length) {
+            lines.innerHTML = '<tr><td colspan="6" class="statement-table-empty">No billing or payment records yet.</td></tr>';
+            return;
+          }
+          lines.innerHTML = entries.map(entry => {
+            const debit = Number(entry.debit || 0);
+            const credit = Number(entry.credit || 0);
+            running += debit - credit;
+            return `
+              <tr>
+                <td>${new Date(entry.created_at).toLocaleDateString()}</td>
+                <td>${entry.description || entry.entry_type}</td>
+                <td>${entry.term || '-'}</td>
+                <td class="statement-cell-right">${debit ? statementMoney(debit) : '-'}</td>
+                <td class="statement-cell-right">${credit ? statementMoney(credit) : '-'}</td>
+                <td class="statement-cell-right"><strong>${statementMoney(running)}</strong></td>
+              </tr>
+            `;
+          }).join('');
+        } catch (error) {
+          console.error('Live fee statement error:', error);
+          summary.innerHTML = '';
+          lines.innerHTML = '<tr><td colspan="6" class="statement-table-empty">Unable to load fee statement.</td></tr>';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', ()=>{
+        loadLiveStatement();
+        loadFinanceDocs('feestatement', null, null, { inlinePdf: true });
+      });
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

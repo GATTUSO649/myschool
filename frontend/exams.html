@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - Exams</title>
+    <link rel="stylesheet" href="exams.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+      <div class="header-content">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-actions">
+          <span class="header-pill">Student Portal</span>
+          <button class="logout-button" onclick="logout()" title="Logout">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="exams-main">
+        <section class="exams-header">
+            <h2>Exam Information</h2>
+            <p>View your examination timetable and transcripts.</p>
+        </section>
+        <section class="dashboard-cards">
+            <div class="exam-card">
+                <h3>Exam Timetable</h3>
+                <p>Check your examination timetable and upcoming sessions.</p>
+                <a href="timetable.html">View Timetable</a>
+            </div>
+            <div class="exam-card">
+                <h3>Exam Transcripts</h3>
+                <p>Access your full academic transcript and grades.</p>
+                <a href="student-transcript.html">View My Transcript</a>
+            </div>
+            <div class="exam-card">
+                <h3>Upcoming Events</h3>
+                <p>Review important academic events and deadlines.</p>
+                <a href="#eventsSection">View Events</a>
+            </div>
+            <div class="semester-progress">
+                <h3>Semester Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-fill-65"></div>
+                </div>
+                <p class="progress-text">65% completed</p>
+            </div>
+        </section>
+
+        <section class="section-container exam-table-section" id="eventsSection">
+            <div class="section-header">
+                <h2>Upcoming Exams</h2>
+                <p>Auto-loaded from exam schedule API.</p>
+            </div>
+            <div class="exam-table-wrap">
+                <table class="exam-table" id="examTable">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Venue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="empty-state">Loading exams...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-container events-list-section">
+            <div class="section-header">
+                <h2>Upcoming Academic Events</h2>
+                <p>Keep track of key school events and deadlines.</p>
+            </div>
+            <div class="events-grid" id="eventsGrid">
+                <div class="event-card">Loading events...</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="docs.js"></script>
+    <script>
+      function logout() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('student');
+        localStorage.removeItem('rememberMe');
+        window.location.href = 'login.html';
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        loadExamSchedule();
+        renderUpcomingEventsPlaceholder();
+      });
+
+      async function loadExamSchedule() {
+        const tableBody = document.querySelector('#examTable tbody');
+        try {
+          const resp = await fetchWithAuth('/api/exams');
+          if (!resp.ok) throw new Error('Exam API failed');
+          const exams = await resp.json();
+
+          if (!Array.isArray(exams) || exams.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">No upcoming exams found.</td></tr>';
+            return;
+          }
+
+          tableBody.innerHTML = '';
+          exams.forEach(exam => {
+            const d = new Date(exam.exam_date || exam.date || '');
+            const dateForm = isNaN(d.getTime()) ? (exam.exam_date || exam.date || '--') : d.toLocaleDateString();
+            const time = exam.time || exam.exam_time || 'TBD';
+            const venue = exam.venue || exam.location || 'TBD';
+
+            const row = `
+              <tr>
+                <td>${exam.course || exam.subject || 'Unknown'}</td>
+                <td>${dateForm}</td>
+                <td>${time}</td>
+                <td>${venue}</td>
+              </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', row);
+          });
+        } catch (err) {
+          console.error('Error loading exams', err);
+          tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">Unable to load exam data.</td></tr>';
+        }
+      }
+
+      function renderUpcomingEventsPlaceholder() {
+        const eventsGrid = document.getElementById('eventsGrid');
+        if (eventsGrid) {
+          eventsGrid.innerHTML = '<div class="event-card"><p>No upcoming academic events are available at this time.</p></div>';
+        }
+      }
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - My Transcript</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="site-common.css">
+    <style>
+        .dashboard-main {
+            padding: 28px 32px 48px;
+        }
+
+        .page-content {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcome-section {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(26,35,126,0.10);
+            padding: 24px 28px;
+            margin-bottom: 8px;
+            text-align: center;
+            max-width: 1160px;
+            width: 100%;
+        }
+
+        .welcome-section .header-top {
+            display: block;
+        }
+
+        .welcome-section h1 {
+            color: #1a237e;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .welcome-section p {
+            color: #334155;
+            font-size: 1rem;
+            margin: 8px 0 0;
+        }
+
+        .welcome-greeting {
+            text-align: center;
+            color: #1a237e;
+            margin-top: 16px;
+            font-size: 1rem;
+        }
+
+        .transcript-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 14px;
+            gap: 12px;
+        }
+
+        .transcript-actions .btn {
+            min-width: 170px;
+        }
+
+        .filter-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+            padding: 22px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a237e;
+            font-weight: 700;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 0.96rem;
+        }
+
+        .search-button {
+            background: linear-gradient(90deg, #1565c0 0%, #1a237e 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 13px 16px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+            min-height: 46px;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            align-self: start;
+        }
+
+        .search-button:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .note-text {
+            color: #475569;
+            align-self: center;
+            font-size: 0.92rem;
+        }
+
+        .transcript-document {
+            background: #fffdf8;
+            border: 1px solid #d7dfe8;
+            border-radius: 22px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            padding: 34px;
+            font-family: "Times New Roman", Georgia, serif;
+            color: #172033;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            padding-bottom: 22px;
+            border-bottom: 2px solid #1a237e;
+            margin-bottom: 24px;
+        }
+
+        .document-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #1a237e;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.16em;
+            border-radius: 999px;
+            margin-bottom: 8px;
+        }
+
+        .document-header h2 {
+            margin: 0 0 6px;
+            color: #111827;
+            font-size: 1.6rem;
+            letter-spacing: 0.03em;
+        }
+
+        .document-header p {
+            margin: 0;
+            color: #475569;
+            font-size: 1rem;
+        }
+
+        .document-meta {
+            min-width: 220px;
+            padding: 14px 16px;
+            border: 1px solid #dbe2ec;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        .document-meta div {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .document-meta div:last-child {
+            margin-bottom: 0;
+        }
+
+        .document-meta span {
+            color: #64748b;
+        }
+
+        .student-profile {
+            display: grid;
+            grid-template-columns: 1.4fr 0.9fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .profile-card,
+        .summary-card,
+        .detail-card,
+        .results-card {
+            background: #fff;
+            border: 1px solid #e4e8ef;
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .profile-card h3,
+        .detail-card h3,
+        .results-card h3 {
+            margin: 0 0 12px;
+            color: #1a237e;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .profile-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .profile-item label,
+        .detail-list span {
+            color: #64748b;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .profile-item strong,
+        .detail-list strong {
+            color: #0f172a;
+            font-size: 1rem;
+        }
+
+        .summary-card {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            align-content: start;
+        }
+
+        .summary-pill {
+            border: 1px solid #dbe2ec;
+            border-radius: 12px;
+            padding: 12px;
+            background: #f8fafc;
+        }
+
+        .summary-pill span {
+            display: block;
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
+        }
+
+        .summary-pill strong {
+            font-size: 1.18rem;
+            color: #1a237e;
+        }
+
+        .results-card {
+            margin-top: 16px;
+        }
+
+        .results-card .table-wrapper {
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 520px;
+        }
+
+        .pdf-table th,
+        .pdf-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            color: #172033;
+        }
+
+        .pdf-table th {
+            background: #f2f5fa;
+            font-weight: 700;
+            color: #1a237e;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.8rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .detail-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .detail-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .detail-card p {
+            margin: 0;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .document-footer {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 18px;
+        }
+
+        .signature-block {
+            text-align: center;
+            min-width: 220px;
+        }
+
+        .signature-block span {
+            display: block;
+            color: #64748b;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            margin-bottom: 14px;
+        }
+
+        .signature-line {
+            width: 100%;
+            height: 1px;
+            background: #111827;
+            margin-bottom: 10px;
+        }
+
+        .signature-block p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .loading-state {
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #475569;
+        }
+
+        .loading-spinner {
+            width: 44px;
+            height: 44px;
+            border: 5px solid rgba(21, 101, 192, 0.2);
+            border-top-color: #1565c0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        @media (max-width: 900px) {
+            .student-profile,
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .filter-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .document-header {
+                flex-direction: column;
+            }
+
+            .profile-grid,
+            .summary-card {
+                grid-template-columns: 1fr;
+            }
+
+            .transcript-document {
+                padding: 22px;
+            }
+        }
+
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .dashboard-header,
+            .student-sidebar,
+            .filter-panel,
+            .welcome-section,
+            .footer {
+                display: none !important;
+            }
+
+            .dashboard-main {
+                padding: 0;
+            }
+
+            .transcript-document {
+                box-shadow: none;
+                border: 0;
+                padding: 0;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+      <div class="header-content">
+        <div class="brand-bar">
+          <div class="school-name">
+            <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
+          </div>
+          <div class="header-note">Student portal transcript</div>
+        </div>
+        <nav class="dashboard-nav">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="academic.html">Academics</a>
+          <a href="calendar.html">Events</a>
+          <a href="finance.html">Finance</a>
+          <a href="help.html">Help</a>
+          <a href="settings.html">Settings</a>
+        </nav>
+        <div class="header-actions">
+          <span class="header-pill" id="studentNamePill">Student</span>
+          <button class="logout-button" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="student-shell">
+      <aside class="student-sidebar">
+        <div class="sidebar-section">
+          <h3>Main</h3>
+          <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+          <a class="sidebar-link" href="academic.html">Academics</a>
+          <a class="sidebar-link" href="calendar.html">Events</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Academics</h3>
+          <a class="sidebar-link active" href="student-transcript.html">Transcript</a>
+          <a class="sidebar-link" href="notes.html">Notes</a>
+          <a class="sidebar-link" href="revision.html">Revision</a>
+          <a class="sidebar-link" href="exams.html">Exams</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Finance</h3>
+          <a class="sidebar-link" href="finance.html">Fee Balance</a>
+          <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Support</h3>
+          <a class="sidebar-link" href="clearance-request.html">Clearance</a>
+          <a class="sidebar-link" href="lecturer interaction.html">Lecturer Interaction</a>
+          <a class="sidebar-link" href="settings.html">Settings</a>
+        </div>
+      </aside>
+
+      <main class="dashboard-main">
+        <div class="page-content">
+            <section class="welcome-section">
+            <div class="header-top">
+                <div class="school-title">
+                    <h1>CRESENT HIGH SCHOOL</h1>
+                    <p>Student Academic Transcript</p>
+                </div>
+                <div class="transcript-actions">
+                    <button class="btn btn-primary" id="printTranscriptBtn">Print Transcript</button>
+                </div>
+                <div class="welcome-greeting">
+                    <span>Welcome back,</span>
+                    <strong id="studentGreetingName">Student</strong>
+                </div>
+            </div>
+        </section>
+
+        <div class="filter-panel">
+            <div class="filter-group">
+                <label>Admission Number</label>
+                <input type="text" id="searchAdmission" readonly placeholder="Your admission number" />
+            </div>
+            <div class="filter-group">
+                <label for="searchForm">Form</label>
+                <select id="searchForm" title="Select form">
+                    <option value="">All Forms</option>
+                    <option value="Form 1">Form 1</option>
+                    <option value="Form 2">Form 2</option>
+                    <option value="Form 3">Form 3</option>
+                    <option value="Form 4">Form 4</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="searchTerm">Term</label>
+                <select id="searchTerm" title="Select term">
+                    <option value="">All Terms</option>
+                    <option value="Term 1">Term 1</option>
+                    <option value="Term 2">Term 2</option>
+                    <option value="Term 3">Term 3</option>
+                </select>
+            </div>
+            <button class="search-button" id="searchTranscriptBtn">Search Transcript</button>
+            <div class="note-text">Search uses your logged-in admission number and displays only your own transcript document.</div>
+        </div>
+
+        <div id="loadingContainer" class="transcript-section">
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading your transcript data...</p>
+            </div>
+        </div>
+
+        <div id="contentContainer" class="hidden">
+            <div class="transcript-document">
+                <div class="document-header">
+                    <div>
+                        <div class="document-badge">Official Academic Record</div>
+                        <h2>CRESENT HIGH SCHOOL</h2>
+                        <p>Student transcript for academic evaluation and records</p>
+                    </div>
+                    <div class="document-meta">
+                        <div><span>Issued</span><strong id="issuedDate">--</strong></div>
+                        <div><span>Reference</span><strong id="transcriptReference">--</strong></div>
+                    </div>
+                </div>
+
+                <div class="student-profile">
+                    <div class="profile-card">
+                        <h3>Student Information</h3>
+                        <div class="profile-grid">
+                            <div class="profile-item">
+                                <label>Admission Number</label>
+                                <strong id="studentAdm">--</strong>
+                            </div>
+                            <div class="profile-item">
+                                <label>Student Name</label>
+                                <strong id="studentName">--</strong>
+                            </div>
+                            <div class="profile-item">
+                                <label>Stream</label>
+                                <strong id="studentStream">--</strong>
+                            </div>
+                            <div class="profile-item">
+                                <label>Class</label>
+                                <strong id="studentClass">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-pill">
+                            <span>Total Marks</span>
+                            <strong id="totalMarks">0</strong>
+                        </div>
+                        <div class="summary-pill">
+                            <span>Average</span>
+                            <strong id="avgMarks">0.00</strong>
+                        </div>
+                        <div class="summary-pill">
+                            <span>Grade</span>
+                            <strong id="gradeMarks">--</strong>
+                        </div>
+                        <div class="summary-pill">
+                            <span>Term</span>
+                            <strong id="termBadge">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-card">
+                    <h3>Academic Performance Record</h3>
+                    <div class="table-wrapper">
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transcriptBody">
+                                <tr><td colspan="2" class="loading-state">Search to load your transcript subjects.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="detail-card">
+                        <h3>Results Summary</h3>
+                        <ul class="detail-list">
+                            <li><span>Total Marks</span><strong id="totalRow">-</strong></li>
+                            <li><span>Average Marks</span><strong id="avgRow">-</strong></li>
+                            <li><span>Grade</span><strong id="gradeRow">-</strong></li>
+                            <li><span>Academic Year</span><strong id="yearRow">-</strong></li>
+                            <li><span>Term</span><strong id="termRow">-</strong></li>
+                        </ul>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Remarks</h3>
+                        <p id="academicRemarks">This transcript reflects the student’s academic standing for the selected term and form. The record includes all available subject marks and summary performance data.</p>
+                    </div>
+                </div>
+
+                <div class="document-footer">
+                    <div class="signature-block">
+                        <span>Official Seal</span>
+                        <div class="signature-line"></div>
+                        <p>Principal / Registrar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorContainer" class="hidden"></div>
+
+        <div class="footer">
+            <p>&copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.</p>
+            <p>This is an official academic transcript. For inquiries, contact the administration office.</p>
+        </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const SUBJECTS = ['eng', 'kisw', 'mat', 'bio', 'che', 'phy', 'cre', 'his', 'geo', 'comp', 'bus', 'agr'];
+
+        function getStudentDisplayName(student) {
+            return (student && (student.name || student.username || student.email || student.admission_number))
+                ? (student.name || student.username || student.email || 'Student')
+                : 'Student';
+        }
+
+        function setStudentAdmissionValue(student) {
+            const admissionInput = document.getElementById('searchAdmission');
+            if (admissionInput && student) {
+                admissionInput.value = student.admission_number || student.adm || student.adm_no || student.admNo || '';
+            }
+        }
+
+        function clearTranscriptDisplay() {
+            document.getElementById('studentAdm').textContent = '--';
+            document.getElementById('studentName').textContent = '--';
+            document.getElementById('studentStream').textContent = '--';
+            document.getElementById('studentClass').textContent = '--';
+            document.getElementById('transcriptBody').innerHTML = `
+                <tr><td colspan="2" class="loading-state">Search to load your transcript subjects.</td></tr>
+            `;
+            document.getElementById('totalMarks').textContent = '0';
+            document.getElementById('avgMarks').textContent = '0.00';
+            document.getElementById('gradeMarks').textContent = '--';
+            document.getElementById('termBadge').textContent = '--';
+            document.getElementById('totalRow').textContent = '-';
+            document.getElementById('avgRow').textContent = '-';
+            document.getElementById('gradeRow').textContent = '-';
+            document.getElementById('yearRow').textContent = '-';
+            document.getElementById('termRow').textContent = '-';
+            document.getElementById('issuedDate').textContent = '--';
+            document.getElementById('transcriptReference').textContent = '--';
+            document.getElementById('academicRemarks').textContent = 'This transcript reflects the student’s academic standing for the selected term and form. The record includes all available subject marks and summary performance data.';
+        }
+
+        function renderTranscriptRows(transcript) {
+            const transcriptBody = document.getElementById('transcriptBody');
+            if (!transcriptBody) return;
+
+            if (!transcript) {
+                transcriptBody.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="text-center">No record available.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const rows = SUBJECTS.map(subject => {
+                const subjectLabel = subject.toUpperCase();
+                const marks = transcript[subject];
+                const numericScore = parseFloat(marks);
+                const displayValue = Number.isFinite(numericScore) ? Math.round(numericScore) : '-';
+                return `
+                    <tr>
+                        <td>${subjectLabel}</td>
+                        <td>${displayValue}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            transcriptBody.innerHTML = rows;
+        }
+
+        async function loadTranscript() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const contentContainer = document.getElementById('contentContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const searchButton = document.getElementById('searchTranscriptBtn');
+
+            try {
+                const student = getStudentInfo();
+                if (!student || !student.admission_number) {
+                    throw new Error('Unable to determine your admission number. Please log in again.');
+                }
+
+                const admissionNumber = student.admission_number || student.adm || student.adm_no || student.admNo;
+                const form = document.getElementById('searchForm')?.value?.trim();
+                const term = document.getElementById('searchTerm')?.value?.trim();
+
+                const apiUrl = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : (window.location.origin + '/api');
+                const params = new URLSearchParams();
+                if (form) params.set('form', form);
+                if (term) params.set('term', term);
+                const queryString = params.toString() ? `?${params.toString()}` : '';
+                const requestUrl = `${apiUrl}/transcript/${encodeURIComponent(admissionNumber)}${queryString}`;
+
+                if (searchButton) searchButton.disabled = true;
+                if (loadingContainer) loadingContainer.style.display = 'block';
+                if (contentContainer) contentContainer.style.display = 'none';
+                if (errorContainer) errorContainer.style.display = 'none';
+                clearTranscriptDisplay();
+
+                const response = await fetch(requestUrl, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        throw new Error('You are not authorized to view this transcript.');
+                    }
+                    if (response.status === 404) {
+                        const student = getStudentInfo();
+                        document.getElementById('studentAdm').textContent = (student && (student.admission_number || student.adm || student.adm_no || student.admNo)) || '--';
+                        document.getElementById('studentName').textContent = getStudentDisplayName(student);
+                        document.getElementById('studentGreetingName').textContent = getStudentDisplayName(student);
+                        renderTranscriptRows(null);
+                        document.getElementById('totalMarks').textContent = 0;
+                        document.getElementById('avgMarks').textContent = '0.00';
+                        document.getElementById('gradeMarks').textContent = '-';
+                        document.getElementById('termBadge').textContent = '-';
+                        document.getElementById('totalRow').textContent = 0;
+                        document.getElementById('avgRow').textContent = '0.00';
+                        document.getElementById('gradeRow').textContent = '-';
+                        document.getElementById('yearRow').textContent = '-';
+                        document.getElementById('termRow').textContent = '-';
+                        document.getElementById('issuedDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        document.getElementById('transcriptReference').textContent = admissionNumber;
+                        document.getElementById('academicRemarks').textContent = 'No transcript data is available for the selected term and form yet.';
+                        if (loadingContainer) loadingContainer.style.display = 'none';
+                        if (contentContainer) contentContainer.style.display = 'block';
+                        return;
+                    }
+                    const message = await response.text();
+                    throw new Error(`Error loading transcript (${response.status}) ${message}`);
+                }
+
+                const result = await response.json();
+                if (!result.success || !result.data) {
+                    const transcript = null;
+                    const student = result.data?.student || getStudentInfo();
+                    if (student) {
+                        document.getElementById('studentAdm').textContent = student.adm || student.admission_number || '--';
+                        document.getElementById('studentName').textContent = student.name || '--';
+                        document.getElementById('studentGreetingName').textContent = student.name || 'Student';
+                    }
+                    renderTranscriptRows(null);
+                    document.getElementById('totalMarks').textContent = 0;
+                    document.getElementById('avgMarks').textContent = '0.00';
+                    document.getElementById('gradeMarks').textContent = '-';
+                    document.getElementById('termBadge').textContent = '-';
+                    document.getElementById('totalRow').textContent = 0;
+                    document.getElementById('avgRow').textContent = '0.00';
+                    document.getElementById('gradeRow').textContent = '-';
+                    document.getElementById('yearRow').textContent = '-';
+                    document.getElementById('termRow').textContent = '-';
+                    document.getElementById('issuedDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    document.getElementById('transcriptReference').textContent = student.adm || student.admission_number || '--';
+                    document.getElementById('academicRemarks').textContent = 'No transcript data is available for the selected term and form yet.';
+                    if (loadingContainer) loadingContainer.style.display = 'none';
+                    if (contentContainer) contentContainer.style.display = 'block';
+                    return;
+                }
+
+                const { student: studentData, transcript } = result.data;
+                const displayName = studentData.name || getStudentDisplayName(getStudentInfo()) || '--';
+                document.getElementById('studentAdm').textContent = studentData.adm || '--';
+                document.getElementById('studentName').textContent = displayName;
+                document.getElementById('studentStream').textContent = studentData.stream || '--';
+                document.getElementById('studentClass').textContent = studentData.class || '--';
+                document.getElementById('studentGreetingName').textContent = displayName;
+
+                const hasTranscript = transcript && Object.keys(transcript).length > 0;
+                renderTranscriptRows(hasTranscript ? transcript : null);
+
+                const total = Number.isFinite(parseFloat(transcript?.total)) ? Math.round(transcript.total) : 0;
+                const avg = Number.isFinite(parseFloat(transcript?.avg)) ? parseFloat(transcript.avg) : 0;
+                const grade = transcript?.grade || '-';
+
+                document.getElementById('totalMarks').textContent = total;
+                document.getElementById('avgMarks').textContent = avg.toFixed(2);
+                document.getElementById('gradeMarks').textContent = grade;
+                document.getElementById('termBadge').textContent = transcript.term || '-';
+                document.getElementById('totalRow').textContent = total;
+                document.getElementById('avgRow').textContent = avg.toFixed(2);
+                document.getElementById('gradeRow').textContent = grade;
+                document.getElementById('yearRow').textContent = transcript.academic_year || '-';
+                document.getElementById('termRow').textContent = transcript.term || '-';
+                document.getElementById('issuedDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                document.getElementById('transcriptReference').textContent = studentData.adm || studentData.admission_number || admissionNumber;
+                document.getElementById('academicRemarks').textContent = transcript.remark || `The student achieved grade ${grade} with an average score of ${avg.toFixed(2)} for the selected academic period.`;
+
+                if (loadingContainer) loadingContainer.style.display = 'none';
+                if (contentContainer) contentContainer.style.display = 'block';
+                if (errorContainer) errorContainer.style.display = 'none';
+            } catch (err) {
+                console.error('Error loading transcript:', err);
+                if (loadingContainer) loadingContainer.style.display = 'none';
+                if (contentContainer) contentContainer.style.display = 'none';
+                if (errorContainer) {
+                    errorContainer.style.display = 'block';
+                    errorContainer.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            <strong>Error:</strong> ${err.message}
+                        </div>
+                    `;
+                }
+            } finally {
+                if (searchButton) searchButton.disabled = false;
+            }
+        }
+
+        function initializeTranscriptPage() {
+            const student = getStudentInfo();
+            const namePill = document.getElementById('studentNamePill');
+            if (namePill && student) {
+                namePill.textContent = student.name || 'Student';
+            }
+
+            if (!student || !(student.admission_number || student.adm || student.adm_no || student.admNo)) {
+                const errorContainer = document.getElementById('errorContainer');
+                errorContainer.style.display = 'block';
+                errorContainer.innerHTML = `
+                    <div class="error-state">
+                        <strong>Error:</strong> Unable to determine your admission number. Please log in again.
+                    </div>
+                `;
+                return;
+            }
+
+            setStudentAdmissionValue(student);
+            document.getElementById('studentGreetingName').textContent = getStudentDisplayName(student);
+            document.getElementById('searchTranscriptBtn')?.addEventListener('click', loadTranscript);
+            document.getElementById('searchForm')?.addEventListener('change', loadTranscript);
+            document.getElementById('searchTerm')?.addEventListener('change', loadTranscript);
+        document.getElementById('printTranscriptBtn')?.addEventListener('click', () => window.print());
+
+        document.addEventListener('DOMContentLoaded', initializeTranscriptPage);
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('student');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

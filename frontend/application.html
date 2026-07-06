@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Application | CRESENT High School</title>
+  <script src="config.js"></script>
+  <link rel="stylesheet" href="site-common.css">
+  <style>
+    * { box-sizing: border-box; }
+    .application-shell {
+      min-height: 100vh;
+      padding: 40px 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: rgba(5, 18, 35, 0.38);
+    }
+    .application-card {
+      width: min(980px, 100%);
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 8px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+    .application-header {
+      background: #1a3a52;
+      color: #fff;
+      padding: 26px 30px;
+    }
+    .application-header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #05cdab;
+      font-family: Georgia, "Times New Roman", Times, serif;
+    }
+    .application-header p {
+      margin: 8px 0 0;
+      color: #e6efe8;
+    }
+    form { padding: 28px 30px 32px; }
+    .form-section {
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid #e4e9ef;
+    }
+    .form-section h2 {
+      margin: 0 0 16px;
+      font-size: 1.05rem;
+      color: #1a3a52;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+      color: #24364a;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #ced7e0;
+      border-radius: 6px;
+      padding: 11px 12px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #1565c0;
+      box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
+    }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 0;
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #1565c0 0%, #1a237e 100%);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #edf2f7;
+      color: #1a3a52;
+    }
+    .application-status {
+      margin-top: 18px;
+      border-radius: 6px;
+      padding: 13px 14px;
+      display: none;
+      font-weight: 700;
+    }
+    .application-status.success {
+      display: block;
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+    .application-status.error {
+      display: block;
+      background: #ffebee;
+      color: #b71c1c;
+    }
+    .submission-card {
+      margin-top: 18px;
+      padding: 24px;
+      border-radius: 12px;
+      background: rgba(5, 68, 109, 0.08);
+      border: 1px solid rgba(21, 101, 192, 0.14);
+      color: #0b2440;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+    .submission-card.hidden {
+      display: none;
+    }
+    .submission-card h3 {
+      margin-top: 0;
+      color: #064a7a;
+    }
+    .submission-card p {
+      margin: 12px 0 0;
+      line-height: 1.6;
+      color: #1b3d60;
+    }
+    @media (max-width: 720px) {
+      .form-row { grid-template-columns: 1fr; }
+      form { padding: 22px 18px 26px; }
+      .application-header { padding: 22px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="application-shell">
+    <section class="application-card">
+      <div class="application-header">
+        <h1><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
+        <p>Student admission application</p>
+      </div>
+
+      <form id="applicationForm">
+        <div class="form-section">
+          <h2>Applicant Profile</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fullName">Full Name *</label>
+              <input type="text" id="fullName" name="fullName" required>
+            </div>
+            <div class="form-group">
+              <label for="className">Applying For *</label>
+              <select id="className" name="className" required>
+                <option value="">Select Class</option>
+                <option value="Form 1">Form 1</option>
+                <option value="Form 2">Form 2</option>
+                <option value="Form 3">Form 3</option>
+                <option value="Form 4">Form 4</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dob">Date of Birth</label>
+              <input type="date" id="dob" name="dob">
+            </div>
+            <div class="form-group">
+              <label for="gender">Gender</label>
+              <select id="gender" name="gender">
+                <option value="">Select Gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="previousSchool">Previous School</label>
+              <input type="text" id="previousSchool" name="previousSchool">
+            </div>
+            <div class="form-group">
+              <label for="kcpeMarks">KCPE Marks / Previous Score</label>
+              <input type="text" id="kcpeMarks" name="kcpeMarks">
+            </div>
+          </div>
+
+        <div class="form-section">
+          <h2>Parent / Guardian Details</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="parentName">Parent / Guardian Name *</label>
+              <input type="text" id="parentName" name="parentName" required>
+            </div>
+            <div class="form-group">
+              <label for="parentPhone">Parent / Guardian Phone *</label>
+              <input type="tel" id="parentPhone" name="parentPhone" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="parentEmail">Parent Email</label>
+              <input type="email" id="parentEmail" name="parentEmail">
+            </div>
+            <div class="form-group">
+              <label for="address">Home Address</label>
+              <input type="text" id="address" name="address">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Required Documents</h2>
+          <p style="margin:0 0 16px;color:#567;">Upload files from your device or paste a Google Drive link for each document.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="birthCertificate">Birth Certificate</label>
+              <input type="file" id="birthCertificate" name="birthCertificate" accept=".pdf,.jpg,.jpeg,.png">
+              <input type="url" id="birthCertificateUrl" name="birthCertificateUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
+            </div>
+            <div class="form-group">
+              <label for="kcpeCertificate">KCPE Certificate</label>
+              <input type="file" id="kcpeCertificate" name="kcpeCertificate" accept=".pdf,.jpg,.jpeg,.png">
+              <input type="url" id="kcpeCertificateUrl" name="kcpeCertificateUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="medicalForm">Medical Form</label>
+              <input type="file" id="medicalForm" name="medicalForm" accept=".pdf,.jpg,.jpeg,.png">
+              <input type="url" id="medicalFormUrl" name="medicalFormUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="index.html" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn btn-primary">Submit Application</button>
+        </div>
+        <div id="applicationStatus" class="application-status"></div>
+        <div id="submissionCard" class="submission-card hidden"></div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = window.CONFIG?.API_URL || 'http://localhost:5001/api';
+    
+    function setStatus(message, type) {
+      const status = document.getElementById('applicationStatus');
+      status.className = `application-status ${type}`;
+      status.textContent = message;
+    }
+
+    document.getElementById('applicationForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const submissionCard = document.getElementById('submissionCard');
+
+      try {
+        const response = await fetch(`${API_BASE}/applications`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+          form.reset();
+          submissionCard.classList.remove('hidden');
+          submissionCard.innerHTML = `
+            <h3>Thank you for applying!</h3>
+            <p>Your application has been submitted successfully and is now pending approval.</p>
+            <p>Please check your email for confirmation and the next steps. We appreciate your interest in CRESENT High School.</p>
+          `;
+          return;
+        }
+
+        setStatus(data.message || 'Application could not be submitted.', 'error');
+      } catch (error) {
+        console.error('Application error:', error);
+        setStatus('Could not submit application. Check that the backend server is running.', 'error');
+      }
+    });
+  </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

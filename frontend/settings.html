@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - CRESENT HIGH SCHOOL</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Fail-safe override to ensure content is visible even if CSS buffering fails */
+        .settings-section { display: block !important; }
+        .settings-content, .settings-main, .settings-header, .settings-container, .settings-sidebar, .settings-card { display: block !important; }
+        .settings-nav-item { display: inline-flex !important; }
+        .settings-header { background: #fff !important; }
+        #debugMessage { display: block !important; }
+    </style>
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="academic.html">Academics</a>
+            <a href="finance.html">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="clearance-request.html">Clearence & Request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>
+        </nav>
+    </header>
+
+    <main class="settings-main">
+        <!-- Settings Header -->
+        <div class="settings-header">
+            <div class="back-button">
+                <a href="dashboard.html"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            </div>
+            <h1>Account Settings</h1>
+            <p class="settings-subtitle">Manage your account preferences and security</p>
+        </div>
+
+        <div class="settings-container">
+            <!-- Sidebar Navigation -->
+            <aside class="settings-sidebar">
+                <nav class="settings-nav">
+                    <button class="settings-nav-item active" onclick="switchTab('profile', event)">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Profile</span>
+                    </button>
+                    <button class="settings-nav-item" onclick="switchTab('password', event)">
+                        <i class="fas fa-lock"></i>
+                        <span>Password & Security</span>
+                    </button>
+                    <button class="settings-nav-item" onclick="switchTab('notifications', event)">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                    </button>
+                    <button class="settings-nav-item" onclick="switchTab('privacy', event)">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Privacy</span>
+                    </button>
+                    <button class="settings-nav-item" onclick="switchTab('appearance', event)">
+                        <i class="fas fa-paint-brush"></i>
+                        <span>Appearance</span>
+                    </button>
+                    <button class="settings-nav-item" onclick="switchTab('sessions', event)">
+                        <i class="fas fa-laptop"></i>
+                        <span>Active Sessions</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+
+                <!-- Profile Settings -->
+                <section id="profile" class="settings-section active">
+                    <div class="section-header">
+                        <h2>Profile Information</h2>
+                        <p>Update your personal details</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="profile-picture-section">
+                            <div class="profile-picture">
+                                <img id="profileImg" src="https://ui-avatars.com/api/?name=Student&background=1565c0&color=fff" alt="Profile Picture">
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn-secondary" onclick="uploadProfilePicture()">
+                                    <i class="fas fa-camera"></i> Upload Photo
+                                </button>
+                                <button class="btn-secondary" onclick="removeProfilePicture()">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <form id="profileForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name</label>
+                                    <input type="text" id="fullName" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="studentID">Student ID</label>
+                                    <input type="text" id="studentID" placeholder="e.g., SCI2021001" disabled>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dateOfBirth">Date of Birth</label>
+                                    <input type="date" id="dateOfBirth">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" placeholder="your.email@school.ac.ke">
+                                    <small>We'll send important updates to this email</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Phone Number</label>
+                                    <input type="tel" id="phone" placeholder="+254 700 000 000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="course">Course/Class</label>
+                                    <select id="course">
+                                        <option value="">Select your course</option>
+                                        <option value="form-1">Form 1</option>
+                                        <option value="form-2">Form 2</option>
+                                        <option value="form-3">Form 3</option>
+                                        <option value="form-4">Form 4</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                                <button type="reset" class="btn-secondary">
+                                    <i class="fas fa-redo"></i> Discard
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Password & Security Settings -->
+                <section id="password" class="settings-section">
+                    <div class="section-header">
+                        <h2>Password & Security</h2>
+                        <p>Keep your account secure and protected</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Change Password</h3>
+                        <form id="passwordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password</label>
+                                <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" id="newPassword" placeholder="Enter new password" required>
+                                <div class="password-strength">
+                                    <div class="strength-bar"><div id="strengthIndicator" class="strength-fill"></div></div>
+                                    <small id="strengthText">Password strength: Weak</small>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-key"></i> Update Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Two-Factor Authentication</h3>
+                        <p class="card-description">Add an extra layer of security to your account</p>
+                        <div class="security-status">
+                            <div class="status-badge disabled">
+                                <i class="fas fa-shield-alt"></i> Not Enabled
+                            </div>
+                            <button class="btn-secondary" onclick="enable2FA()">
+                                <i class="fas fa-mobile-alt"></i> Enable 2FA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Account Recovery</h3>
+                        <p class="card-description">Set up recovery options for account access</p>
+                        <div class="recovery-options">
+                            <div class="recovery-item">
+                                <div class="recovery-info">
+                                    <strong>Recovery Email</strong>
+                                    <p>backup.email@example.com</p>
+                                </div>
+                                <button class="btn-secondary btn-sm">Update</button>
+                            </div>
+                            <div class="recovery-item">
+                                <div class="recovery-info">
+                                    <strong>Recovery Phone</strong>
+                                    <p>+254 700 000 000</p>
+                                </div>
+                                <button class="btn-secondary btn-sm">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notification Settings -->
+                <section id="notifications" class="settings-section">
+                    <div class="section-header">
+                        <h2>Notification Preferences</h2>
+                        <p>Control how and when you receive notifications</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Email Notifications</h3>
+                        <div class="toggle-list">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Academic Updates</strong>
+                                    <p>Grades, assignments, and course announcements</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Finance Notifications</strong>
+                                    <p>Fee statements and payment reminders</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Exam Updates</strong>
+                                    <p>Exam schedules and results</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>System Notifications</strong>
+                                    <p>Important system updates and maintenance</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Notification Frequency</h3>
+                        <div class="frequency-options">
+                            <label class="radio-option">
+                                <input type="radio" name="frequency" value="instant" checked>
+                                <span class="radio-custom"></span>
+                                <div>
+                                    <strong>Instant</strong>
+                                    <p>Get notified as soon as updates arrive</p>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="frequency" value="daily">
+                                <span class="radio-custom"></span>
+                                <div>
+                                    <strong>Daily Digest</strong>
+                                    <p>Receive one email per day with all updates</p>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="frequency" value="weekly">
+                                <span class="radio-custom"></span>
+                                <div>
+                                    <strong>Weekly Summary</strong>
+                                    <p>Get a weekly summary of important updates</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Privacy Settings -->
+                <section id="privacy" class="settings-section">
+                    <div class="section-header">
+                        <h2>Privacy Settings</h2>
+                        <p>Control who can see your information</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Profile Visibility</h3>
+                        <div class="toggle-list">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Public Profile</strong>
+                                    <p>Allow other students to view your profile</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Show Online Status</strong>
+                                    <p>Let others see when you're online</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Allow Messages</strong>
+                                    <p>Allow other students to message you</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Data & Privacy</h3>
+                        <div class="privacy-actions">
+                            <button class="btn-secondary">
+                                <i class="fas fa-download"></i> Download My Data
+                            </button>
+                            <button class="btn-secondary">
+                                <i class="fas fa-file-pdf"></i> View Privacy Policy
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Appearance Settings -->
+                <section id="appearance" class="settings-section">
+                    <div class="section-header">
+                        <h2>Appearance</h2>
+                        <p>Customize how the portal looks</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Theme</h3>
+                        <div class="theme-options">
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="light" checked>
+                                <div class="theme-preview light-theme">
+                                    <span class="theme-label">Light</span>
+                                </div>
+                            </label>
+
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="dark">
+                                <div class="theme-preview dark-theme">
+                                    <span class="theme-label">Dark</span>
+                                </div>
+                            </label>
+
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="auto">
+                                <div class="theme-preview auto-theme">
+                                    <span class="theme-label">Auto</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Display Options</h3>
+                        <div class="toggle-list">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Compact View</strong>
+                                    <p>Use a more condensed layout</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <strong>Animations</strong>
+                                    <p>Enable smooth page transitions</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Language</h3>
+                        <select class="language-select">
+                            <option value="en" selected>English</option>
+                            <option value="sw">Swahili</option>
+                            <option value="fr">French</option>
+                            <option value="es">Spanish</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Active Sessions -->
+                <section id="sessions" class="settings-section">
+                    <div class="section-header">
+                        <h2>Active Sessions</h2>
+                        <p>Manage your logged-in devices</p>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="sessions-list">
+                            <div class="session-item current">
+                                <div class="session-icon">
+                                    <i class="fas fa-laptop"></i>
+                                </div>
+                                <div class="session-details">
+                                    <strong>Windows - Chrome</strong>
+                                    <p>192.168.1.100</p>
+                                    <small>Current session • Last active now</small>
+                                </div>
+                                <div class="session-status">
+                                    <span class="badge-active">Active</span>
+                                </div>
+                            </div>
+
+                            <div class="session-item">
+                                <div class="session-icon">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <div class="session-details">
+                                    <strong>iPhone - Safari</strong>
+                                    <p>192.168.1.50</p>
+                                    <small>Last active 2 hours ago</small>
+                                </div>
+                                <button class="btn-danger btn-sm">Logout</button>
+                            </div>
+
+                            <div class="session-item">
+                                <div class="session-icon">
+                                    <i class="fas fa-tablet-alt"></i>
+                                </div>
+                                <div class="session-details">
+                                    <strong>iPad - Chrome</strong>
+                                    <p>192.168.1.75</p>
+                                    <small>Last active 1 day ago</small>
+                                </div>
+                                <button class="btn-danger btn-sm">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>Logout All Other Sessions</h3>
+                        <p class="card-description">Sign out all active sessions except this one</p>
+                        <button class="btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout All
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification-toast"></div>
+
+    <script src="settings.js"></script>
+  <script src="site-common.js"></script>
+</body>
+</html>

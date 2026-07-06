@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - Clearance & Request</title>
+    <link rel="stylesheet" href="clearance-request.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="academic.html">Academics</a>
+            <a href="finance.html">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="clearance-request.html" class="active">Clearance & Request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>
+        </nav>
+    </header>
+
+
+    <main class="clearance-main">
+        <section class="page-header">
+            <h1>Clearance & Request Management</h1>
+            <p>Manage your clearance forms and submit service requests efficiently</p>
+        </section>
+
+        <!-- Status Overview Section -->
+        <section class="status-overview">
+            <div class="status-card clearance-status">
+                <div class="status-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="status-content">
+                    <h3>Clearance Status</h3>
+                    <p class="status-value" id="clearanceStatus">Pending</p>
+                    <p class="status-detail">1 of 3 items completed</p>
+                </div>
+            </div>
+            <div class="status-card request-status">
+                <div class="status-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <div class="status-content">
+                    <h3>Active Requests</h3>
+                    <p class="status-value" id="activeRequests">2</p>
+                    <p class="status-detail">Awaiting approval or action</p>
+                </div>
+            </div>
+            <div class="status-card pending-status">
+                <div class="status-icon">
+                    <i class="fas fa-hourglass-end"></i>
+                </div>
+                <div class="status-content">
+                    <h3>Pending Actions</h3>
+                    <p class="status-value" id="pendingActions">3</p>
+                    <p class="status-detail">Require immediate attention</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Clearance Forms Section -->
+        <section class="section-container">
+            <div class="section-header">
+                <h2><i class="fas fa-file-contract"></i> Clearance Forms</h2>
+                <p>Complete required clearance documentation for graduation</p>
+            </div>
+            <div class="forms-grid">
+                <div class="form-card">
+                    <div class="form-header">
+                        <i class="fas fa-book"></i>
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                    <h3>Library Clearance</h3>
+                    <p>Return all borrowed books and settle outstanding fines</p>
+                    <ul class="requirements">
+                        <li><i class="fas fa-check-circle"></i> Return borrowed items</li>
+                        <li><i class="fas fa-times-circle"></i> Clear outstanding fines</li>
+                        <li><i class="fas fa-check-circle"></i> Obtain librarian signature</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary">View Requirements</a>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <i class="fas fa-microscope"></i>
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                    <h3>Laboratory Clearance</h3>
+                    <p>Return all laboratory equipment and complete course requirements</p>
+                    <ul class="requirements">
+                        <li><i class="fas fa-check-circle"></i> Return lab equipment</li>
+                        <li><i class="fas fa-times-circle"></i> Complete practicals</li>
+                        <li><i class="fas fa-check-circle"></i> Submit lab reports</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary">View Requirements</a>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <i class="fas fa-money-bill"></i>
+                        <span class="status-badge completed">Completed</span>
+                    </div>
+                    <h3>Finance Clearance</h3>
+                    <p>Confirm all fees and outstanding payments are settled</p>
+                    <ul class="requirements">
+                        <li><i class="fas fa-check-circle"></i> Settle all fees</li>
+                        <li><i class="fas fa-check-circle"></i> Clear outstanding balances</li>
+                        <li><i class="fas fa-check-circle"></i> Obtain receipt</li>
+                    </ul>
+                    <a href="#" class="btn btn-success">View Clearance</a>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <i class="fas fa-laptop"></i>
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                    <h3>ICT Clearance</h3>
+                    <p>Return all IT equipment and ensure data security compliance</p>
+                    <ul class="requirements">
+                        <li><i class="fas fa-times-circle"></i> Return laptops/tablets</li>
+                        <li><i class="fas fa-check-circle"></i> Clear user account</li>
+                        <li><i class="fas fa-times-circle"></i> Sign security agreement</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary">View Requirements</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Service Requests Section -->
+        <section class="section-container">
+            <div class="section-header">
+                <h2><i class="fas fa-tasks"></i> Service Requests</h2>
+                <p>Submit and track your service requests</p>
+            </div>
+            <div class="requests-container">
+                <button class="btn btn-primary btn-lg" onclick="openRequestForm()">
+                    <i class="fas fa-plus-circle"></i> New Service Request
+                </button>
+            </div>
+
+            <div class="requests-grid">
+                <div class="request-card">
+                    <div class="request-header">
+                        <h3>Transcript Request</h3>
+                        <span class="request-status approved"><i class="fas fa-check"></i> Approved</span>
+                    </div>
+                    <p class="request-date"><i class="fas fa-calendar"></i> Submitted: March 15, 2026</p>
+                    <p class="request-description">Official transcript for university application</p>
+                    <div class="request-timeline">
+                        <div class="timeline-item completed">
+                            <span class="dot"></span>
+                            <span>Submitted</span>
+                        </div>
+                        <div class="timeline-item completed">
+                            <span class="dot"></span>
+                            <span>Reviewed</span>
+                        </div>
+                        <div class="timeline-item completed">
+                            <span class="dot"></span>
+                            <span>Approved</span>
+                        </div>
+                        <div class="timeline-item active">
+                            <span class="dot"></span>
+                            <span>Ready for Pickup</span>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-outline-primary btn-sm">Download</a>
+                </div>
+
+                <div class="request-card">
+                    <div class="request-header">
+                        <h3>Document Verification</h3>
+                        <span class="request-status pending"><i class="fas fa-hourglass"></i> Pending</span>
+                    </div>
+                    <p class="request-date"><i class="fas fa-calendar"></i> Submitted: March 18, 2026</p>
+                    <p class="request-description">Verification of academic credentials</p>
+                    <div class="request-timeline">
+                        <div class="timeline-item completed">
+                            <span class="dot"></span>
+                            <span>Submitted</span>
+                        </div>
+                        <div class="timeline-item active">
+                            <span class="dot"></span>
+                            <span>In Review</span>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="dot"></span>
+                            <span>Completed</span>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-outline-primary btn-sm">View Details</a>
+                </div>
+
+                <div class="request-card">
+                    <div class="request-header">
+                        <h3>Certificate Request</h3>
+                        <span class="request-status rejected"><i class="fas fa-times"></i> Needs Revision</span>
+                    </div>
+                    <p class="request-date"><i class="fas fa-calendar"></i> Submitted: March 10, 2026</p>
+                    <p class="request-description">Special achievement certificate</p>
+                    <p class="notes"><strong>Notes:</strong> Please provide additional supporting documents</p>
+                    <div class="request-timeline">
+                        <div class="timeline-item completed">
+                            <span class="dot"></span>
+                            <span>Submitted</span>
+                        </div>
+                        <div class="timeline-item active">
+                            <span class="dot"></span>
+                            <span>Revision Needed</span>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="dot"></span>
+                            <span>Approval</span>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-warning btn-sm">Revise & Resubmit</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Important Notes Section -->
+        <section class="section-container">
+            <div class="important-box">
+                <div class="important-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="important-content">
+                    <h3>Important Reminders</h3>
+                    <ul>
+                        <li>Complete all clearance requirements before graduation date (May 30, 2026)</li>
+                        <li>Allow 5-7 business days for request processing</li>
+                        <li>Submit all required documents in the specified format</li>
+                        <li>Contact your department head for clearance-related inquiries</li>
+                        <li>Keep copies of all submitted documents for your records</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Quick Action Modal -->
+    <div class="modal" id="requestModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeRequestForm()">&times;</span>
+            <h2>New Service Request</h2>
+            <form class="request-form">
+                <div class="form-group">
+                    <label for="requestType">Request Type *</label>
+                    <select id="requestType" required>
+                        <option value="">Select a request type</option>
+                        <option value="document">Document Request</option>
+                        <option value="verification">Verification Request</option>
+                        <option value="certificate">Certificate Request</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="requestDetails">Details *</label>
+                    <textarea id="requestDetails" rows="4" placeholder="Describe your request..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="requestDate">Required By Date</label>
+                    <input type="date" id="requestDate">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeRequestForm()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="dashboard-footer">
+        &copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        function toggleMenu() {
+            const sideMenu = document.getElementById('sideMenu');
+            const hamburger = document.getElementById('hamburger');
+            sideMenu.classList.toggle('active');
+        }
+
+        document.addEventListener('click', (e) => {
+            const sideMenu = document.getElementById('sideMenu');
+            const hamburger = document.getElementById('hamburger');
+            if (!hamburger.contains(e.target) && !sideMenu.contains(e.target)) {
+                sideMenu.classList.remove('active');
+            }
+        });
+
+        function openRequestForm() {
+            document.getElementById('requestModal').style.display = 'block';
+        }
+
+        function closeRequestForm() {
+            document.getElementById('requestModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('requestModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Check authentication
+        if (!checkAuth()) {
+            console.warn('Clearance page: Not authenticated, redirecting to login');
+            window.location.href = 'login.html';
+        }
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

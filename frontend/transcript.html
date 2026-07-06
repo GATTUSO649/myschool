@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRESENT HIGH SCHOOL - Transcripts</title>
+    <link rel="stylesheet" href="transcript.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="academic.html">Academics</a>
+            <a href="finance.html">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="transcript.html" class="active">Transcripts</a>
+            <a href="notifications.html">Notifications</a>
+            <a href="clearance-request.html">clearence & request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>
+        </nav>
+    </header>
+
+    <!-- Side Menu for Navigation -->
+    <nav class="side-menu" id="sideMenu">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="academic.html">Academics</a>
+        <a href="finance.html">Finance</a>
+        <a href="exams.html">Exams</a>
+        <a href="transcript.html" class="active">Transcripts</a>
+        <a href="notifications.html">Notifications</a>
+        <a href="clearance-request.html">clearence & request</a>
+        <a href="lecturer interaction.html">Lecturer Interaction</a>
+        <a href="#" onclick="logout()" class="logout">Logout</a>
+    </nav>
+
+    <main class="transcript-main">
+        <section class="transcript-header">
+            <h2>Academic Transcripts</h2>
+            <p>View your academic records and grades.</p>
+        </section>
+
+        <section id="transcriptSummary" class="transcript-summary">
+            <div class="transcript-summary-inner">
+                <div>
+                    <h3 class="transcript-summary-school">CRESENT HIGH SCHOOL</h3>
+                    <p class="transcript-summary-subtitle">Official Student Transcript</p>
+                </div>
+                <div class="transcript-summary-side">
+                    <div class="transcript-summary-title">Student Transcript</div>
+                    <div class="transcript-summary-note">Generated for the logged-in student</div>
+                </div>
+            </div>
+            <div class="transcript-summary-grid">
+                <div><strong>Name:</strong> <span id="transcriptStudentName">-</span></div>
+                <div><strong>Admission No.:</strong> <span id="transcriptAdmissionNumber">-</span></div>
+                <div><strong>Class / Stream:</strong> <span id="transcriptClassStream">-</span></div>
+                <div><strong>Academic Year:</strong> <span id="transcriptAcademicYear">-</span></div>
+            </div>
+        </section>
+
+
+
+        <section class="transcript-table-section">
+            <table class="transcript-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Grade</th>
+                        <th>Score</th>
+                        <th>Year</th>
+                        <th>Term</th>
+                        <th>Exam Type</th>
+                    </tr>
+                </thead>
+                <tbody id="transcriptTableBody">
+                    <tr><td colspan="6" class="text-center">Loading transcripts...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="transcript-table-section admin-highlight">
+            <h3>Student Marks Report</h3>
+            <button class="btn btn-secondary download-button" onclick="downloadMarkReport()">Download as CSV</button>
+            <table class="transcript-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Adm. No.</th>
+                        <th>ENG</th>
+                        <th>MAT</th>
+                        <th>KISW</th>
+                        <th>BIO</th>
+                        <th>CHE</th>
+                        <th>PHY</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody id="marksTableBody">
+                    <tr><td colspan="9" class="text-center">Loading marks...</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+
+    <footer class="dashboard-footer">
+        &copy; 2025 CRESENT HIGH SCHOOL. All rights reserved.
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+
+    <script>
+        // Helper to fetch with authentication
+        async function fetchWithAuth(endpoint, options = {}) {
+            const token = getAuthToken();
+            const isForm = options.body instanceof FormData;
+            const defaultHeaders = isForm ? {} : { 'Content-Type': 'application/json' };
+            const headers = { ...defaultHeaders, ...(options.headers || {}) };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            
+            return fetch(getApiUrl() + endpoint, { ...options, headers });
+        }
+
+        let transcripts = [];
+        let students = [];
+        let isAdmin = false;
+        const TRANSCRIPT_SUBJECTS = [
+            'English', 'Kiswahili', 'Mathematics', 'Biology', 'Physics', 'Chemistry',
+            'History and Government', 'Geography', 'Christian Religious Education',
+            'Business Studies', 'Computer Studies', 'Agriculture', 'Art and Design'
+        ];
+        const TRANSCRIPT_FORMS = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const student = getStudentInfo();
+            isAdmin = student && (student.role === 'lecturer' || student.role === 'rba');
+            
+            if (isAdmin) {
+                const adminControls = document.getElementById('adminControls');
+                if (adminControls) {
+                    adminControls.style.display = 'flex';
+                }
+                const studentHeader = document.getElementById('studentHeader');
+                const actionsHeader = document.getElementById('actionsHeader');
+                const csvBtn = document.getElementById('csvUploadBtn');
+                if (studentHeader) studentHeader.style.display = 'table-cell';
+                if (actionsHeader) actionsHeader.style.display = 'table-cell';
+                if (csvBtn) csvBtn.style.display = 'inline-flex';
+                loadStudents();
+            }
+
+            loadTranscripts();
+            loadMarkRecords();
+        });
+
+        async function loadTranscripts() {
+            try {
+                const url = isAdmin ? '/admin/transcripts' : '/transcript';
+                const res = await fetchWithAuth(url);
+                if (!res.ok) throw new Error('Failed to load transcripts');
+                
+                transcripts = await res.json();
+                renderTranscripts(transcripts);
+                renderTranscriptSummary();
+            } catch (err) {
+                console.error('Error loading transcripts:', err);
+                document.getElementById('transcriptTableBody').innerHTML = 
+                    '<tr><td colspan="6" class="text-center">Failed to load transcripts</td></tr>';
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetchWithAuth('/admin/students');
+                if (res.ok) {
+                    students = await res.json();
+                    const select = document.getElementById('studentSelect');
+                    select.innerHTML = '<option value="">Select Student</option>';
+                    students.forEach(student => {
+                        select.innerHTML += `<option value="${student.id}">${student.name} (${student.email})</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading students:', err);
+            }
+        }
+
+        function renderTranscripts(data) {
+            const tbody = document.getElementById('transcriptTableBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No transcripts found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(transcript => `
+                <tr>
+                    ${isAdmin ? `<td>${transcript.student_name || 'Unknown'}</td>` : ''}
+                    <td>${transcript.course}</td>
+                    <td>${transcript.grade}</td>
+                    <td>${transcript.score || '-'}</td>
+                    <td>${transcript.year}</td>
+                    <td>${transcript.term || '-'}</td>
+                    <td>${transcript.exam_type || '-'}</td>
+                    ${isAdmin ? `
+                        <td>
+                            <button class="btn btn-sm" onclick="editTranscript(${transcript.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTranscript(${transcript.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    ` : ''}
+                </tr>
+            `).join('');
+        }
+
+        function renderTranscriptSummary() {
+            const student = getStudentInfo();
+            const summary = document.getElementById('transcriptSummary');
+            if (!summary || !student || isAdmin) {
+                if (summary) summary.style.display = 'none';
+                return;
+            }
+
+            const years = Array.from(new Set(transcripts.map(t => t.year))).filter(Boolean);
+            const yearLabel = years.length === 1 ? years[0] : (years.length ? 'All years' : new Date().getFullYear());
+
+            document.getElementById('transcriptStudentName').textContent = student.name || '-';
+            document.getElementById('transcriptAdmissionNumber').textContent = student.admissionNumber || student.admission_number || '-';
+            document.getElementById('transcriptClassStream').textContent = `${student.className || student.class_name || '-'} ${student.stream || ''}`.trim();
+            document.getElementById('transcriptAcademicYear').textContent = yearLabel;
+            summary.style.display = 'block';
+        }
+
+        function filterTranscripts() {
+            const query = document.getElementById('studentFilter').value.toLowerCase();
+            const filtered = transcripts.filter(t => 
+                !query || 
+                (t.student_name && t.student_name.toLowerCase().includes(query)) ||
+                (t.student_email && t.student_email.toLowerCase().includes(query))
+            );
+            renderTranscripts(filtered);
+        }
+
+
+        function showAddTranscriptModal() {
+            document.getElementById('modalTitle').textContent = 'Add Transcript';
+            document.getElementById('transcriptForm').reset();
+            document.getElementById('transcriptModal').style.display = 'block';
+        }
+
+        function editTranscript(id) {
+            const transcript = transcripts.find(t => t.id === id);
+            if (!transcript) return;
+            
+            document.getElementById('modalTitle').textContent = 'Edit Transcript';
+            document.getElementById('studentSelect').value = transcript.student_id;
+            document.getElementById('course').value = transcript.course;
+            document.getElementById('grade').value = transcript.grade;
+            document.getElementById('score').value = transcript.score || '';
+            document.getElementById('year').value = transcript.year;
+            document.getElementById('term').value = transcript.term || '';
+            document.getElementById('examType').value = transcript.exam_type || '';
+            
+            document.getElementById('transcriptForm').dataset.editId = id;
+            document.getElementById('transcriptModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('transcriptModal').style.display = 'none';
+            document.getElementById('transcriptForm').reset();
+            delete document.getElementById('transcriptForm').dataset.editId;
+        }
+
+        async function deleteTranscript(id) {
+            if (!confirm('Are you sure you want to delete this transcript?')) return;
+            
+            try {
+                const res = await fetchWithAuth(`/admin/transcripts/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadTranscripts();
+                    alert('Transcript deleted successfully');
+                } else {
+                    alert('Failed to delete transcript');
+                }
+            } catch (err) {
+                console.error('Error deleting transcript:', err);
+                alert('Failed to delete transcript');
+            }
+        }
+
+        function triggerCsvUpload() {
+            const input = document.getElementById('csvUploadInput');
+            if (input) {
+                input.click();
+            }
+        }
+
+        async function handleCsvUploadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please upload a CSV file exported from Excel.');
+                event.target.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetchWithAuth('/admin/transcripts/upload_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.message || `Upload failed (${res.status})`);
+                }
+
+                const result = await res.json();
+                const summary = [`Imported ${result.imported} transcripts.`];
+                if (result.errors && result.errors.length) {
+                    summary.push(`${result.errors.length} rows failed.`);
+                }
+                alert(summary.join(' '));
+                loadTranscripts();
+            } catch (err) {
+                console.error('Error uploading CSV:', err);
+                alert(err.message || 'Failed to upload transcript CSV');
+            } finally {
+                event.target.value = '';
+            }
+        }
+
+        async function loadMarkRecords() {
+            try {
+                const res = await fetchWithAuth('/transcript/marks');
+                if (!res.ok) throw new Error('Failed to load mark records');
+
+                const marks = await res.json();
+                const tbody = document.getElementById('marksTableBody');
+                if (!marks || marks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No mark records found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = marks.map(mark => `
+                    <tr>
+                        <td>${mark.student_name || 'You'}</td>
+                        <td>${mark.admission_number || ''}</td>
+                        <td>${mark.eng || ''}</td>
+                        <td>${mark.mat || ''}</td>
+                        <td>${mark.kisw || ''}</td>
+                        <td>${mark.bio || ''}</td>
+                        <td>${mark.che || ''}</td>
+                        <td>${mark.phy || ''}</td>
+                        <td>${new Date(mark.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading mark records:', err);
+                document.getElementById('marksTableBody').innerHTML = '<tr><td colspan="9" class="text-center">Failed to load marks</td></tr>';
+            }
+        }
+
+        function downloadMarkReport() {
+            const rows = Array.from(document.querySelectorAll('#marksTableBody tr'))
+                .filter(r => !r.textContent.includes('No mark records found') && !r.textContent.includes('Failed to load marks'))
+                .map(row => {
+                    const cols = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+                    return cols.join(',');
+                });
+
+            if (!rows.length) {
+                alert('No marks to download');
+                return;
+            }
+
+            const header = 'Student,AdmissionNumber,ENG,MAT,KISW,BIO,CHE,PHY,CreatedAt';
+            const csv = [header, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcript-marks.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            menu.classList.toggle('active');
+        }
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

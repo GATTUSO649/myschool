@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Structure - CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="academic.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+<header class="dashboard-header">
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <nav class="dashboard-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="academic.html">Academics</a>
+            <a href="finance.html" class="active">Finance</a>
+            <a href="exams.html">Exams</a>
+            <a href="notifications.html">Notifications</a>
+            <a href="clearance-request.html">Clearance & Request</a>
+            <a href="lecturer interaction.html">Lecturer Interaction</a>
+        </nav>
+    </header>
+    <main class="profile-main">
+        <section class="profile-header">
+            <h2><i class="fas fa-file-invoice-dollar"></i> Fee Structure</h2>
+            <p>View fee structures for each form and academic year</p>
+        </section>
+        <section id="financeDocsSection" class="receipts-container">
+            <div id="financeDocsContainer" class="finance-docs-container"></div>
+                <div class="forms-grid">
+                  <div class="form-card">
+                    <div>
+                      <h4 class="form-card-title">Form 1</h4>
+                      <p class="form-card-description">View fee structure for Form 1 in PDF format.</p>
+                    </div>
+                    <a href="feestructure_view.html?form=Form%201" class="btn btn-primary form-card-button">Open PDF</a>
+                  </div>
+                  <div class="form-card">
+                    <div>
+                      <h4 class="form-card-title">Form 2</h4>
+                      <p class="form-card-description">View fee structure for Form 2 in PDF format.</p>
+                    </div>
+                    <a href="feestructure_view.html?form=Form%202" class="btn btn-primary form-card-button">Open PDF</a>
+                  </div>
+                  <div class="form-card">
+                    <div>
+                      <h4 class="form-card-title">Form 3</h4>
+                      <p class="form-card-description">View fee structure for Form 3 in PDF format.</p>
+                    </div>
+                    <a href="feestructure_view.html?form=Form%203" class="btn btn-primary form-card-button">Open PDF</a>
+                  </div>
+                  <div class="form-card">
+                    <div>
+                      <h4 class="form-card-title">Form 4</h4>
+                      <p class="form-card-description">View fee structure for Form 4 in PDF format.</p>
+                    </div>
+                    <a href="feestructure_view.html?form=Form%204" class="btn btn-primary form-card-button">Open PDF</a>
+                  </div>
+                </div>
+        </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="financeAuth.js"></script>
+    <script src="financeDocs.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', ()=>{
+        const params = new URLSearchParams(window.location.search);
+        const form = params.get('form');
+        const term = params.get('term');
+
+        if(form){
+          document.querySelector('.profile-header h2').textContent = form + ' - Fee Structure';
+          document.querySelector('.profile-header p').textContent = `View fee structures for ${form}${term ? ' (' + term + ')' : ''}`;
+          document.querySelector('.forms-grid').style.display = 'none';
+          loadFinanceDocs('feestructure', form, term, { inlinePdf: true });
+        } else {
+          loadFinanceDocs('feestructure', null, term);
+        }
+      });
+    </script>
+  <script src="site-common.js"></script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+.sidebar-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.module-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(147, 170, 201, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.module-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 76, 129, 0.12);
+  color: #0f4c81;
+  font-size: 1.1rem;
+}
+
+.module-card h3 {
+  margin: 0;
+  color: #10293d;
+}
+
+.module-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.module-card a {
+  color: #0f4c81;
+  text-decoration: none;
+  font-weight: 700;
+  margin-top: auto;
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 6px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading h2 {
+  margin: 4px 0 0;
+  color: #10293d;
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+}
+
+.upload-box {
+  border: 1px dashed #86b6df;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(5, 205, 171, 0.08));
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: #133b5c;
+  margin-bottom: 14px;
+}
+
+.upload-box i {
+  font-size: 1.4rem;
+  color: #0f4c81;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.info-box {
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-box span {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.info-box strong {
+  color: #10293d;
+  font-size: 1.05rem;
+}
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mini-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-card strong {
+  color: #10293d;
+}
+
+.mini-card span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.form-row input {
+  border: 1px solid #d7e2ef;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.form-row input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.primary-button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #10293d 0%, #1f4e70 100%);
+  color: #fff;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.secondary-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #334155;
+}
+
+.chart-header span {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.mini-chart {
+  width: 100%;
+  height: 120px;
+}
+
+.chart-bar-0 { fill: #0f4c81; }
+.chart-bar-1 { fill: #14b8a6; }
+.chart-bar-2 { fill: #f59e0b; }
+.chart-bar-3 { fill: #8b5cf6; }
+
+.chart-label {
+  font-size: 9px;
+  fill: #64748b;
+}
+
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 8, 23, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+}
+
+.admin-modal-card {
+  width: min(560px, 100%);
+  background: #fff;
+  color: #0f172a;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
+}
+
+.admin-modal-card h3 {
+  margin-top: 0;
+}
+
+.admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-modal-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+}
+
+.admin-modal-form input,
+.admin-modal-form textarea,
+.admin-modal-form select {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.admin-modal-form textarea {
+  min-height: 84px;
+}
+
+.admin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-table th {
+  color: #64748b;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.status-pill {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.status-pill.active {
+  background: rgba(5, 205, 171, 0.16);
+  color: #0f766e;
+}
+
+.status-pill.inactive {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+.action-link {
+  color: #0f4c81;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 960px) {
+  .student-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .student-sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .stats-grid,
+  .module-grid,
+  .section-grid,
+  .form-row,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

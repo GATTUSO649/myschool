@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uploads - Admin Portal</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="admin-dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="site-common.css">
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Upload center</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="admin-applications.html">Applications</a>
+        <a class="sidebar-link" href="admin-students.html">Students</a>
+        <a class="sidebar-link" href="admin-academics.html">Academics</a>
+        <a class="sidebar-link active" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link" href="admin-finance.html">Finance</a>
+        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
+        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
+        <a class="sidebar-link" href="admin-reports.html">Reports</a>
+        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
+        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Uploads</p>
+            <h2>Documents and resources</h2>
+          </div>
+          <button class="primary-button" data-admin-action="upload-files">Upload files</button>
+        </div>
+        <div class="dashboard-panel">
+          <div class="panel-header"><h3>Upload center</h3><span class="panel-pill">PDF / DOCX</span></div>
+          <div class="upload-box">
+            <i class="fas fa-file-upload"></i>
+            <p>Manage notes, revision papers, result slips, receipts, notices, and other official documents.</p>
+            <button type="button" class="primary-button">Select files</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>
