@@ -1,10 +1,10 @@
 USE cresent_high_school_portal;
 
-INSERT INTO students (name, username, email, admission_number, role, class_name, stream, active)
+INSERT INTO students (name, username, email, admission_number, role, class_name, subject, stream, active)
 VALUES
-  ('Demo Student', 'student', 'student@cresent.local', 'CRES/001/2026', 'student', 'Form 1', 'A', 1),
-  ('Demo Lecturer', 'lecturer', 'lecturer@cresent.local', 'STAFF/001', 'lecturer', NULL, NULL, 1)
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+  ('Demo Student', 'student', 'student@cresent.local', 'CRES/001/2026', 'student', 'Form 1', NULL, 'A', 1),
+  ('Demo Lecturer', 'Mathematics', 'lecturer@cresent.local', 'STAFF/001', 'lecturer', NULL, 'Mathematics', NULL, 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name), username = VALUES(username), subject = VALUES(subject);
 
 INSERT INTO exams (title, subject, class_name, exam_date, start_time, end_time, venue)
 VALUES

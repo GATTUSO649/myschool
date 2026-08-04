@@ -4,82 +4,265 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fee Structure - CRESENT HIGH SCHOOL</title>
-  <link rel="stylesheet" href="academic.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="finance.css">
 </head>
-<body>
-<header class="dashboard-header">
-        <div class="school-name">CRESENT HIGH SCHOOL</div>
-        <nav class="dashboard-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="academic.html">Academics</a>
-            <a href="finance.html" class="active">Finance</a>
-            <a href="exams.html">Exams</a>
-            <a href="notifications.html">Notifications</a>
-            <a href="clearance-request.html">Clearance & Request</a>
-            <a href="lecturer interaction.html">Lecturer Interaction</a>
-        </nav>
-    </header>
-    <main class="profile-main">
-        <section class="profile-header">
-            <h2><i class="fas fa-file-invoice-dollar"></i> Fee Structure</h2>
-            <p>View fee structures for each form and academic year</p>
-        </section>
-        <section id="financeDocsSection" class="receipts-container">
-            <div id="financeDocsContainer" class="finance-docs-container"></div>
-                <div class="forms-grid">
-                  <div class="form-card">
-                    <div>
-                      <h4 class="form-card-title">Form 1</h4>
-                      <p class="form-card-description">View fee structure for Form 1 in PDF format.</p>
-                    </div>
-                    <a href="feestructure_view.html?form=Form%201" class="btn btn-primary form-card-button">Open PDF</a>
-                  </div>
-                  <div class="form-card">
-                    <div>
-                      <h4 class="form-card-title">Form 2</h4>
-                      <p class="form-card-description">View fee structure for Form 2 in PDF format.</p>
-                    </div>
-                    <a href="feestructure_view.html?form=Form%202" class="btn btn-primary form-card-button">Open PDF</a>
-                  </div>
-                  <div class="form-card">
-                    <div>
-                      <h4 class="form-card-title">Form 3</h4>
-                      <p class="form-card-description">View fee structure for Form 3 in PDF format.</p>
-                    </div>
-                    <a href="feestructure_view.html?form=Form%203" class="btn btn-primary form-card-button">Open PDF</a>
-                  </div>
-                  <div class="form-card">
-                    <div>
-                      <h4 class="form-card-title">Form 4</h4>
-                      <p class="form-card-description">View fee structure for Form 4 in PDF format.</p>
-                    </div>
-                    <a href="feestructure_view.html?form=Form%204" class="btn btn-primary form-card-button">Open PDF</a>
-                  </div>
-                </div>
-        </section>
+<body class="student-portal has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Fee structure and policy</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="studentNamePill">Student</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="feestatement.html">Statements</a>
+        <a class="sidebar-link active" href="feestructure.html">Fee Structure</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="help.html">Help</a>
+        <a class="sidebar-link" href="notifications.html">Notifications</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main finance-page">
+      <section class="finance-hero">
+        <div>
+          <p class="eyebrow">Finance</p>
+          <h1>Fee Structure</h1>
+          <p id="structureSubtitle">Browse fee structure documents and see the current school fee breakdown.</p>
+        </div>
+        <span class="finance-status">Fee structure</span>
+      </section>
+
+      <section class="finance-filters">
+        <div>
+          <label class="finance-filter-label" for="classFilter">Form / class</label>
+          <select id="classFilter" class="finance-filter"></select>
+        </div>
+        <div>
+          <label class="finance-filter-label" for="termFilter">Term</label>
+          <select id="termFilter" class="finance-filter"></select>
+        </div>
+        <div class="filter-actions">
+          <button id="applyStructureFilters" class="panel-link" type="button">Apply filters</button>
+        </div>
+      </section>
+
+      <section class="finance-grid">
+        <article class="finance-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Documents</p>
+              <h3>Fee Structure Files</h3>
+            </div>
+            <a class="panel-link" href="feestatement.html">Statements</a>
+          </div>
+          <div id="financeDocsContainer" class="finance-list">
+            <p>Loading available fee structure documents...</p>
+          </div>
+        </article>
+
+        <article class="finance-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Standard Fees</p>
+              <h3>Current Fee Breakdown</h3>
+            </div>
+            <a class="panel-link" href="paymentreceipts.html">Receipts</a>
+          </div>
+          <div class="fee-table-wrapper" id="feeStructureTableWrapper">
+            <table class="finance-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="feeStructureTableBody">
+                <tr><td colspan="2">Loading standard fee structure...</td></tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>Total</strong></td>
+                  <td id="feeStructureTotal"><strong>KSh 0</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </article>
+      </section>
     </main>
+  </div>
 
-    <script src="config.js"></script>
-    <script src="financeAuth.js"></script>
-    <script src="financeDocs.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', ()=>{
-        const params = new URLSearchParams(window.location.search);
-        const form = params.get('form');
-        const term = params.get('term');
+  <footer class="dashboard-footer">&copy; 2026 CRESENT HIGH SCHOOL. Fee structure documents are subject to school approval.</footer>
 
-        if(form){
-          document.querySelector('.profile-header h2').textContent = form + ' - Fee Structure';
-          document.querySelector('.profile-header p').textContent = `View fee structures for ${form}${term ? ' (' + term + ')' : ''}`;
-          document.querySelector('.forms-grid').style.display = 'none';
-          loadFinanceDocs('feestructure', form, term, { inlinePdf: true });
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="financeDocs.js"></script>
+  <script>
+    function formatMoney(amount) {
+      return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    async function loadStandardFeeStructure(form, term) {
+      try {
+        const student = getStudentInfo() || {};
+        const params = new URLSearchParams();
+        const className = form || student.class_name || student.className || '';
+        if (className) params.set('className', className);
+        if (term) params.set('term', term);
+        const response = await fetchWithAuth(`/finance/fee-structure${params.toString() ? '?' + params.toString() : ''}`);
+        if (!response.ok) throw new Error('Failed to load fee structure');
+        const data = await response.json();
+        const rows = data.structure || [];
+        const body = document.getElementById('feeStructureTableBody');
+        const total = Number(data.total || rows.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+
+        if (!body) return;
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="2" class="empty">No fee structure details available.</td></tr>';
         } else {
-          loadFinanceDocs('feestructure', null, term);
+          body.innerHTML = rows.map(item => `
+            <tr>
+              <td>${item.description}</td>
+              <td>${formatMoney(item.amount)}</td>
+            </tr>
+          `).join('');
         }
-      });
-    </script>
+
+        const totalEl = document.getElementById('feeStructureTotal');
+        if (totalEl) totalEl.textContent = formatMoney(total);
+      } catch (error) {
+        console.error('Fee structure error:', error);
+        const body = document.getElementById('feeStructureTableBody');
+        if (body) body.innerHTML = '<tr><td colspan="2" class="empty">Unable to load fee structure.</td></tr>';
+      }
+    }
+
+    async function loadStudentProfile() {
+      try {
+        const response = await fetchWithAuth('/students/me');
+        if (!response.ok) return null;
+        const profile = await response.json();
+        if (profile && profile.id) {
+          localStorage.setItem('student', JSON.stringify(profile));
+          return profile;
+        }
+      } catch (err) {
+        console.warn('Could not refresh student profile:', err);
+      }
+      return null;
+    }
+
+    function getCurrentValues() {
+      return {
+        form: document.getElementById('classFilter')?.value || '',
+        term: document.getElementById('termFilter')?.value || ''
+      };
+    }
+
+    function getQueryParamValue(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || '';
+    }
+
+    function setQueryParams({ form, term }) {
+      const params = new URLSearchParams(window.location.search);
+      if (form) {
+        params.set('form', form);
+      } else {
+        params.delete('form');
+      }
+      if (term) {
+        params.set('term', term);
+      } else {
+        params.delete('term');
+      }
+      const queryString = params.toString();
+      const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+
+    function updateFilterSubtitle(form, term, student) {
+      const base = `Browse fee structure documents${form ? ` for ${form}` : ''}${term ? ` (${term})` : ''}`;
+      document.getElementById('structureSubtitle').textContent = form || term ? `${base}.` : 'Browse fee structure documents and see the current school fee breakdown.';
+      if (student && !form) {
+        document.getElementById('structureSubtitle').textContent = `Browse fee structure details for ${student.class_name || student.className || 'your class'}${term ? ` (${term})` : ''}.`;
+      }
+    }
+
+    function populateFilters(student, initialForm, initialTerm) {
+      const classFilter = document.getElementById('classFilter');
+      const termFilter = document.getElementById('termFilter');
+      const classOptions = window.SCHOOL_FORMS || ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
+      const termOptions = ['Term 1', 'Term 2', 'Term 3'];
+
+      if (!classFilter || !termFilter) return;
+      classFilter.innerHTML = `<option value="">All Forms</option>` + classOptions.map((formOption) => `
+        <option value="${formOption}">${formOption}</option>
+      `).join('');
+      termFilter.innerHTML = `<option value="">All Terms</option>` + termOptions.map((termOption) => `
+        <option value="${termOption}">${termOption}</option>
+      `).join('');
+
+      classFilter.value = initialForm || (student.className || student.class_name || '');
+      termFilter.value = initialTerm || '';
+    }
+
+    async function applyFeeStructureFilters() {
+      const { form, term } = getCurrentValues();
+      setQueryParams({ form, term });
+      updateFilterSubtitle(form, term, getStudentInfo());
+      await Promise.all([
+        loadStandardFeeStructure(form, term),
+        loadFinanceDocs('feestructure', form, term, { inlinePdf: !!form })
+      ]);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const profile = await loadStudentProfile();
+      const student = profile || getStudentInfo() || {};
+      document.getElementById('studentNamePill').textContent = (student.name || 'Student').split(' ')[0];
+
+      const params = new URLSearchParams(window.location.search);
+      const initialForm = params.get('form') || '';
+      const initialTerm = params.get('term') || '';
+      populateFilters(student, initialForm, initialTerm);
+      updateFilterSubtitle(initialForm, initialTerm, student);
+
+      document.getElementById('applyStructureFilters')?.addEventListener('click', applyFeeStructureFilters);
+      document.getElementById('classFilter')?.addEventListener('change', applyFeeStructureFilters);
+      document.getElementById('termFilter')?.addEventListener('change', applyFeeStructureFilters);
+
+      await Promise.all([
+        loadStandardFeeStructure(initialForm, initialTerm),
+        loadFinanceDocs('feestructure', initialForm, initialTerm, { inlinePdf: !!initialForm })
+      ]);
+    });
+  </script>
   <script src="site-common.js"></script>
 </body>
 </html>

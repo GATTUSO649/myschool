@@ -1,9 +1,16 @@
 // Backend API URL - Change this if your backend is hosted elsewhere
 function getApiUrl() {
-  // return base API URL (not auth-specific) so all pages can use a common endpoint prefix
-  return (typeof CONFIG !== 'undefined' && CONFIG.API_URL)
-    ? CONFIG.API_URL
-    : window.location.origin + '/api';
+  const config = (typeof window !== 'undefined' && window.CONFIG)
+    || (typeof globalThis !== 'undefined' && globalThis.CONFIG)
+    || (typeof CONFIG !== 'undefined' ? CONFIG : null);
+
+  const configuredUrl = config && config.API_URL ? config.API_URL : null;
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/+$/, '');
+  }
+
+  const fallbackUrl = 'http://localhost:5001/api';
+  return fallbackUrl;
 }
 
 // Helper for auth route prefix
@@ -78,6 +85,9 @@ if (loginForm) {
             if (role === 'admin' || username === 'admin' || role === 'rba') {
               console.log('Redirecting admin to admin-dashboard.html');
               window.location.href = 'admin-dashboard.html';
+            } else if (role === 'lecturer') {
+              console.log('Redirecting lecturer to lecturer-dashboard.html');
+              window.location.href = 'lecturer-dashboard.html';
             } else {
               console.log('Redirecting student to dashboard.html');
               window.location.href = 'dashboard.html';
@@ -168,17 +178,57 @@ function checkAuth() {
     return false;
   }
 
-  // if an admin accidentally visits a student page, send them to their dashboard
   const path = window.location.pathname.toLowerCase();
   if (student && student.role === 'rba') {
-    // Allow admin pages (any path containing 'admin') including admin-transcript-sheet
-    if (!path.includes('admin') && !path.includes('admin-login.html')) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const canViewStudentTranscript = path.includes('student-transcript.html') && !!urlParams.get('adm');
+    if (!path.includes('admin') && !path.includes('admin-login.html') && !canViewStudentTranscript) {
       console.warn('Redirecting admin user away from student page', path);
       window.location.href = 'admin-dashboard.html';
       return false;
     }
   }
+
+  if (student && student.role === 'lecturer') {
+    if (!path.includes('lecturer-dashboard.html') && path.includes('admin-') && !path.includes('lecturer interaction.html')) {
+      console.warn('Redirecting lecturer user to lecturer dashboard', path);
+      window.location.href = 'lecturer-dashboard.html';
+      return false;
+    }
+  }
+
+  if (student && student.role === 'student' && path.includes('admin-')) {
+    console.warn('Redirecting student user away from admin page', path);
+    window.location.href = 'dashboard.html';
+    return false;
+  }
+
   return true;
+}
+
+function isAdminPath() {
+  const path = window.location.pathname.toLowerCase();
+  return path.includes('admin') || path.includes('login.html') || path.includes('signup.html') || path.endsWith('/') || path.includes('index.html');
+}
+
+async function enforceMaintenanceMode() {
+  if (isAdminPath()) return;
+  try {
+    const response = await fetch(`${getApiUrl()}/admin/settings/public`, { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.maintenanceMode) return;
+    document.body.innerHTML = `
+      <main class="maintenance-lock">
+        <section>
+          <h1>Student portal under maintenance</h1>
+          <p>The school portal is temporarily closed for updates. Please check again later.</p>
+          <a href="login.html">Back to login</a>
+        </section>
+      </main>
+    `;
+  } catch (error) {
+    console.warn('Maintenance mode check failed:', error);
+  }
 }
 
 // Get current student info
@@ -194,12 +244,22 @@ function getAuthToken() {
 
 async function fetchWithAuth(endpoint, options = {}) {
   const token = getAuthToken();
-  const base = getApiUrl().replace(/\/api$/, '');
-  const url = endpoint.startsWith('/api') ? `${base}${endpoint}` : `${getApiUrl()}${endpoint}`;
+  const apiUrl = getApiUrl();
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const base = apiUrl.replace(/\/api$/, '');
+  const url = normalizedEndpoint.startsWith('/api')
+    ? `${base}${normalizedEndpoint}`
+    : `${apiUrl}${normalizedEndpoint}`;
   const isForm = options.body instanceof FormData;
   const headers = isForm ? { ...(options.headers || {}) } : { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
-  return fetch(url, { ...options, headers });
+
+  let body = options.body;
+  if (!isForm && body != null && Object.prototype.toString.call(body) === '[object Object]') {
+    body = JSON.stringify(body);
+  }
+
+  return fetch(url, { ...options, headers, body });
 }
 
 window.SCHOOL_FORMS = window.SCHOOL_FORMS || ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
@@ -213,17 +273,9 @@ window.EIGHT_FOUR_FOUR_SUBJECTS = window.EIGHT_FOUR_FOUR_SUBJECTS || [
   'History and Government',
   'Geography',
   'Christian Religious Education',
-  'Islamic Religious Education',
-  'Hindu Religious Education',
   'Business Studies',
-  'Agriculture',
   'Computer Studies',
-  'Home Science',
-  'Art and Design',
-  'Music',
-  'French',
-  'German',
-  'Arabic'
+  'Agriculture'
 ];
 
 function enforceSchoolAcademicOptions() {
@@ -388,6 +440,7 @@ window.addEventListener('storage', (e) => {
 
 // run showAdminLink on DOM load so nav is updated across pages
 window.addEventListener('DOMContentLoaded', () => {
+  enforceMaintenanceMode();
   enforceSchoolAcademicOptions();
   showAdminLink();
 });

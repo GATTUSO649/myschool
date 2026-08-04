@@ -55,12 +55,7 @@
       href: 'exams.html',
       action: 'View Exams'
     },
-    {
-      title: 'Clearance & Request',
-      text: 'Submit requests and follow clearance or school-service progress.',
-      href: 'clearance-request.html',
-      action: 'Manage Requests'
-    },
+    // Clearance removed from portal services
     {
       title: 'Lecturer Interaction',
       text: 'Communicate with lecturers and tutors about learning support.',
@@ -93,7 +88,7 @@
     {
       title: 'My Transcript',
       text: 'View your academic transcript with all subject marks.',
-      href: 'student-transcript.html',
+      href: 'transcript.html',
       action: 'View Transcript'
     },
     {

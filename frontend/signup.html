@@ -3,125 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>signup | Student Portal</title>
+    <title>Sign Up | Student Portal</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="site-common.css">
     <script src="config.js"></script>
-    <style>
-        .register-container {
-            background: #1a3a52;
-            border-radius: 16px;
-            box-shadow: 0 80px 32px 0 rgba(6, 21, 231, 0.822);
-            padding: 40px 32px;
-            width: 350px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 40px auto;
-        }
-        .register-form h2 {
-            margin-bottom: 24px;
-            color: #c2cbda;
-            letter-spacing: 1px;
-        }
-        .input-group {
-            width: 100%;
-            margin-bottom: 18px;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 6px;
-            color: #e0e2f1;
-            font-weight: 500;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            background: #f7f9fa;
-            transition: border 0.2s;
-        }
-        .input-group input:focus {
-            border: 1.5px solid #2575fc;
-            outline: none;
-        }
-        .register-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(90deg, #1565c0 0%, #1a237e 100%);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .register-btn:hover {
-            background: linear-gradient(90deg, #1a237e 0%, #1565c0 100%);
-        }
-        .login-link {
-            margin-top: 18px;
-            font-size: 15px;
-            color: #888;
-        }
-        .login-link a {
-            color: #2575fc;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-        .site-logo {
-            margin-bottom: 20px;
-        }
-        .portal-footer {
-            margin-top: auto;
-            background: none;
-            text-align: center;
-            color: #fff;
-            font-size: 16px;
-            padding: 16px 0 8px 0;
-        }
-    </style>
-  <link rel="stylesheet" href="site-common.css">
 </head>
 <body>
-    <div class="register-container">
-    <div class="portal-header">
-        <h1><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
-        <p>Student Portal</p>
-    </div>
-        <form class="register-form" id="registerForm">
-            <h2>Portal Account Setup</h2>
-            <div class="input-group">
-                <label for="regUsername">Username</label>
-                <input type="text" id="regUsername" name="username" placeholder="Create Your Username">
+    <main class="auth-shell">
+        <section class="auth-card" aria-labelledby="signupTitle">
+            <div class="brand-block">
+                <div class="brand-mark">C</div>
+                <h1 id="signupTitle"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
+                <p>Create your student portal account</p>
             </div>
-            <div class="input-group">
-                <label for="regAdmission">Admission Number</label>
-                <input type="text" id="regAdmission" name="admissionNumber" placeholder="e.g., CHS01">
+            <form class="auth-form" id="registerForm">
+                <div class="form-field">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" name="username" placeholder="Create a username">
+                </div>
+                <div class="form-field">
+                    <label for="regAdmission">Admission number</label>
+                    <input type="text" id="regAdmission" name="admissionNumber" placeholder="e.g. CHS01">
+                </div>
+                <div class="form-field">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" name="password" placeholder="Use your admission number">
+                </div>
+                <div class="form-field">
+                    <label for="regConfirm">Confirm password</label>
+                    <input type="password" id="regConfirm" name="confirm" placeholder="Confirm your password">
+                </div>
+                <button type="submit" class="auth-button">Register</button>
+            </form>
+            <div class="auth-links">
+                <a href="application.html">Apply for admission</a>
+                <a href="login.html">Already have an account?</a>
             </div>
-            <div class="input-group">
-                <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" name="password" placeholder="Use Your Admission Number">
-            </div>
-            <div class="input-group">
-                <label for="regConfirm">Confirm Password</label>
-                <input type="password" id="regConfirm" name="confirm" placeholder="Confirm Your Admission Number">
-            </div>
-            <button type="submit" class="register-btn">Register</button>
-            <p class="login-link">Need admission first? <a href="application.html">Apply</a></p>
-            <p class="login-link">Already have an account? <a href="login.html">Login</a></p>
-        </form>
-    </div>
-    <footer class="portal-footer">
-        &copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.
-    </footer>
+        </section>
+    </main>
+    <footer class="auth-footer">&copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
     <script src="auth.js"></script>
-  <script src="site-common.js"></script>
+    <script src="site-common.js"></script>
 </body>
 </html>

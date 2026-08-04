@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS students (
   password_hash VARCHAR(255),
   role ENUM('student','lecturer','rba') NOT NULL DEFAULT 'student',
   class_name VARCHAR(40),
+  subject VARCHAR(100) NULL,
   stream VARCHAR(40),
   phone VARCHAR(40),
   guardian_name VARCHAR(150),

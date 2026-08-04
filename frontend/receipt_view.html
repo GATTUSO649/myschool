@@ -1,122 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Receipt - CRESENT</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt - CRESENT HIGH SCHOOL</title>
   <link rel="stylesheet" href="site-common.css">
-  <style>
-    body{font-family:Segoe UI,Arial,Helvetica,sans-serif;margin:0}
-    .sheet{max-width:800px;margin:28px auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 10px 30px rgba(20,20,40,0.06)}
-    .sheet h2{margin:0 0 6px}
-    .sheet .meta{color:#666;font-size:13px;margin-bottom:14px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2f7}
-    .actions{margin-top:16px;text-align:right}
-    .btn{padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
-    .btn-primary{background:#1565c0;color:#fff}
-    .btn-outline{background:#fff;border:1px solid #d1d7e0;color:#1a3a52}
-  </style>
-<script src="config.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-  </head>
-<body>
-  <div class="sheet" id="receiptSheet">
-    <div>
-      <h2 id="schoolName">CRESENT HIGH SCHOOL</h2>
-      <div class="meta" id="receiptMeta">Receipt</div>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="finance.css">
+</head>
+<body class="student-portal has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Payment receipt</div>
+      </div>
+      <div class="header-actions">
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
     </div>
+  </header>
 
-    <div id="receiptContent">
-      <!-- populated by script -->
-    </div>
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">My Portal</div>
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="feestatement.html">Statements</a>
+        <a class="sidebar-link active" href="paymentreceipts.html">Receipts</a>
+      </div>
+    </aside>
 
-    <div class="actions">
-      <button class="btn btn-outline" id="printBtn">Print / Save as PDF</button>
-      <button class="btn btn-primary" id="downloadHtmlBtn">Download HTML</button>
-    </div>
+    <main class="dashboard-main finance-page">
+      <section class="finance-hero">
+        <div>
+          <p class="eyebrow">Receipt</p>
+          <h1>Payment Receipt</h1>
+          <p>Official payment record generated from the finance ledger.</p>
+        </div>
+        <span class="finance-status is-cleared">Verified</span>
+      </section>
+
+      <section class="finance-panel">
+        <div id="receiptContainer" class="receipt-document">
+          <div class="empty-card">Loading receipt...</div>
+        </div>
+        <div class="panel-actions">
+          <button class="panel-link" type="button" id="printBtn">Print</button>
+          <a id="downloadLink" class="panel-link" href="#">Download</a>
+        </div>
+      </section>
+    </main>
   </div>
 
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script>
-    function qs(name){return new URLSearchParams(window.location.search).get(name)}
-    const receiptId = qs('receiptId');
-    const mode = qs('mode') || 'view';
-    const API_BASE = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : window.location.origin + '/api';
-
-    async function fetchReceipts(){
-      try{
-        const res = await fetch(`${API_BASE}/payments/receipts`, {headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`}});
-        if(!res.ok) throw new Error('Failed');
-        const list = await res.json();
-        return list;
-      }catch(e){console.error(e);return []}
+    function formatMoney(amount) {
+      return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
-    function getReceiptQrDataUrl(receipt) {
-      const adm = receipt.admission_number || receipt.admission || receipt.admissionNumber || 'N/A';
-      const className = receipt.class || receipt.class_name || receipt.className || 'N/A';
-      const qrPayload = JSON.stringify({
-        receipt: receipt.receipt_number || receipt.id,
-        student: receipt.student_name || receipt.name || '',
-        admission: adm,
-        class: className,
-        amount: receipt.amount,
-        date: receipt.payment_date
-      });
-      return new QRious({ value: qrPayload, size: 180 }).toDataURL();
+    async function fetchReceiptById(receiptId) {
+      const response = await fetchWithAuth('/finance/payments');
+      if (!response.ok) throw new Error('Failed to fetch receipts');
+      const receipts = await response.json();
+      return receipts.find((receipt) => String(receipt.id) === String(receiptId));
     }
 
-    function renderReceipt(r){
-      const content = document.getElementById('receiptContent');
-      const qrDataUrl = getReceiptQrDataUrl(r);
-      content.innerHTML = `
-        <div class="row"><strong>Receipt No:</strong><span>#${r.receipt_number || r.id}</span></div>
-        <div class="row"><strong>Date:</strong><span>${new Date(r.payment_date).toLocaleString()}</span></div>
-        <div class="row"><strong>Student:</strong><span>${r.student_name || 'N/A'}</span></div>
-        <div class="row"><strong>Admission No:</strong><span>${r.admission_number || r.admission || 'N/A'}</span></div>
-        <div class="row"><strong>Class:</strong><span>${r.class || r.class_name || r.className || 'N/A'}</span></div>
-        <div class="row"><strong>Description:</strong><span>${r.description || 'Payment'}</span></div>
-        <div class="row"><strong>Amount:</strong><span>KSh ${parseFloat(r.amount).toLocaleString()}</span></div>
-        <div class="row"><strong>Method:</strong><span>${r.payment_method || 'N/A'}</span></div>
-        <div class="row"><strong>Reference:</strong><span>${r.reference || 'N/A'}</span></div>
-        <div class="row"><strong>Status:</strong><span>${(r.status || 'completed').charAt(0).toUpperCase() + (r.status || 'completed').slice(1)}</span></div>
-        <div class="row"><strong>QR Code:</strong><span><img src="${qrDataUrl}" alt="QR code" class="receipt-qr"></span></div>
-      `;
+    async function renderReceipt() {
+      const params = new URLSearchParams(window.location.search || '');
+      const receiptId = params.get('receiptId') || params.get('id');
+      const container = document.getElementById('receiptContainer');
+      if (!receiptId) {
+        container.innerHTML = '<div class="empty-card">No receipt was selected.</div>';
+        return;
+      }
 
-      const printBtn = document.getElementById('printBtn');
-      const downloadBtn = document.getElementById('downloadHtmlBtn');
-      printBtn.addEventListener('click', ()=>window.print());
+      try {
+        const receipt = await fetchReceiptById(receiptId);
+        if (!receipt) {
+          container.innerHTML = '<div class="empty-card">Receipt not found.</div>';
+          return;
+        }
 
-      if (mode === 'pdf') {
-        document.title = `Receipt_${r.receipt_number || r.id}`;
-        document.getElementById('receiptMeta').textContent = 'Payment Receipt • PDF View';
-        if (downloadBtn) {
-          downloadBtn.style.display = 'none';
-        }
-        printBtn.textContent = 'Save as PDF';
-      } else {
-        if (downloadBtn) {
-          downloadBtn.style.display = 'inline-block';
-        }
+        container.innerHTML = `
+          <div class="receipt-sheet">
+            <div class="receipt-school">
+              <h2>CRESENT HIGH SCHOOL</h2>
+              <p>Official Payment Receipt</p>
+            </div>
+            <div class="receipt-lines">
+              <div><span>Receipt No.</span><strong>${receipt.receipt_number || receipt.id}</strong></div>
+              <div><span>Student</span><strong>${receipt.student_name || '-'}</strong></div>
+              <div><span>Admission No.</span><strong>${receipt.admission_number || '-'}</strong></div>
+              <div><span>Amount</span><strong>${formatMoney(receipt.amount)}</strong></div>
+              <div><span>Date</span><strong>${new Date(receipt.payment_date || receipt.created_at).toLocaleString()}</strong></div>
+              <div><span>Method</span><strong>${receipt.payment_method || 'N/A'}</strong></div>
+              <div><span>Reference</span><strong>${receipt.reference || 'N/A'}</strong></div>
+              <div><span>Description</span><strong>${receipt.description || 'School fees payment'}</strong></div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('downloadLink').href = `${getApiUrl()}/finance/payments/${receipt.id}/download`;
+      } catch (error) {
+        console.error('Receipt load failed:', error);
+        container.innerHTML = '<div class="empty-card">Unable to load receipt.</div>';
       }
     }
 
-    function downloadHtml(r){
-      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Receipt_${r.receipt_number||r.id}</title></head><body>${document.getElementById('receiptSheet').innerHTML}</body></html>`;
-      const blob = new Blob([html], {type:'text/html'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `receipt_${r.receipt_number||r.id}.html`;
-      document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    (async ()=>{
-      if(!receiptId){ document.getElementById('receiptContent').innerHTML = '<p class="text-error">No receipt specified.</p>'; return }
-      const list = await fetchReceipts();
-      const r = list.find(x=>String(x.id)===String(receiptId));
-      if(!r){ document.getElementById('receiptContent').innerHTML = '<p class="text-error">Receipt not found.</p>'; return }
-      renderReceipt(r);
-    })();
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      document.getElementById('printBtn').addEventListener('click', () => window.print());
+      renderReceipt();
+    });
   </script>
+  <script src="site-common.js"></script>
 </body>
 </html>

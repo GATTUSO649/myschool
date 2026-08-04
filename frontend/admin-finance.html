@@ -1,20 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finance - Admin Portal</title>
+  <link rel="stylesheet" href="site-common.css">
   <link rel="stylesheet" href="dashboard.css">
   <link rel="stylesheet" href="admin-dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
 </head>
-<body>
+<body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
       <div class="brand-bar">
         <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
-        <div class="header-note">Finance control</div>
+        <div class="header-note">Financial operations command</div>
       </div>
       <div class="header-actions">
         <span class="header-pill" id="adminNamePill">Administrator</span>
@@ -34,59 +33,115 @@
         <a class="sidebar-link" href="admin-academics.html">Academics</a>
         <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
         <a class="sidebar-link active" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
-        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-        <a class="sidebar-link" href="admin-reports.html">Reports</a>
-        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
       </div>
     </aside>
 
     <main class="dashboard-main">
       <section class="admin-section">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Finance</p>
-            <h2>Fee and payment control</h2>
-          </div>
-          <button class="primary-button" data-admin-action="record-payment">Record payment</button>
-        </div>
-        <div class="section-grid">
-          <div class="dashboard-panel">
-            <div class="panel-header"><h3>Fee entry</h3><span class="panel-pill">Live payment capture</span></div>
-            <form id="financeEntryForm" class="admin-form">
-              <div class="form-row">
-                <label>Academic year<input name="academicYear" value="2026" required></label>
-                <label>Term<select name="term"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></label>
-              </div>
-              <div class="form-row">
-                <label>Class<select id="financeEntryClass" name="className"><option value="">Select class</option><option>Form 1</option><option>Form 2</option><option>Form 3</option><option>Form 4</option></select></label>
-                <label>Student<select id="financeEntryStudent" name="student_id" required><option value="">Select student</option></select></label>
-              </div>
-              <div class="form-row">
-                <label>Amount<input name="amount" type="number" min="0" step="0.01" required></label>
-                <label>Payment method<select name="payment_method"><option>Cash</option><option>Bank Deposit</option><option>M-Pesa</option><option>Cheque</option></select></label>
-              </div>
-              <label>Description<textarea name="description" placeholder="Fee payment, adjustment or bursary"></textarea></label>
-              <button type="submit" class="primary-button">Record payment</button>
-            </form>
-          </div>
-          <div class="dashboard-panel">
-            <div class="panel-header"><h3>Finance statistics</h3><span class="panel-pill">Collection summary</span></div>
-            <div id="financeChart" class="chart-shell"></div>
-            <div class="info-grid">
-              <div class="info-box"><span>Total billed</span><strong id="financeBilled">KSh 0</strong></div>
-              <div class="info-box"><span>Collected</span><strong id="financePaid">KSh 0</strong></div>
-              <div class="info-box"><span>Outstanding</span><strong id="financeBalance">KSh 0</strong></div>
-              <div class="info-box"><span>Payments today</span><strong id="financeToday">0</strong></div>
+        <div class="dashboard-panel page-intro">
+          <div class="panel-header">
+            <div>
+              <h2>Finance command center</h2>
+              <p class="footer-note">Track collections, review balances, and publish finance documents with a modern administrative workflow.</p>
             </div>
           </div>
+        </div>
+
+        <div class="sheet-container">
+          <div class="sheet-top-row">
+            <div class="sheet-card sheet-card-accent finance-stat-card accent-blue">
+              <div class="sheet-card-title">Total billed</div>
+              <div class="sheet-card-value" id="financeBilled">KSh 0</div>
+              <div class="sheet-card-meta">Posted fee charges</div>
+            </div>
+            <div class="sheet-card sheet-card-accent finance-stat-card accent-teal">
+              <div class="sheet-card-title">Collected</div>
+              <div class="sheet-card-value" id="financePaid">KSh 0</div>
+              <div class="sheet-card-meta">Recorded payments</div>
+            </div>
+            <div class="sheet-card sheet-card-accent finance-stat-card accent-gold">
+              <div class="sheet-card-title">Outstanding</div>
+              <div class="sheet-card-value" id="financeBalance">KSh 0</div>
+              <div class="sheet-card-meta">Expected balance</div>
+            </div>
+            <div class="sheet-card sheet-card-accent finance-stat-card accent-rose">
+              <div class="sheet-card-title">Today</div>
+              <div class="sheet-card-value" id="financeToday">0</div>
+              <div class="sheet-card-meta">Payments posted</div>
+            </div>
+          </div>
+
+            <div class="module-grid finance-module-grid" id="financeModules">
+            <article class="module-card">
+              <h3>Fee payments</h3>
+              <p>Record paid amounts by admission number and print receipts.</p>
+              <div class="module-actions">
+                <a class="sheet-button primary" href="admin-finance-payments.html">Record payment</a>
+                <a class="sheet-button secondary" href="admin-finance-receipts.html">View ledger</a>
+                <a class="sheet-button secondary" href="admin-finance-statements.html">Statement</a>
+                <a class="sheet-button secondary" href="admin-finance-upload.html">Upload</a>
+              </div>
+            </article>
+            <article class="module-card improved-card">
+              <div class="card-head"><h3>Fee structure</h3><span class="card-badge" id="feeStructureCount">0</span></div>
+              <p>Create school fee categories and post them to a student, class, or all learners.</p>
+              <div class="module-actions">
+                <a class="sheet-button primary" href="admin-finance-structure.html">Build structure</a>
+                <a class="sheet-button secondary" href="admin-finance-balances.html">Balances</a>
+                <a class="sheet-button secondary" href="admin-finance-statements.html">Generate</a>
+                <a class="sheet-button secondary" href="admin-finance-upload.html">Documents</a>
+              </div>
+            </article>
+            <article class="module-card">
+              <h3>Receipts</h3>
+              <p>Open generated receipts in a printable PDF-style view.</p>
+              <div class="module-actions">
+                <a class="sheet-button primary" href="admin-finance-receipts.html">Latest receipts</a>
+                <button class="sheet-button secondary" data-admin-action="refresh-finance">Refresh</button>
+                <a class="sheet-button secondary" href="admin-finance-payments.html">New receipt</a>
+                <a class="sheet-button secondary" href="admin-finance-balances.html">Audit</a>
+              </div>
+            </article>
+            <article class="module-card">
+              <h3>Student portal</h3>
+              <p>Publish finance documents to the correct student finance pages.</p>
+              <div class="module-actions">
+                <a class="sheet-button primary" href="admin-finance-upload.html">Upload file</a>
+                <a class="sheet-button secondary" href="admin-finance-statements.html">Statement</a>
+                <a class="sheet-button secondary" href="admin-finance-structure.html">Structure</a>
+                <a class="sheet-button secondary" href="admin-finance-receipts.html">Records</a>
+              </div>
+            </article>
+          </div>
+
         </div>
       </section>
     </main>
   </div>
 
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
+  <script>
+    // Toast on finance doc creation via socket
+    (function(){
+      const s = document.createElement('script'); s.src = '/socket.io/socket.io.js'; s.onload = () => {
+        const socket = io();
+        socket.on('new_finance_doc', doc => {
+          if (!doc) return;
+          const title = doc.title || doc.filename || 'finance document';
+          showToast(`New finance doc uploaded: ${title}`, 'info');
+          // increment badge if it's a fees structure
+          if (doc.type === 'feestructure') {
+            const el = document.getElementById('feeStructureCount');
+            if (el) el.textContent = String((parseInt(el.textContent||'0')||0)+1);
+          }
+        });
+      }; document.head.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
+

@@ -1,1239 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Help Center - CRESENT HIGH SCHOOL</title>
-    <link rel="stylesheet" href="academic.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Help & Support - CRESENT HIGH SCHOOL</title>
   <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <style>
+    body { background: #f6f8fb; font-family: Inter, system-ui, Arial, sans-serif; }
+    .dashboard-header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background: #0f2f63; color:#fff }
+    .dashboard-header .school-name { font-weight:700 }
+    .help-shell { max-width:1100px; margin:0 auto; padding:140px 18px 40px; width:100%; }
+    .help-grid { display:grid; grid-template-columns: 1fr 320px; gap:20px; }
+    .help-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 8px 24px rgba(15,23,42,0.06) }
+    .help-card h1 { margin:0 0 8px; font-size:1.3rem }
+    .help-actions { display:flex; gap:10px; margin:12px 0 }
+    .btn { padding:8px 12px; border-radius:8px; border:0; cursor:pointer }
+    .btn-primary { background:#2563eb; color:#fff }
+    .btn-outline { background:transparent; border:1px solid #dbe6fb; color:#0f2f63 }
+    .quick-links { display:flex; flex-wrap:wrap; gap:8px }
+    .quick-link { background:#f1f6ff; padding:10px 12px; border-radius:8px; color:#0f2f63; font-weight:600 }
+    .support-list { display:grid; gap:10px; }
+    .support-item { display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:#fbfdff; border:1px solid #eef4ff }
+    .right-column .contact { margin-bottom:12px }
+    .empty-state { padding:28px; text-align:center; color:#64748b }
+  </style>
 </head>
-<body>
-    <header class="dashboard-header">
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="header-brand">
         <div class="school-name">CRESENT HIGH SCHOOL</div>
-        <nav class="dashboard-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="academic.html">Academics</a>
-            <a href="finance.html">Finance</a>
-            <a href="exams.html">Exams</a>
-            <a href="notifications.html">Notifications</a>
-            <a href="clearance-request.html">Clearance & Request</a>
-            <a href="lecturer interaction.html">Lecturer Interaction</a>
-        </nav>
-    </header>
-
-
-
-    <main class="profile-main">
-        <section class="profile-header">
-            <h2><i class="fas fa-question-circle"></i> Help Center</h2>
-            <p>Find answers to common questions and get support</p>
-
-            <!-- Search Bar -->
-            <div class="help-search">
-                <div class="search-container">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="helpSearch" placeholder="Search for help topics...">
-                </div>
-            </div>
-        </section>
-
-        <!-- Quick Help Categories -->
-        <div class="help-categories">
-            <div class="category-card" data-category="getting-started">
-                <i class="fas fa-rocket"></i>
-                <h3>Getting Started</h3>
-                <p>New to the system? Start here to learn the basics.</p>
-            </div>
-            <div class="category-card" data-category="academics">
-                <i class="fas fa-graduation-cap"></i>
-                <h3>Academics</h3>
-                <p>Learn about assignments, grades, and academic resources.</p>
-            </div>
-            <div class="category-card" data-category="finance">
-                <i class="fas fa-money-bill-wave"></i>
-                <h3>Finance</h3>
-                <p>Understand fees, payments, and financial records.</p>
-            </div>
-            <div class="category-card" data-category="technical">
-                <i class="fas fa-cogs"></i>
-                <h3>Technical Support</h3>
-                <p>Troubleshooting and technical assistance.</p>
-            </div>
-        </div>
-
-        <!-- Help Content Container -->
-        <div id="helpContent" class="help-content">
-            <!-- Help articles will be loaded here -->
-        </div>
-
-        <!-- Contact Support Section -->
-        <div class="contact-support">
-            <h3><i class="fas fa-headset"></i> Still Need Help?</h3>
-            <p>Can't find what you're looking for? Our support team is here to help.</p>
-
-            <div class="contact-options">
-                <div class="contact-card">
-                    <i class="fas fa-envelope"></i>
-                    <h4>Email Support</h4>
-                    <p>Get help via email</p>
-                    <a href="mailto:support@crescent.edu" class="contact-btn">support@crescent.edu</a>
-                </div>
-                <div class="contact-card">
-                    <i class="fas fa-phone"></i>
-                    <h4>Phone Support</h4>
-                    <p>Speak with our team</p>
-                    <a href="tel:+254700000000" class="contact-btn">+254 700 000 000</a>
-                </div>
-                <div class="contact-card">
-                    <i class="fas fa-comments"></i>
-                    <h4>Live Chat</h4>
-                    <p>Chat with support now</p>
-                    <button class="contact-btn" onclick="startLiveChat()">Start Chat</button>
-                </div>
-                <div class="contact-card">
-                    <i class="fas fa-calendar-alt"></i>
-                    <h4>Schedule Consultation</h4>
-                    <p>Book a one-on-one session</p>
-                    <button class="contact-btn" onclick="scheduleConsultation()">Schedule</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- FAQ Section -->
-        <div class="faq-section">
-            <h3><i class="fas fa-question"></i> Frequently Asked Questions</h3>
-
-            <div class="faq-list">
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I reset my password?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>To reset your password, click on "Forgot Password" on the login page and follow the instructions sent to your registered email address.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I submit an assignment?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Go to the Assignments page, find your assignment, click on it, and use the "Submit Assignment" button. Upload your file and add any comments before submitting.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I view my grades?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Your grades are available on the Transcript page. You can view detailed grade breakdowns and academic performance over time.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I make a payment?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Visit the Finance page and navigate to the Payments section. You can make payments using M-Pesa, card, or bank transfer options available.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I contact my lecturer?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Use the Lecturer Interaction page to send messages, schedule meetings, or join live chat sessions with your lecturers.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>What should I do if I encounter a technical issue?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Try refreshing the page first. If the issue persists, contact our technical support team using the contact options above or visit the Technical Support section.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- System Status -->
-        <div class="system-status">
-            <h3><i class="fas fa-server"></i> System Status</h3>
-            <div class="status-grid">
-                <div class="status-item">
-                    <div class="status-indicator online"></div>
-                    <div class="status-info">
-                        <span class="status-name">Student Portal</span>
-                        <span class="status-text">All systems operational</span>
-                    </div>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator online"></div>
-                    <div class="status-info">
-                        <span class="status-name">Email Services</span>
-                        <span class="status-text">All systems operational</span>
-                    </div>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator online"></div>
-                    <div class="status-info">
-                        <span class="status-name">Payment Gateway</span>
-                        <span class="status-text">All systems operational</span>
-                    </div>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator maintenance"></div>
-                    <div class="status-info">
-                        <span class="status-name">File Upload</span>
-                        <span class="status-text">Scheduled maintenance</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Live Chat Modal -->
-    <div id="liveChatModal" class="modal">
-        <div class="modal-content chat-modal">
-            <div class="modal-header">
-                <h2><i class="fas fa-comments"></i> Live Chat Support</h2>
-                <button class="modal-close" onclick="closeModal('liveChatModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="chat-container">
-                    <div id="chatMessages" class="chat-messages">
-                        <div class="chat-message support">
-                            <div class="message-avatar">
-                                <i class="fas fa-user-headset"></i>
-                            </div>
-                            <div class="message-content">
-                                <div class="message-text">Hello! How can I help you today?</div>
-                                <div class="message-time">Just now</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="Type your message..." onkeypress="handleChatKeyPress(event)">
-                        <button onclick="sendChatMessage()" class="send-btn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="header-tagline">Student Portal</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+      </div>
     </div>
+  </header>
 
-    <!-- Schedule Consultation Modal -->
-    <div id="scheduleModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Schedule Consultation</h2>
-                <button class="modal-close" onclick="closeModal('scheduleModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="scheduleForm">
-                    <div class="form-group">
-                        <label>Full Name *</label>
-                        <input type="text" name="name" required>
-                    </div>
+  <main class="help-shell">
+    <div class="help-grid">
+      <section class="help-card">
+        <h1>Help & Support</h1>
+        <p class="muted">Quick, focused guides to help you use the portal. If you need personalized help, use the contact options on the right.</p>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" name="phone">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Consultation Type *</label>
-                        <select name="type" required>
-                            <option value="">Select Type</option>
-                            <option value="technical">Technical Support</option>
-                            <option value="academic">Academic Advising</option>
-                            <option value="financial">Financial Aid</option>
-                            <option value="general">General Inquiry</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Preferred Date *</label>
-                        <input type="date" name="date" required min="<?php echo date('Y-m-d'); ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Preferred Time *</label>
-                        <select name="time" required>
-                            <option value="">Select Time</option>
-                            <option value="09:00">9:00 AM</option>
-                            <option value="10:00">10:00 AM</option>
-                            <option value="11:00">11:00 AM</option>
-                            <option value="14:00">2:00 PM</option>
-                            <option value="15:00">3:00 PM</option>
-                            <option value="16:00">4:00 PM</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Description *</label>
-                        <textarea name="description" rows="4" placeholder="Please describe what you need help with..." required></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('scheduleModal')">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-calendar-check"></i> Schedule Consultation
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="help-actions">
+          <button class="btn btn-primary" id="getStartedBtn">Getting started</button>
+          <button class="btn btn-outline" id="financeGuideBtn">Finance guide</button>
+          <button class="btn btn-outline" id="academicsGuideBtn">Academics guide</button>
         </div>
+
+        <h3>Quick links</h3>
+        <div class="quick-links" id="quickLinks">
+          <a class="quick-link" href="login.html">Login / Signup</a>
+          <a class="quick-link" href="transcript.html">My transcript</a>
+          <a class="quick-link" href="finance.html">View fees</a>
+          <a class="quick-link" href="admin-academics.html">Admin academics</a>
+          <a class="quick-link" href="mailto:support@cresenthigh.ac.ke">Contact Us</a>
+        </div>
+
+        <h3 style="margin-top:18px">Top support topics</h3>
+        <div class="support-list" id="supportList">
+          <div class="support-item"><div>Reset password</div><div><a href="#" onclick="openTopic('reset-password')">Open</a></div></div>
+          <div class="support-item"><div>Make a payment</div><div><a href="#" onclick="openTopic('payments')">Open</a></div></div>
+          <div class="support-item"><div>Download transcript</div><div><a href="#" onclick="openTopic('transcript')">Open</a></div></div>
+          <div class="support-item"><div>Contact Us</div><div><a href="#" onclick="openTopic('contact-us')">Open</a></div></div>
+        </div>
+
+        <div id="topicContent" style="margin-top:18px">
+          <div class="empty-state">Select a topic to view a short guide.</div>
+        </div>
+      </section>
+
+      <aside class="right-column">
+        <div class="help-card contact">
+          <h3>Contact support</h3>
+          <p class="muted">Email or call our support team for one-on-one help.</p>
+          <p><strong>Email</strong><br><a href="mailto:support@cresenthigh.ac.ke">support@cresenthigh.ac.ke</a></p>
+          <p><strong>Phone</strong><br><a href="tel:+254700000000">+254 700 000 000</a></p>
+          <p><strong>Hours</strong><br>Mon–Fri, 08:00–17:00</p>
+        </div>
+
+        <div class="help-card">
+          <h3>Feedback</h3>
+          <p class="muted">Help us improve — send quick feedback.</p>
+          <textarea id="feedbackText" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e6eefc"></textarea>
+          <div style="margin-top:10px;text-align:right"><button class="btn btn-primary" id="sendFeedback">Send</button></div>
+        </div>
+
+        <div class="help-card">
+          <h3>System status</h3>
+          <div class="support-list">
+            <div class="support-item"><div>Portal</div><div class="status">Online</div></div>
+            <div class="support-item"><div>Payments</div><div class="status">Online</div></div>
+            <div class="support-item"><div>Uploads</div><div class="status">Online</div></div>
+          </div>
+        </div>
+      </aside>
     </div>
+  </main>
+
+  <script>
+    function openTopic(key) {
+      const content = document.getElementById('topicContent');
+      const snippets = {
+        'reset-password': '<h4>Reset password</h4><p>Use "Forgot password" on the login page to receive reset instructions by email.</p>',
+        'payments': '<h4>Make a payment</h4><p>Open the Finance page and follow the payments section. You can download receipts from Receipts.</p>',
+        'transcript': '<h4>Download transcript</h4><p>Open your transcript and use the Download button — it exports a printable document.</p>',
+        'fee-structure': '<h4>Upload fee structure</h4><p>Admins can create fee structures in the Admin → Academics → Fee structure panel. After upload, the structure is available on the Finance page.</p>',
+        'contact-us': '<h4>Contact Us</h4><p>If you need one-on-one assistance, email <a href="mailto:support@cresenthigh.ac.ke">support@cresenthigh.ac.ke</a> or call <a href="tel:+254700000000">+254 700 000 000</a>. Support hours: Mon–Fri, 08:00–17:00.</p>'
+      };
+      content.innerHTML = snippets[key] || '<div class="empty-state">No guide available.</div>';
+    }
+
+    document.getElementById('getStartedBtn').addEventListener('click', () => openTopic('reset-password'));
+    document.getElementById('financeGuideBtn').addEventListener('click', () => openTopic('payments'));
+    document.getElementById('academicsGuideBtn').addEventListener('click', () => openTopic('transcript'));
+
+    document.getElementById('sendFeedback').addEventListener('click', async () => {
+      const text = document.getElementById('feedbackText').value.trim();
+      if (!text) { alert('Please enter feedback'); return; }
+      try {
+        // store feedback locally; backend integration can be added later
+        const existing = JSON.parse(localStorage.getItem('portalFeedback') || '[]');
+        existing.unshift({ text, created_at: Date.now() });
+        localStorage.setItem('portalFeedback', JSON.stringify(existing.slice(0,50)));
+        alert('Thanks — feedback saved.');
+        document.getElementById('feedbackText').value = '';
+      } catch (e) { console.error(e); alert('Could not save feedback'); }
+    });
+  </script>
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script>
-        let currentCategory = 'getting-started';
-
-        // Initialize page
-        if (!checkAuth()) {
-            window.location.href = 'login.html';
-        } else {
-            loadHelpContent('getting-started');
-        }
-
-        // Help content data
-        const helpContent = {
-            'getting-started': {
-                title: 'Getting Started',
-                articles: [
-                    {
-                        title: 'Creating Your Account',
-                        content: `
-                            <h4>Welcome to CRESENT High School Portal!</h4>
-                            <p>To get started, you'll need to create an account or log in with your existing credentials.</p>
-                            <ol>
-                                <li>Visit the login page</li>
-                                <li>Click "Sign Up" if you're a new student</li>
-                                <li>Fill in your personal information</li>
-                                <li>Verify your email address</li>
-                                <li>Complete your profile setup</li>
-                            </ol>
-                            <p>Once your account is set up, you can access all school resources and services.</p>
-                        `
-                    },
-                    {
-                        title: 'Navigating the Dashboard',
-                        content: `
-                            <h4>Your Dashboard Overview</h4>
-                            <p>The dashboard is your central hub for all school activities. Here's what you can find:</p>
-                            <ul>
-                                <li><strong>Academic Progress:</strong> View your current grades and attendance</li>
-                                <li><strong>Upcoming Events:</strong> See important dates and deadlines</li>
-                                <li><strong>Quick Actions:</strong> Access frequently used features</li>
-                                <li><strong>Notifications:</strong> Stay updated with important announcements</li>
-                            </ul>
-                        `
-                    },
-                    {
-                        title: 'Setting Up Your Profile',
-                        content: `
-                            <h4>Complete Your Profile</h4>
-                            <p>A complete profile helps us provide you with personalized services:</p>
-                            <ul>
-                                <li>Update your contact information</li>
-                                <li>Upload a profile picture</li>
-                                <li>Set your academic preferences</li>
-                                <li>Configure notification settings</li>
-                            </ul>
-                            <p>You can update your profile anytime from the Settings page.</p>
-                        `
-                    }
-                ]
-            },
-            'academics': {
-                title: 'Academic Resources',
-                articles: [
-                    {
-                        title: 'Accessing Course Materials',
-                        content: `
-                            <h4>Find Your Study Materials</h4>
-                            <p>All course materials are available in the Academics section:</p>
-                            <ul>
-                                <li><strong>Notes:</strong> Download lecture notes and study guides</li>
-                                <li><strong>Assignments:</strong> View and submit your assignments</li>
-                                <li><strong>Revision Materials:</strong> Access past papers and revision guides</li>
-                                <li><strong>Events:</strong> Check important academic dates</li>
-                            </ul>
-                        `
-                    },
-                    {
-                        title: 'Submitting Assignments',
-                        content: `
-                            <h4>How to Submit Your Work</h4>
-                            <p>Follow these steps to submit assignments:</p>
-                            <ol>
-                                <li>Go to the Assignments page</li>
-                                <li>Find your assignment in the list</li>
-                                <li>Click on the assignment to view details</li>
-                                <li>Click "Submit Assignment"</li>
-                                <li>Upload your file and add comments if needed</li>
-                                <li>Click "Submit" to complete</li>
-                            </ol>
-                            <p>Make sure to submit before the deadline to avoid penalties.</p>
-                        `
-                    },
-                    {
-                        title: 'Understanding Your Grades',
-                        content: `
-                            <h4>Grade System Explained</h4>
-                            <p>Our grading system is based on the following scale:</p>
-                            <ul>
-                                <li>A (80-100%): Excellent</li>
-                                <li>B (70-79%): Good</li>
-                                <li>C (60-69%): Satisfactory</li>
-                                <li>D (50-59%): Pass</li>
-                                <li>F (0-49%): Fail</li>
-                            </ul>
-                            <p>You can view detailed grade breakdowns on the Transcript page.</p>
-                        `
-                    }
-                ]
-            },
-            'finance': {
-                title: 'Financial Services',
-                articles: [
-                    {
-                        title: 'Understanding School Fees',
-                        content: `
-                            <h4>Fee Structure Overview</h4>
-                            <p>School fees cover various services and facilities:</p>
-                            <ul>
-                                <li><strong>Tuition Fees:</strong> Core academic instruction</li>
-                                <li><strong>Activity Fees:</strong> Sports and clubs</li>
-                                <li><strong>Technology Fees:</strong> Computer labs and online resources</li>
-                                <li><strong>Facilities Fees:</strong> Library and laboratory access</li>
-                            </ul>
-                            <p>Detailed fee breakdowns are available on the Finance page.</p>
-                        `
-                    },
-                    {
-                        title: 'Making Payments',
-                        content: `
-                            <h4>Payment Methods Available</h4>
-                            <p>We accept multiple payment methods for your convenience:</p>
-                            <ul>
-                                <li><strong>M-Pesa:</strong> Mobile money payments</li>
-                                <li><strong>Bank Transfer:</strong> Direct bank deposits</li>
-                                <li><strong>Credit/Debit Cards:</strong> Online payments</li>
-                                <li><strong>Cash:</strong> In-person payments at the bursar's office</li>
-                            </ul>
-                            <p>All payments are processed securely and receipts are provided immediately.</p>
-                        `
-                    },
-                    {
-                        title: 'Payment Records and Receipts',
-                        content: `
-                            <h4>Access Your Payment History</h4>
-                            <p>Keep track of all your payments:</p>
-                            <ul>
-                                <li>View payment history on the Finance page</li>
-                                <li>Download payment receipts</li>
-                                <li>Check outstanding balances</li>
-                                <li>Monitor fee payment status</li>
-                            </ul>
-                        `
-                    }
-                ]
-            },
-            'technical': {
-                title: 'Technical Support',
-                articles: [
-                    {
-                        title: 'Browser Compatibility',
-                        content: `
-                            <h4>Supported Browsers</h4>
-                            <p>The school portal works best with modern browsers:</p>
-                            <ul>
-                                <li>Google Chrome (recommended)</li>
-                                <li>Mozilla Firefox</li>
-                                <li>Microsoft Edge</li>
-                                <li>Safari (latest version)</li>
-                            </ul>
-                            <p>Please ensure your browser is updated to the latest version for the best experience.</p>
-                        `
-                    },
-                    {
-                        title: 'Troubleshooting Login Issues',
-                        content: `
-                            <h4>Can't Log In?</h4>
-                            <p>If you're having trouble logging in:</p>
-                            <ol>
-                                <li>Check your username and password</li>
-                                <li>Clear your browser cache and cookies</li>
-                                <li>Try a different browser</li>
-                                <li>Reset your password if needed</li>
-                                <li>Contact support if issues persist</li>
-                            </ol>
-                        `
-                    },
-                    {
-                        title: 'File Upload Issues',
-                        content: `
-                            <h4>Problems Uploading Files?</h4>
-                            <p>Common file upload issues and solutions:</p>
-                            <ul>
-                                <li><strong>File Size:</strong> Maximum file size is 10MB</li>
-                                <li><strong>File Types:</strong> PDF, DOC, DOCX, JPG, PNG accepted</li>
-                                <li><strong>Network:</strong> Check your internet connection</li>
-                                <li><strong>Browser:</strong> Try refreshing the page</li>
-                            </ul>
-                        `
-                    }
-                ]
-            }
-        };
-
-        function loadHelpContent(category) {
-            currentCategory = category;
-            const content = helpContent[category];
-            const container = document.getElementById('helpContent');
-
-            if (!content) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Content not found</h3><p>The requested help content is not available.</p></div>';
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="help-section">
-                    <h3><i class="fas fa-book"></i> ${content.title}</h3>
-                    <div class="articles-grid">
-                        ${content.articles.map(article => `
-                            <div class="help-article">
-                                <h4>${article.title}</h4>
-                                <div class="article-content">
-                                    ${article.content}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Category selection
-        document.querySelectorAll('.category-card').forEach(card => {
-            card.addEventListener('click', function() {
-                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                loadHelpContent(this.dataset.category);
-            });
-        });
-
-        // Search functionality
-        document.getElementById('helpSearch').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const articles = document.querySelectorAll('.help-article');
-
-            articles.forEach(article => {
-                const title = article.querySelector('h4').textContent.toLowerCase();
-                const content = article.querySelector('.article-content').textContent.toLowerCase();
-
-                if (title.includes(searchTerm) || content.includes(searchTerm)) {
-                    article.style.display = 'block';
-                } else {
-                    article.style.display = 'none';
-                }
-            });
-        });
-
-        // FAQ functionality
-        function toggleFAQ(element) {
-            const faqItem = element.parentElement;
-            const answer = faqItem.querySelector('.faq-answer');
-            const icon = element.querySelector('i');
-
-            if (answer.style.display === 'block') {
-                answer.style.display = 'none';
-                icon.style.transform = 'rotate(0deg)';
-            } else {
-                answer.style.display = 'block';
-                icon.style.transform = 'rotate(180deg)';
-            }
-        }
-
-        // Contact functions
-        function startLiveChat() {
-            openModal('liveChatModal');
-        }
-
-        function scheduleConsultation() {
-            openModal('scheduleModal');
-        }
-
-        // Chat functionality
-        function handleChatKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendChatMessage();
-            }
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-
-            if (message) {
-                addChatMessage(message, 'user');
-                input.value = '';
-
-                // Simulate support response
-                setTimeout(() => {
-                    addChatMessage("Thank you for your message. A support agent will respond shortly.", 'support');
-                }, 1000);
-            }
-        }
-
-        function addChatMessage(message, sender) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${sender}`;
-            messageDiv.innerHTML = `
-                <div class="message-avatar">
-                    <i class="fas ${sender === 'user' ? 'fa-user' : 'fa-user-headset'}"></i>
-                </div>
-                <div class="message-content">
-                    <div class="message-text">${message}</div>
-                    <div class="message-time">Just now</div>
-                </div>
-            `;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Form submissions
-        document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const consultationData = {
-                name: formData.get('name'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                type: formData.get('type'),
-                date: formData.get('date'),
-                time: formData.get('time'),
-                description: formData.get('description')
-            };
-
-            try {
-                const response = await fetchWithAuth('/api/consultations', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(consultationData)
-                });
-
-                if (response.ok) {
-                    alert('Consultation scheduled successfully! You will receive a confirmation email.');
-                    closeModal('scheduleModal');
-                    this.reset();
-                } else {
-                    const error = await response.json();
-                    alert('Failed to schedule consultation: ' + (error.message || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error scheduling consultation:', error);
-                alert('Failed to schedule consultation. Please try again.');
-            }
-        });
-
-        function toggleMenu() {
-            const sideMenu = document.getElementById('sideMenu');
-            const hamburger = document.getElementById('hamburger');
-            sideMenu.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('student');
-            localStorage.removeItem('rememberMe');
-            window.location.href = 'login.html';
-        }
-
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-    </script>
-
-    <style>
-        .help-search {
-            margin-top: 20px;
-        }
-
-        .search-container {
-            position: relative;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: 12px 15px 12px 45px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-
-        .search-container input:focus {
-            outline: none;
-            border-color: #1a237e;
-            box-shadow: 0 0 0 3px rgba(26,35,126,0.1);
-        }
-
-        .help-categories {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .category-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .category-card:hover,
-        .category-card.active {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(26,35,126,0.15);
-            border-color: #1a237e;
-        }
-
-        .category-card i {
-            font-size: 48px;
-            color: #1a237e;
-            margin-bottom: 15px;
-        }
-
-        .category-card h3 {
-            color: #1a237e;
-            margin-bottom: 10px;
-        }
-
-        .category-card p {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .help-content {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-            margin-bottom: 30px;
-        }
-
-        .help-section h3 {
-            color: #1a237e;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .articles-grid {
-            display: grid;
-            gap: 25px;
-        }
-
-        .help-article {
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            transition: border-color 0.2s;
-        }
-
-        .help-article:hover {
-            border-color: #1a237e;
-        }
-
-        .help-article h4 {
-            color: #1a237e;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .article-content {
-            color: #555;
-            line-height: 1.6;
-        }
-
-        .article-content h4 {
-            color: #1a237e;
-            margin: 20px 0 10px 0;
-            font-size: 16px;
-        }
-
-        .article-content ul,
-        .article-content ol {
-            margin: 15px 0;
-            padding-left: 25px;
-        }
-
-        .article-content li {
-            margin-bottom: 8px;
-        }
-
-        .contact-support {
-            background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .contact-support h3 {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .contact-support p {
-            margin-bottom: 25px;
-            opacity: 0.9;
-        }
-
-        .contact-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .contact-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .contact-card i {
-            font-size: 32px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .contact-card h4 {
-            margin-bottom: 8px;
-        }
-
-        .contact-card p {
-            margin-bottom: 15px;
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
-        .contact-btn {
-            background: white;
-            color: #1a237e;
-            padding: 8px 16px;
-            border-radius: 20px;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .contact-btn:hover {
-            background: #f5f5f5;
-            transform: translateY(-2px);
-        }
-
-        .faq-section {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-            margin-bottom: 30px;
-        }
-
-        .faq-section h3 {
-            color: #1a237e;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .faq-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .faq-item {
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .faq-question {
-            padding: 20px;
-            background: #f8f9fa;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-        }
-
-        .faq-question:hover {
-            background: #e9ecef;
-        }
-
-        .faq-question span {
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        .faq-question i {
-            color: #666;
-            transition: transform 0.2s;
-        }
-
-        .faq-answer {
-            padding: 0 20px 20px 20px;
-            display: none;
-            color: #555;
-            line-height: 1.6;
-        }
-
-        .system-status {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-        }
-
-        .system-status h3 {
-            color: #1a237e;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .status-indicator.online {
-            background: #4caf50;
-        }
-
-        .status-indicator.maintenance {
-            background: #ff9800;
-        }
-
-        .status-indicator.offline {
-            background: #f44336;
-        }
-
-        .status-info {
-            flex: 1;
-        }
-
-        .status-name {
-            display: block;
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        .status-text {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .chat-modal {
-            max-width: 500px;
-            max-height: 600px;
-        }
-
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 400px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .chat-message {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .chat-message.support {
-            justify-content: flex-start;
-        }
-
-        .chat-message.user {
-            justify-content: flex-end;
-        }
-
-        .chat-message.user .message-content {
-            background: #1a237e;
-            color: white;
-        }
-
-        .message-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: #1a237e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .chat-message.user .message-avatar {
-            background: #4caf50;
-        }
-
-        .message-content {
-            max-width: 70%;
-            background: white;
-            padding: 10px 15px;
-            border-radius: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .message-text {
-            margin-bottom: 5px;
-        }
-
-        .message-time {
-            font-size: 11px;
-            opacity: 0.7;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            outline: none;
-        }
-
-        .send-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #1a237e;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .send-btn:hover {
-            background: #1565c0;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #1a237e;
-            box-shadow: 0 0 0 2px rgba(26,35,126,0.1);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 30px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: #1a237e;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1565c0;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-secondary:hover {
-            background: #e9ecef;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        @media (max-width: 768px) {
-            .help-categories {
-                grid-template-columns: 1fr;
-            }
-
-            .contact-options {
-                grid-template-columns: 1fr;
-            }
-
-            .status-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .faq-question {
-                padding: 15px;
-            }
-
-            .faq-answer {
-                padding: 0 15px 15px 15px;
-            }
-        }
-    </style>
   <script src="site-common.js"></script>
 </body>
 </html>

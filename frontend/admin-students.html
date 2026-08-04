@@ -1,15 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Students - Admin Portal</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="admin-dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="dashboard.css">`n<link rel="stylesheet" href="admin-dashboard.css">
 </head>
-<body>
+<body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
       <div class="brand-bar">
@@ -34,10 +31,6 @@
         <a class="sidebar-link" href="admin-academics.html">Academics</a>
         <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
         <a class="sidebar-link" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
-        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-        <a class="sidebar-link" href="admin-reports.html">Reports</a>
-        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
       </div>
     </aside>
@@ -62,8 +55,23 @@
               <label>Username<input name="username" required></label>
             </div>
             <div class="form-row">
-              <label>Admission number<input name="admissionNumber" required></label>
+              <label>Admission number<input name="admissionNumber"></label>
               <label>Email<input name="email" type="email"></label>
+            </div>
+            <div class="form-row">
+              <label>Role
+                <select name="role" id="studentRoleSelect">
+                  <option value="student" selected>Student</option>
+                  <option value="lecturer">Lecturer</option>
+                  <option value="rba">RBA</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+              <label id="studentSubjectLabel">Subject
+                <select name="subject" id="studentSubjectSelect">
+                  <option value="">Select subject</option>
+                </select>
+              </label>
             </div>
             <div class="form-row">
               <label>Class<input name="className"></label>
@@ -94,5 +102,5 @@
 
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
-</body>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n</body>
 </html>

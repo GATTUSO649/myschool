@@ -14,6 +14,7 @@ function publicStudent(row) {
     role: row.role,
     className: row.class_name,
     stream: row.stream,
+    subject: row.subject || null,
     avatar: row.avatar,
     active: Boolean(row.active),
     last_login: row.last_login
@@ -38,23 +39,53 @@ async function signup(req, res) {
       return res.status(400).json({ success: false, message: 'Username, admission number, and password are required' });
     }
 
-    const exists = await query(
-      'SELECT id FROM students WHERE username = ? OR admission_number = ? LIMIT 1',
-      [username, admissionNumber]
-    );
-    if (exists.length) {
-      return res.status(409).json({ success: false, message: 'Account already exists' });
+    const usernameOwner = await query('SELECT id FROM students WHERE username = ? LIMIT 1', [username]);
+    if (usernameOwner.length) {
+      return res.status(409).json({ success: false, message: 'That username is already taken' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    await query(
-      `INSERT INTO students (name, username, email, admission_number, password_hash, role, active)
-       VALUES (?, ?, ?, ?, ?, 'student', 1)`,
-      [username, username, schoolEmail(null, username), admissionNumber, passwordHash]
+    const approvedRows = await query(
+      `SELECT id, username FROM students
+       WHERE admission_number = ? AND role = 'student' AND active = 1
+       LIMIT 1`,
+      [admissionNumber]
     );
 
-    await logActivity(null, 'signup', `Created account for ${username}`, req.ip);
-    return res.status(201).json({ success: true, message: 'Account created successfully' });
+    if (approvedRows.length) {
+      const student = approvedRows[0];
+      if (student.username && student.username !== username) {
+        return res.status(409).json({ success: false, message: 'This admission number already has an account. Please log in.' });
+      }
+
+      await query(
+        `UPDATE students
+         SET username = ?, password_hash = ?, name = COALESCE(NULLIF(name, ''), ?)
+         WHERE id = ?`,
+        [username, passwordHash, username, student.id]
+      );
+      await logActivity(student.id, 'signup_claimed_approved_student', `Activated portal account for ${admissionNumber}`, req.ip);
+      return res.status(201).json({ success: true, message: 'Account created successfully. You can now log in.' });
+    }
+
+    const approvedApplication = await query(
+      `SELECT id FROM applications
+       WHERE admission_number = ? AND status = 'approved'
+       LIMIT 1`,
+      [admissionNumber]
+    );
+
+    if (!approvedApplication.length) {
+      return res.status(403).json({
+        success: false,
+        message: 'This admission number has not been approved by admin yet.'
+      });
+    }
+
+    return res.status(404).json({
+      success: false,
+      message: 'Approved admission found, but no student record exists. Ask admin to re-approve or create the student record.'
+    });
   } catch (error) {
     console.error('Signup error:', error);
     return res.status(500).json({ success: false, message: 'Signup failed' });
@@ -69,13 +100,23 @@ async function login(req, res) {
       return res.status(400).json({ success: false, message: 'Name/email and password are required' });
     }
 
-    const rows = await query(
+    let rows = await query(
       `SELECT * FROM students
        WHERE username = ? OR email = ? OR name = ? OR admission_number = ?
        LIMIT 1`,
       [identifier, identifier, identifier, identifier.toUpperCase()]
     );
-    const student = rows[0];
+    let student = rows[0];
+
+    if (!student) {
+      const lecturerRows = await query(
+        `SELECT * FROM students
+         WHERE role = 'lecturer' AND LOWER(subject) = LOWER(?)
+         LIMIT 1`,
+        [identifier]
+      );
+      student = lecturerRows[0];
+    }
 
     if (identifier.toLowerCase() === 'admin' && password === 'admin123') {
       const adminStudent = {

@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get('/', authMiddleware, transcripts.listMyTranscripts);
 router.get('/marks', authMiddleware, controller.transcriptMarks);
+router.get('/:adm', authMiddleware, transcripts.getStudentTranscriptByAdm);
 
 module.exports = router;

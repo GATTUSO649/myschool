@@ -24,17 +24,9 @@ const EIGHT_FOUR_FOUR_SUBJECTS = [
   'History and Government',
   'Geography',
   'Christian Religious Education',
-  'Islamic Religious Education',
-  'Hindu Religious Education',
   'Business Studies',
-  'Agriculture',
   'Computer Studies',
-  'Home Science',
-  'Art and Design',
-  'Music',
-  'French',
-  'German',
-  'Arabic'
+  'Agriculture'
 ];
 
 function replaceOptions(select, options, placeholder) {

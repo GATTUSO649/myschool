@@ -38,7 +38,10 @@
   </style>
 </head>
 <body>
-  <main class="viewer-page">
+  <header class="dashboard-header"></header>
+  <div class="student-shell">
+    <aside class="student-sidebar"></aside>
+    <main class="viewer-page dashboard-main">
     <div class="viewer-header">
       <div>
         <div class="viewer-title" id="pageTitle">Fee Structure PDF View</div>
@@ -68,10 +71,13 @@
         <iframe id="previewFrame" class="preview-frame" title="Fee Structure Preview"></iframe>
       </div>
     </section>
-  </main>
+    </main>
+  </div>
 
   <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script src="financeAuth.js"></script>
+  <script src="site-common.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
     const form = params.get('form') || 'All Forms';

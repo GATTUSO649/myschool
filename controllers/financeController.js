@@ -32,6 +32,10 @@ try {
   redisClient = null;
 }
 
+// Socket IO instance (set by server)
+let io = null;
+function setIO(ioInstance) { io = ioInstance; }
+
 async function getCachedOverviewCharts() {
   // try Redis first
   try {
@@ -95,6 +99,10 @@ function balanceRow(row) {
   };
 }
 
+function classMatchesExpression(alias = 'd') {
+  return `(${alias}.target_class IS NULL OR ${alias}.target_class = ? OR ? LIKE CONCAT(${alias}.target_class, '%') OR ${alias}.target_class LIKE CONCAT(?, '%'))`;
+}
+
 async function getBalanceRows(filters = {}) {
   const params = [];
   let where = "WHERE s.role = 'student' AND s.active = 1";
@@ -115,6 +123,8 @@ async function getBalanceRows(filters = {}) {
      LEFT JOIN (
        SELECT student_id, SUM(amount) total_charges
        FROM fee_charges
+       WHERE LOWER(description) NOT LIKE '%test charge%'
+         AND (category IS NULL OR LOWER(category) NOT LIKE '%test charge%')
        GROUP BY student_id
      ) c ON c.student_id = s.id
      LEFT JOIN (
@@ -123,9 +133,7 @@ async function getBalanceRows(filters = {}) {
        GROUP BY student_id
      ) p ON p.student_id = s.id
      ${where}
-     ORDER BY s.class_name, s.stream, s.name`,
-    params
-  );
+     ORDER BY s.class_name, s.stream, s.name`, params);
 
   return rows.map(balanceRow);
 }
@@ -144,7 +152,7 @@ async function getStatement(studentId, filters = {}) {
     `SELECT id, 'charge' AS entry_type, description, amount, category, term, academic_year,
             due_date, created_at, NULL AS receipt_number, NULL AS payment_method, NULL AS reference
      FROM fee_charges
-     WHERE student_id = ?${termFilter}${yearFilter}`,
+     WHERE student_id = ? AND (description IS NULL OR LOWER(description) NOT LIKE '%test charge%')${termFilter}${yearFilter}`,
     entryParams
   );
 
@@ -356,11 +364,11 @@ async function overviewCharts(req, res) {
 
     // Monthly trends per form (payments)
     const trendRows = await query(
-      `SELECT s.class_name, MONTH(fp.payment_date) AS month, COALESCE(SUM(fp.amount),0) AS total
+      `SELECT s.class_name, MONTH(fp.created_at) AS month, COALESCE(SUM(fp.amount),0) AS total
        FROM fee_payments fp
        JOIN students s ON s.id = fp.student_id
        WHERE s.role = 'student' AND s.active = 1
-       GROUP BY s.class_name, MONTH(fp.payment_date)`
+       GROUP BY s.class_name, MONTH(fp.created_at)`
     );
     const trends = {};
     forms.forEach(f => trends[f] = Array(12).fill(0));
@@ -416,6 +424,12 @@ async function statement(req, res) {
   res.json(data);
 }
 
+function getAuditUserId(user) {
+  if (!user) return null;
+  if (user.role === 'admin' || Number(user.id) <= 0) return null;
+  return Number(user.id);
+}
+
 async function postCharges(req, res) {
   try {
     const body = req.body;
@@ -432,11 +446,12 @@ async function postCharges(req, res) {
       students = (body.student_ids || []).map(id => ({ id }));
     }
 
+    const createdBy = getAuditUserId(req.user);
     for (const student of students) {
       await query(
         `INSERT INTO fee_charges (student_id, description, amount, category, academic_year, term, due_date, created_by)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [student.id, body.description, body.amount, body.category || null, body.academic_year || new Date().getFullYear(), body.term || null, body.due_date || null, req.user.id]
+        [student.id, body.description, body.amount, body.category || null, body.academic_year || new Date().getFullYear(), body.term || null, body.due_date || null, createdBy]
       );
     }
     await logActivity(req.user.id, 'fee_charge_posted', `Posted ${body.description} to ${students.length} student(s)`, req.ip);
@@ -455,11 +470,12 @@ async function recordPayment(req, res) {
     }
 
     const receipt = `RCPT-${Date.now()}`;
+    const recordedBy = getAuditUserId(req.user);
     const result = await query(
       `INSERT INTO fee_payments
        (student_id, receipt_number, description, amount, payment_method, reference, academic_year, term, recorded_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [body.student_id, receipt, body.description || 'School fees payment', body.amount, body.payment_method || null, body.reference || null, body.academic_year || new Date().getFullYear(), body.term || null, req.user.id]
+      [body.student_id, receipt, body.description || 'School fees payment', body.amount, body.payment_method || null, body.reference || null, body.academic_year || new Date().getFullYear(), body.term || null, recordedBy]
     );
     await logActivity(req.user.id, 'payment_recorded', `Recorded payment ${receipt}`, req.ip);
     res.status(201).json({ success: true, id: result.insertId, receipt_number: receipt });
@@ -480,7 +496,7 @@ async function payments(req, res) {
     params.push(req.query.className || req.query.class_name);
   }
   const rows = await query(
-    `SELECT p.*, p.created_at AS payment_date, s.name AS student_name, s.class_name
+    `SELECT p.*, p.created_at AS payment_date, s.name AS student_name, s.admission_number, s.class_name
      FROM fee_payments p
      JOIN students s ON s.id = p.student_id
      ${where}
@@ -491,40 +507,57 @@ async function payments(req, res) {
 }
 
 async function listDocs(req, res) {
-  const params = [];
-  const clauses = [];
-  if (req.query.type) {
-    clauses.push('d.type = ?');
-    params.push(req.query.type);
-  }
-  
-  // If className is explicitly requested (either by admin or student browsing), filter by it
-  if (req.query.className) {
-    clauses.push('d.target_class = ?');
-    params.push(req.query.className);
-  }
+  try {
+    const params = [];
+    const clauses = [];
+    const requestedType = req.query.type;
+    const requestedClass = req.query.className || req.query.class_name;
+    const requestedTerm = req.query.term;
 
-  if (req.query.term) {
-    clauses.push('d.target_term = ?');
-    params.push(req.query.term);
-  }
+    if (requestedType) {
+      clauses.push('d.type = ?');
+      params.push(requestedType);
+    }
 
-  if (!req.query.className && req.user && req.user.role !== 'rba') {
-    // Student viewing without explicit className parameter: show their form's documents + public + explicitly linked
-    clauses.push(`(
-      (d.target_class IS NULL AND NOT EXISTS (SELECT 1 FROM finance_document_students fds WHERE fds.document_id = d.id))
-      OR d.target_class = ?
-      OR EXISTS (SELECT 1 FROM finance_document_students fds WHERE fds.document_id = d.id AND fds.student_id = ?)
-    )`);
-    const studentClass = req.user.class_name || '';
-    params.push(studentClass, req.user.id);
-  }
+    if (requestedClass) {
+      clauses.push(`(d.target_class IS NULL OR ${classMatchesExpression('d')})`);
+      params.push(requestedClass, requestedClass, requestedClass);
+    }
 
-  let sql = 'SELECT d.* FROM finance_documents d';
-  if (clauses.length) sql += ` WHERE ${clauses.join(' AND ')}`;
-  sql += ' ORDER BY d.uploaded_at DESC LIMIT ? OFFSET ?';
-  params.push(Number(req.query.limit || 100), Number(req.query.offset || 0));
-  res.json(await query(sql, params));
+    if (requestedTerm) {
+      clauses.push('(d.target_term IS NULL OR d.target_term = ?)');
+      params.push(requestedTerm);
+    }
+
+    clauses.push('(LOWER(d.title) NOT LIKE ? AND (d.description IS NULL OR LOWER(d.description) NOT LIKE ?))');
+    params.push('%test charge%', '%test charge%');
+
+    const userIsStudent = req.user && req.user.role === 'student';
+    if (!requestedClass && userIsStudent) {
+      // Student viewing without explicit className parameter: show their form's documents + public + explicitly linked
+      clauses.push(`(
+        (d.target_class IS NULL AND NOT EXISTS (SELECT 1 FROM finance_document_students fds WHERE fds.document_id = d.id))
+        OR ${classMatchesExpression('d')}
+        OR EXISTS (SELECT 1 FROM finance_document_students fds WHERE fds.document_id = d.id AND fds.student_id = ?)
+      )`);
+      const studentClass = req.user.class_name || '';
+      params.push(studentClass, studentClass, studentClass, req.user.id);
+    }
+
+    let sql = 'SELECT d.* FROM finance_documents d';
+    if (clauses.length) sql += ` WHERE ${clauses.join(' AND ')}`;
+    sql += ' ORDER BY d.uploaded_at DESC LIMIT ? OFFSET ?';
+
+    const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 100;
+    const offset = Number.isFinite(Number(req.query.offset)) ? Number(req.query.offset) : 0;
+    params.push(limit, offset);
+
+    const docs = await query(sql, params);
+    return res.json(docs);
+  } catch (err) {
+    console.error('Error in listDocs:', err, { query: req.query, user: req.user ? { id: req.user.id, role: req.user.role, class_name: req.user.class_name } : null });
+    return res.status(500).json({ success: false, message: 'Unable to list finance documents' });
+  }
 }
 
 async function createDoc(req, res) {
@@ -584,6 +617,9 @@ async function createDoc(req, res) {
   }
 
   res.status(201).json({ success: true, id: result.insertId, filename: file.filename });
+  try {
+    if (io) io.emit('new_finance_doc', { id: result.insertId, title: req.body.title || file.originalname, type: req.body.type || 'other', target_class: req.body.className || req.body.target_class || null });
+  } catch (e) { console.warn('Could not emit new_finance_doc', e.message || e); }
 }
 
 async function deleteDoc(req, res) {
@@ -662,6 +698,7 @@ async function generateStatement(req, res) {
       const content = renderStatementHtml(data, filters);
       await fs.writeFile(path.join(folder, filename), content, 'utf8');
 
+      const uploadedBy = getAuditUserId(req.user);
       const result = await query(
         `INSERT INTO finance_documents (title, type, description, filename, original_name, mime_type, file_size, uploaded_by)
          VALUES (?, 'feestatement', ?, ?, ?, 'text/html', ?, ?)`,
@@ -671,7 +708,7 @@ async function generateStatement(req, res) {
           filename,
           filename,
           Buffer.byteLength(content),
-          req.user.id
+          uploadedBy
         ]
       );
       await query('INSERT IGNORE INTO finance_document_students (document_id, student_id) VALUES (?, ?)', [result.insertId, studentId]);
@@ -684,10 +721,90 @@ async function generateStatement(req, res) {
     }
 
     await logActivity(req.user.id, 'fee_statements_generated', `Generated ${created.length} statement(s)`, req.ip);
+    try {
+      if (io) io.emit('fee_statements_generated', { created });
+    } catch (e) { console.warn('Could not emit fee_statements_generated', e.message || e); }
     res.json({ success: true, created });
   } catch (error) {
     console.error('Generate statement error:', error);
     res.status(500).json({ success: false, message: 'Could not generate fee statements' });
+  }
+}
+
+async function getFeeStructure(req, res) {
+  try {
+    const params = [];
+    const clauses = ["type = 'feestructure'"];
+    const className = req.query.className || req.query.class_name || req.user?.class_name || null;
+    const term = req.query.term || null;
+
+    if (className) {
+      clauses.push(classMatchesExpression('finance_documents'));
+      params.push(className, className, className);
+    }
+    if (term) {
+      clauses.push('(target_term IS NULL OR target_term = ?)');
+      params.push(term);
+    }
+
+    const docs = await query(
+      `SELECT * FROM finance_documents
+       WHERE ${clauses.join(' AND ')}
+       ORDER BY uploaded_at DESC
+       LIMIT 1`,
+      params
+    );
+
+    let structure = [];
+    const latestDoc = docs[0] || null;
+    if (latestDoc?.filename && latestDoc.mime_type === 'application/json') {
+      const filePath = path.join(__dirname, '..', 'uploads', 'documents', path.basename(latestDoc.filename));
+      try {
+        const raw = await fs.readFile(filePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        structure = (parsed.categories || []).map((item) => ({
+          description: item.description || item.category || 'Fee item',
+          amount: Number(item.amount || 0)
+        })).filter((item) => item.amount > 0);
+      } catch (error) {
+        console.warn('Could not parse fee structure document:', error.message);
+      }
+    }
+
+    if (!structure.length) {
+      const chargeParams = [];
+      let chargeWhere = 'WHERE fc.amount > 0'
+        + ' AND (fc.description IS NULL OR LOWER(fc.description) NOT LIKE ? )'
+        + ' AND (fc.category IS NULL OR LOWER(fc.category) NOT LIKE ? )';
+      chargeParams.push('%test charge%', '%test charge%');
+      if (className) {
+        chargeWhere += ' AND (s.class_name = ? OR s.class_name LIKE ? OR ? LIKE CONCAT(s.class_name, "%"))';
+        chargeParams.push(className, `${className}%`, className);
+      }
+      if (term) {
+        chargeWhere += ' AND fc.term = ?';
+        chargeParams.push(term);
+      }
+      const charges = await query(
+        `SELECT COALESCE(fc.category, fc.description) AS description, MAX(fc.amount) AS amount
+         FROM fee_charges fc
+         JOIN students s ON s.id = fc.student_id
+         ${chargeWhere}
+         GROUP BY COALESCE(fc.category, fc.description)
+         ORDER BY description`,
+        chargeParams
+      );
+      structure = charges.map((item) => ({ description: item.description, amount: Number(item.amount || 0) }));
+    }
+
+    res.json({
+      structure,
+      document: latestDoc,
+      total: structure.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load fee structure' });
   }
 }
 
@@ -704,5 +821,7 @@ module.exports = {
   deleteDoc,
   serveFile,
   downloadReceipt,
-  generateStatement
+  generateStatement,
+  getFeeStructure
 };
+module.exports.setIO = setIO;

@@ -54,19 +54,35 @@ async function getNextAdmissionAssignment() {
 
 async function getAdmissionAssignmentForApplication(application) {
   const parsed = getClassFormAndStream(application);
-  if (parsed?.formNumber) {
-    return {
-      admissionNumber: `${parsed.formNumber}${parsed.stream}`,
-      stream: parsed.stream,
-      formNumber: parsed.formNumber
-    };
+  const assignment = await getNextAdmissionAssignment();
+  return {
+    ...assignment,
+    stream: parsed?.stream || assignment.stream,
+    formNumber: parsed?.formNumber || null
+  };
+}
+
+async function getNextStaffAssignment() {
+  const rows = await query(
+    `SELECT admission_number FROM students WHERE admission_number LIKE 'STAFF/%' ORDER BY id ASC`
+  );
+
+  let highest = 0;
+  for (const row of rows) {
+    const match = String(row.admission_number || '').match(/^STAFF\/(\d+)$/i);
+    if (match) highest = Math.max(highest, Number(match[1]));
   }
 
-  return getNextAdmissionAssignment();
+  const sequence = highest + 1;
+  return {
+    admissionNumber: `STAFF/${String(sequence).padStart(3, '0')}`,
+    sequence
+  };
 }
 
 module.exports = {
   STREAMS,
   getNextAdmissionAssignment,
-  getAdmissionAssignmentForApplication
+  getAdmissionAssignmentForApplication,
+  getNextStaffAssignment
 };

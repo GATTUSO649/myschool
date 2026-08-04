@@ -2,6 +2,10 @@ const path = require('path');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
 
+// Socket IO instance (set by server)
+let io = null;
+function setIO(ioInstance) { io = ioInstance; }
+
 function docFileResponse(res, filename, folder = 'documents') {
   const safeName = path.basename(filename);
   res.sendFile(path.join(__dirname, '..', 'uploads', folder, safeName));
@@ -50,12 +54,35 @@ function transcriptColumnForSubject(subject) {
 
 function transcriptTableForClassName(className) {
   const normalized = String(className || '').trim();
-  const formMatch = normalized.match(/form\s*([1-4])/i);
+  const formMatch = normalized.match(/(?:form\s*|^)([1-4])(?:\b|[A-Za-z]|$)/i) || normalized.match(/^([1-4])(?:\b|[A-Za-z]|$)/);
   if (formMatch) return `form${formMatch[1]}_transcript`;
   return null;
 }
 
-async function syncTranscriptForStudent(studentId, academicYear, term) {
+async function findStudentIdByAdmissionNumber(admissionNumber) {
+  if (!admissionNumber) return null;
+  const rows = await query(
+    `SELECT id FROM students WHERE LOWER(admission_number) = LOWER(?) LIMIT 1`,
+    [String(admissionNumber).trim()]
+  );
+  return rows[0] ? rows[0].id : null;
+}
+
+async function cleanupTranscriptDuplicates(tableName, studentId, academicYear, term) {
+  const duplicateRows = await query(
+    `SELECT id FROM ${tableName} WHERE student_id = ? AND academic_year = ? AND term = ? ORDER BY created_at DESC`,
+    [studentId, academicYear, term]
+  );
+  if (duplicateRows.length <= 1) return;
+  const idsToKeep = duplicateRows.map((row) => row.id);
+  const idsToRemove = idsToKeep.slice(1);
+  await query(
+    `DELETE FROM ${tableName} WHERE id IN (${idsToRemove.map(() => '?').join(',')})`,
+    idsToRemove
+  );
+}
+
+async function syncTranscriptForStudent(studentId, academicYear, term, examType = null) {
   const studentRows = await query('SELECT id, name, admission_number, class_name, stream FROM students WHERE id = ? LIMIT 1', [studentId]);
   const student = studentRows[0];
   if (!student) return null;
@@ -63,10 +90,15 @@ async function syncTranscriptForStudent(studentId, academicYear, term) {
   const tableName = transcriptTableForClassName(student.class_name);
   if (!tableName) return null;
 
-  const rows = await query(
-    `SELECT subject, score FROM results WHERE student_id = ? AND academic_year = ? AND term = ? ORDER BY subject`,
-    [studentId, academicYear, term]
-  );
+  let sql = `SELECT subject, score FROM results WHERE student_id = ? AND academic_year = ? AND term = ?`;
+  const params = [studentId, academicYear, term];
+  if (examType) {
+    sql += ' AND exam_type = ?';
+    params.push(examType);
+  }
+  sql += ' ORDER BY subject';
+
+  const rows = await query(sql, params);
 
   const subjectValues = {};
   const scoredEntries = rows.filter((row) => Number.isFinite(Number(row.score)) && Number(row.score) >= 0);
@@ -110,7 +142,7 @@ async function syncTranscriptForStudent(studentId, academicYear, term) {
       `UPDATE ${tableName}
        SET adm = ?, name = ?, stream = ?, eng = ?, kisw = ?, mat = ?, bio = ?, che = ?, phy = ?, cre = ?, his = ?, geo = ?, comp = ?, bus = ?, agr = ?, total = ?, avg = ?, grade = ?, term = ?, academic_year = ?
        WHERE id = ?`,
-      [...values.slice(0, 19), existing[0].id]
+      [...values.slice(0, 20), existing[0].id]
     );
   } else {
     await query(
@@ -120,21 +152,49 @@ async function syncTranscriptForStudent(studentId, academicYear, term) {
     );
   }
 
+  await cleanupTranscriptDuplicates(tableName, student.id, academicYear, term);
   return { tableName, total, avg, grade };
 }
 
 async function listDocs(req, res) {
-  const params = [];
-  let sql = `SELECT id, title, type, subject, class_name, topic, category, description,
+  try {
+    const params = [];
+    let whereClauses = [];
+    let sql = `SELECT id, title, type, subject, class_name, topic, category, description,
                     filename, original_name, due_date, uploaded_at, created_at
              FROM academic_documents`;
-  if (req.query.type) {
-    sql += ' WHERE type = ?';
-    params.push(req.query.type);
+
+    if (req.query.type) {
+      whereClauses.push('type = ?');
+      params.push(req.query.type);
+    }
+
+    if (req.query.subject) {
+      whereClauses.push('LOWER(subject) = LOWER(?)');
+      params.push(req.query.subject);
+    }
+
+    if (req.query.className || req.query.class_name) {
+      const className = req.query.className || req.query.class_name;
+      whereClauses.push('(class_name IS NULL OR class_name = ? OR class_name LIKE ?)');
+      params.push(className, `${className}%`);
+    } else if (req.user?.role === 'student' && req.user?.class_name) {
+      whereClauses.push('(class_name IS NULL OR class_name = ? OR ? LIKE CONCAT(class_name, "%"))');
+      params.push(req.user.class_name, req.user.class_name);
+    }
+
+    if (whereClauses.length) sql += ' WHERE ' + whereClauses.join(' AND ');
+
+    const limit = Math.max(1, Math.min(Number.parseInt(req.query.limit || 100, 10), 500));
+    const offset = Math.max(0, Number.parseInt(req.query.offset || 0, 10));
+    sql += ` ORDER BY uploaded_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+    const rows = await query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('List academic docs error:', err);
+    res.status(500).json({ success: false, message: 'Could not load documents' });
   }
-  sql += ' ORDER BY uploaded_at DESC LIMIT ? OFFSET ?';
-  params.push(Number(req.query.limit || 100), Number(req.query.offset || 0));
-  res.json(await query(sql, params));
 }
 
 async function listEntryStudents(req, res) {
@@ -143,6 +203,9 @@ async function listEntryStudents(req, res) {
       className: req.query.className || req.query.class_name || null,
       stream: req.query.stream || null
     };
+    const academicYear = req.query.academicYear || req.query.academic_year || String(new Date().getFullYear());
+    const term = req.query.term || 'Term 1';
+    const examType = req.query.examType || req.query.exam_type || 'End-Term';
 
     const params = [];
     let where = "WHERE role = 'student' AND active = 1";
@@ -155,14 +218,39 @@ async function listEntryStudents(req, res) {
       params.push(filters.stream);
     }
 
-    const rows = await query(
+    const students = await query(
       `SELECT id, name, admission_number AS admissionNumber, class_name AS className, stream
        FROM students
        ${where}
        ORDER BY name`,
       params
     );
-    res.json({ success: true, students: rows });
+
+    if (students.length) {
+      const studentIds = students.map((student) => student.id);
+      const placeholders = studentIds.map(() => '?').join(',');
+      const resultsRows = await query(
+        `SELECT student_id, subject, score, grade
+         FROM results
+         WHERE academic_year = ? AND term = ? AND exam_type = ? AND student_id IN (${placeholders})`,
+        [academicYear, term, examType, ...studentIds]
+      );
+
+      const resultsByStudent = {};
+      resultsRows.forEach((row) => {
+        resultsByStudent[row.student_id] = resultsByStudent[row.student_id] || {};
+        resultsByStudent[row.student_id][row.subject] = {
+          score: row.score,
+          grade: row.grade
+        };
+      });
+
+      students.forEach((student) => {
+        student.results = resultsByStudent[student.id] || {};
+      });
+    }
+
+    res.json({ success: true, students });
   } catch (error) {
     console.error('List academic entry students error:', error);
     res.status(500).json({ success: false, message: 'Could not load student list' });
@@ -172,20 +260,45 @@ async function listEntryStudents(req, res) {
 async function saveEntryResults(req, res) {
   try {
     const body = req.body || {};
-    const entries = Array.isArray(body.entries) ? body.entries : [];
+    let entries = Array.isArray(body.entries) ? body.entries : [];
     const academicYear = body.academicYear || body.academic_year || null;
     const term = body.term || null;
     const examType = body.examType || body.exam_type || 'CAT 1';
-    const subject = body.subject || null;
+    let subject = body.subject || null;
     const className = body.className || body.class_name || null;
+    const admissionNumber = body.admissionNumber || body.admission_number || null;
+
+    if (req.user?.role === 'lecturer') {
+      if (!req.user.subject) {
+        return res.status(403).json({ success: false, message: 'Lecturer subject is not configured' });
+      }
+      if (!subject) {
+        subject = req.user.subject;
+      } else if (String(subject).trim().toLowerCase() !== String(req.user.subject).trim().toLowerCase()) {
+        return res.status(403).json({ success: false, message: 'Lecturers can only enter results for their assigned subject' });
+      }
+    }
 
     if (!subject || !entries.length) {
       return res.status(400).json({ success: false, message: 'Subject and student marks are required' });
     }
 
+    // If the payload specifies a student by admission number, resolve that student.
+    let defaultStudentId = null;
+    if (admissionNumber) {
+      defaultStudentId = await findStudentIdByAdmissionNumber(admissionNumber);
+      if (!defaultStudentId) {
+        return res.status(404).json({ success: false, message: 'Student not found for the provided admission number' });
+      }
+    }
+
     const saved = [];
+    const syncedStudents = new Set();
     for (const entry of entries) {
-      const studentId = entry.student_id || entry.studentId;
+      let studentId = entry.student_id || entry.studentId || null;
+      if (!studentId) {
+        studentId = defaultStudentId;
+      }
       const score = Number(entry.score);
       if (!studentId || !Number.isFinite(score)) continue;
 
@@ -195,8 +308,12 @@ async function saveEntryResults(req, res) {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [studentId, subject, score, gradeForScore(score), term, academicYear, examType]
       );
-      await syncTranscriptForStudent(studentId, academicYear, term);
+      syncedStudents.add(studentId);
       saved.push({ id: result.insertId, studentId, score, grade: gradeForScore(score) });
+    }
+
+    for (const studentId of syncedStudents) {
+      await syncTranscriptForStudent(studentId, academicYear, term, examType);
     }
 
     const summaryRows = await query(
@@ -211,6 +328,7 @@ async function saveEntryResults(req, res) {
     res.json({
       success: true,
       saved,
+      transcriptSyncCount: syncedStudents.size,
       summary: {
         subject,
         academicYear,
@@ -257,6 +375,27 @@ async function academicDashboard(req, res) {
   }
 }
 
+// New: Average score per form (Form 1..4) for charting
+async function formAverages(req, res) {
+  try {
+    const rows = await query(
+      `SELECT s.class_name AS className, AVG(r.score) AS average
+       FROM results r
+       JOIN students s ON s.id = r.student_id
+       WHERE s.class_name IN ('Form 1','Form 2','Form 3','Form 4')
+       GROUP BY s.class_name
+       ORDER BY s.class_name`
+    );
+    const result = { forms: ['Form 1','Form 2','Form 3','Form 4'], averages: {} };
+    result.forms.forEach(f => { result.averages[f] = 0; });
+    rows.forEach(r => { if (r.className) result.averages[r.className] = Number(r.average || 0).toFixed(2); });
+    res.json(result);
+  } catch (err) {
+    console.error('Error computing form averages:', err);
+    res.status(500).json({ success: false, message: 'Could not compute form averages' });
+  }
+}
+
 async function createDoc(req, res) {
   try {
     const file = req.file;
@@ -283,6 +422,11 @@ async function createDoc(req, res) {
       ]
     );
     await logActivity(req.user?.id, 'upload', `Uploaded academic document ${file.originalname}`, req.ip);
+    const doc = { id: result.insertId, title: body.title || file.originalname, subject: body.subject || null, filename: file.filename };
+    // Emit real-time event for student viewers
+    try {
+      if (io) io.emit('new_academic_doc', doc);
+    } catch (e) { console.warn('Could not emit new_academic_doc', e.message || e); }
     res.status(201).json({ success: true, id: result.insertId, filename: file.filename });
   } catch (error) {
     console.error('Create academic doc error:', error);
@@ -310,14 +454,83 @@ async function serveDoc(req, res) {
   docFileResponse(res, req.params.filename);
 }
 
+async function getStudentTranscript(req, res) {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) return res.status(401).json({ error: 'Not authenticated' });
+
+    const academicYear = req.query.academicYear || new Date().getFullYear();
+    const className = req.query.className || 'Form 4';
+
+    const studentRows = await query(
+      'SELECT id, name, admission_number, stream, class_name FROM students WHERE id = ? LIMIT 1',
+      [studentId]
+    );
+    const student = studentRows[0];
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    // Fetch results grouped by term
+    const results = await query(
+      `SELECT term, subject, score, created_at FROM results
+       WHERE student_id = ? AND academic_year = ?
+       ORDER BY term, subject`,
+      [studentId, academicYear]
+    );
+
+    // Group by term and compute averages
+    const termMap = {};
+    results.forEach(r => {
+      if (!termMap[r.term]) termMap[r.term] = [];
+      termMap[r.term].push(r);
+    });
+
+    const terms = Object.entries(termMap).map(([termName, subjects]) => {
+      const scores = subjects
+        .map(s => Number(s.score))
+        .filter(s => Number.isFinite(s) && s >= 0);
+      const average = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+      
+      return {
+        term: termName,
+        subjects: subjects.map(s => ({
+          subject: s.subject,
+          score: s.score,
+          grade: gradeForScore(s.score),
+          remarks: Number(s.score) >= 70 ? 'Good' : (Number(s.score) >= 50 ? 'Fair' : 'Needs improvement')
+        })),
+        average: average
+      };
+    });
+
+    res.json({
+      student: {
+        id: student.id,
+        name: student.name,
+        admissionNumber: student.admission_number,
+        className: student.class_name,
+        stream: student.stream
+      },
+      academicYear,
+      terms
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load transcript' });
+  }
+}
+
 module.exports = {
   listDocs,
   listEntryStudents,
   saveEntryResults,
   academicDashboard,
+  formAverages,
   createDoc,
   updateDoc,
   deleteDoc,
   serveDoc,
-  docFileResponse
+  docFileResponse,
+  getStudentTranscript
 };
+// export setter for io
+module.exports.setIO = setIO;

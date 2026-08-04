@@ -6,7 +6,7 @@
     <title>Settings - CRESENT HIGH SCHOOL</title>
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="settings.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         /* Fail-safe override to ensure content is visible even if CSS buffering fails */
         .settings-section { display: block !important; }
@@ -17,15 +17,19 @@
     </style>
   <link rel="stylesheet" href="site-common.css">
 </head>
-<body>
+<body class="student-portal">
     <header class="dashboard-header">
-        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <div class="header-content">
+            <button class="mobile-sidebar-toggle" type="button" onclick="document.querySelector('.student-sidebar')?.classList.toggle('is-open')" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="school-name">CRESENT HIGH SCHOOL</div>
+        </div>
         <nav class="dashboard-nav">
             <a href="dashboard.html">Dashboard</a>
             <a href="academic.html">Academics</a>
             <a href="finance.html">Finance</a>
             <a href="exams.html">Exams</a>
-            <a href="clearance-request.html">Clearence & Request</a>
             <a href="lecturer interaction.html">Lecturer Interaction</a>
         </nav>
     </header>
@@ -232,7 +236,7 @@
                                     <p>Grades, assignments, and course announcements</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Academic updates notifications">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -243,7 +247,7 @@
                                     <p>Fee statements and payment reminders</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Finance notifications">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -254,7 +258,7 @@
                                     <p>Exam schedules and results</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Exam updates notifications">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -265,7 +269,7 @@
                                     <p>Important system updates and maintenance</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="System notifications">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -321,7 +325,7 @@
                                     <p>Allow other students to view your profile</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox">
+                                    <input type="checkbox" aria-label="Public profile visibility">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -332,7 +336,7 @@
                                     <p>Let others see when you're online</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Show online status">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -343,7 +347,7 @@
                                     <p>Allow other students to message you</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Allow messages">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -405,7 +409,7 @@
                                     <p>Use a more condensed layout</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox">
+                                    <input type="checkbox" aria-label="Compact view">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -416,7 +420,7 @@
                                     <p>Enable smooth page transitions</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" checked aria-label="Animations">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -425,7 +429,8 @@
 
                     <div class="settings-card">
                         <h3>Language</h3>
-                        <select class="language-select">
+                        <label for="languageSelect" class="sr-only">Preferred language</label>
+                        <select id="languageSelect" class="language-select" aria-label="Preferred language">
                             <option value="en" selected>English</option>
                             <option value="sw">Swahili</option>
                             <option value="fr">French</option>
@@ -498,6 +503,8 @@
 
     <!-- Notification Toast -->
     <div id="notification" class="notification-toast"></div>
+
+    <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. Account settings are managed securely in the student portal.</footer>
 
     <script src="settings.js"></script>
   <script src="site-common.js"></script>

@@ -72,12 +72,22 @@ async function dropColumnIfExists(tableName, columnName) {
 }
 
 async function runMigrations() {
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      setting_key VARCHAR(100) PRIMARY KEY,
+      setting_value TEXT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
   await addColumnIfMissing('calendar_events', 'start_date', 'DATETIME NULL');
   await addColumnIfMissing('calendar_events', 'end_date', 'DATETIME NULL');
   await addColumnIfMissing('calendar_events', 'subject', 'VARCHAR(100) NULL');
   await addColumnIfMissing('calendar_events', 'location', 'VARCHAR(150) NULL');
   await addColumnIfMissing('results', 'exam_type', 'VARCHAR(80) NULL');
   await addColumnIfMissing('students', 'date_of_birth', 'DATE NULL');
+  await addColumnIfMissing('students', 'address', 'TEXT NULL');
+  await addColumnIfMissing('students', 'subject', 'VARCHAR(100) NULL');
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
   await addColumnIfMissing('applications', 'birth_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'kcpe_certificate_path', 'VARCHAR(255) NULL');

@@ -4,13 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRESENT HIGH SCHOOL - Student Dashboard</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
 </head>
-<body>
+<body class="student-portal">
   <header class="dashboard-header">
     <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" onclick="document.querySelector('.student-sidebar')?.classList.toggle('is-open')" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
       <div class="brand-bar">
         <div class="school-name">
           <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
@@ -35,7 +37,6 @@
       <div class="sidebar-section">
         <h3>Academics</h3>
         <a class="sidebar-link" href="notes.html">Notes</a>
-        <a class="sidebar-link" href="revision.html">Revision</a>
         <a class="sidebar-link" href="exams.html">Exams</a>
       </div>
       <div class="sidebar-section">
@@ -45,9 +46,13 @@
       </div>
       <div class="sidebar-section">
         <h3>Support</h3>
-        <a class="sidebar-link" href="clearance-request.html">Clearance</a>
         <a class="sidebar-link" href="lecturer interaction.html">Lecturer Interaction</a>
-        <a class="sidebar-link" href="settings.html">Settings</a>
+      </div>
+      <div class="sidebar-section quick-access">
+        <h3>Quick Access</h3>
+        <a href="notes.html">Notes</a>
+        <a href="transcript.html">Transcript</a>
+        <a href="paymentreceipts.html">Receipts</a>
       </div>
     </aside>
 
@@ -117,16 +122,17 @@
           <div class="quick-links">
             <a href="academic.html">Academics</a>
             <a href="finance.html">Finance</a>
-            <a href="calendar.html">Events</a>
-            <a href="clearance-request.html">Clearance</a>
+            <!-- Clearance removed -->
+            <a href="help.html">Help</a>
           </div>
         </div>
       </section>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="chart-fallback.js"></script>
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script>
@@ -163,9 +169,9 @@
       }
 
       try {
-        const [profileRes, balanceRes, resultsRes] = await Promise.all([
+        const [profileRes, statementRes, resultsRes] = await Promise.all([
           fetchWithAuth('/auth/me'),
-          fetchWithAuth('/finance/balances'),
+          fetchWithAuth('/finance/statement'),
           fetchWithAuth('/results')
         ]);
 
@@ -178,14 +184,15 @@
           setText('studentSummary', `${studentProfile.className || 'Student'} • ${studentProfile.admissionNumber || 'No admission'}`);
         }
 
-        let balanceData = {};
-        if (balanceRes.ok) {
-          balanceData = await balanceRes.json();
+        let statementData = {};
+        if (statementRes.ok) {
+          statementData = await statementRes.json();
         }
 
-        const balance = Number(balanceData.balance || balanceData.total_balance || balanceData.totalBalance || 0);
-        const charged = Number(balanceData.total_charged || balanceData.total_charges || balanceData.totalCharged || 0);
-        const paid = Number(balanceData.paid || balanceData.total_paid || balanceData.totalPaid || 0);
+        const totals = statementData.totals || statementData || {};
+        const balance = Number(totals.balance || statementData.balance || 0);
+        const charged = Number(totals.total_charges || totals.total_charged || statementData.total_charged || statementData.total_charges || 0);
+        const paid = Number(totals.total_paid || totals.paid || statementData.total_paid || statementData.paid || 0);
 
         setText('feeBalance', formatCurrency(balance));
         setText('feeCharged', formatCurrency(charged));
@@ -252,23 +259,40 @@
 
       const labels = results.length ? results.map(item => item.subject || 'Subject') : ['No data'];
       const values = results.length ? results.map(item => Number(item.score || 0)) : [0];
+      const colors = ['#3b82f6', '#0ea5a5', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#10b981'];
+
       academicsChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'pie',
         data: {
           labels,
           datasets: [{
-            label: 'Marks',
+            label: 'Subject marks',
             data: values,
-            backgroundColor: ['#3b82f6', '#0ea5a5', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6'],
-            borderRadius: 8
+            backgroundColor: labels.map((_, index) => colors[index % colors.length]),
+            borderColor: '#ffffff',
+            borderWidth: 2
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, max: 100 }
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 16,
+                padding: 16,
+                font: { size: 12 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const value = context.parsed;
+                  return `${context.label}: ${value}%`;
+                }
+              }
+            }
           }
         }
       });

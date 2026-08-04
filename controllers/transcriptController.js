@@ -13,13 +13,30 @@ function gradeFromScore(score) {
   return 'E';
 }
 
+function transcriptColumnForSubject(subject) {
+  const normalized = String(subject || '').trim().toLowerCase();
+  if (normalized.includes('eng')) return 'eng';
+  if (normalized.includes('kis')) return 'kisw';
+  if (normalized.includes('math') || normalized === 'mat') return 'mat';
+  if (normalized.includes('bio')) return 'bio';
+  if (normalized.includes('chem') || normalized === 'che') return 'che';
+  if (normalized.includes('phy')) return 'phy';
+  if (normalized.includes('cre') || normalized.includes('religious')) return 'cre';
+  if (normalized.includes('hist') || normalized.includes('government')) return 'his';
+  if (normalized.includes('geo')) return 'geo';
+  if (normalized.includes('comp')) return 'comp';
+  if (normalized.includes('bus')) return 'bus';
+  if (normalized.includes('agr')) return 'agr';
+  return null;
+}
+
 const TRANSCRIPT_TABLES = ['form1_transcript', 'form2_transcript', 'form3_transcript', 'form4_transcript'];
 const SUBJECT_FIELDS = ['eng', 'kisw', 'mat', 'bio', 'che', 'phy', 'cre', 'his', 'geo', 'comp', 'bus', 'agr'];
 
 function parseFormNumber(className) {
   if (!className) return null;
   const normalized = String(className).trim();
-  const match = normalized.match(/form\s*([1-4])\b/i) || normalized.match(/^([1-4])\b/);
+  const match = normalized.match(/(?:form\s*|^)([1-4])(?:\b|[A-Za-z]|$)/i) || normalized.match(/^([1-4])(?:\b|[A-Za-z]|$)/);
   return match ? Number(match[1]) : null;
 }
 
@@ -242,16 +259,52 @@ async function listTranscripts(req, res) {
 }
 
 async function listMyTranscripts(req, res) {
+  const termFilter = String(req.query.term || '').trim();
+  const yearFilter = String(req.query.year || req.query.academic_year || '').trim();
+  const filters = ['t.student_id = ?'];
+  const filterParams = [req.user.id];
+
+  if (termFilter) {
+    filters.push('LOWER(TRIM(t.term)) = LOWER(TRIM(?))');
+    filterParams.push(termFilter);
+  }
+  if (yearFilter) {
+    filters.push('CAST(t.academic_year AS CHAR) = ?');
+    filterParams.push(yearFilter);
+  }
+
+  const transcriptSql = await transcriptSelectAll(`WHERE ${filters.join(' AND ')}`);
+  const transcriptRows = transcriptSql ? await query(transcriptSql, filterParams) : [];
+  if (transcriptRows && transcriptRows.length) {
+    return res.json(transcriptRows);
+  }
+
   if (await tableExists('sheet1')) {
     const filter = await buildSheet1UserFilter(req.user.id);
     const sql = await transcriptSelectSheet1(filter.clause);
     const rows = await query(sql, filter.params);
-    return res.json(rows);
+    const filteredRows = rows.filter((row) => {
+      if (termFilter && String(row.term || '').trim().toLowerCase() !== termFilter.toLowerCase()) return false;
+      if (yearFilter && String(row.year || row.academic_year || '').trim() !== yearFilter) return false;
+      return true;
+    });
+    if (filteredRows.length) {
+      return res.json(filteredRows);
+    }
   }
 
-  const sql = await transcriptSelectAll('WHERE t.student_id = ?');
-  const rows = sql ? await query(sql, [req.user.id]) : [];
-  res.json(rows);
+  const studentRows = await query('SELECT id, name, admission_number, class_name, stream FROM students WHERE id = ? LIMIT 1', [req.user.id]);
+  const student = studentRows[0];
+  if (!student) {
+    return res.json([]);
+  }
+
+  const fallbackTranscript = await buildTranscriptFromResults(student, termFilter, yearFilter);
+  if (fallbackTranscript) {
+    return res.json([fallbackTranscript]);
+  }
+
+  res.json([]);
 }
 
 async function listTranscriptSheets(req, res) {
@@ -447,6 +500,58 @@ function buildTranscriptRecord(body) {
   record.grade = record.grade || gradeFromScore(record.avg);
 
   return record;
+}
+
+async function buildTranscriptFromResults(student, termFilter, yearFilter) {
+  const params = [student.id];
+  let where = 'WHERE student_id = ?';
+  if (termFilter && String(termFilter).trim()) {
+    where += ' AND LOWER(term) = LOWER(?)';
+    params.push(String(termFilter).trim());
+  }
+  if (yearFilter && String(yearFilter).trim()) {
+    where += ' AND CAST(academic_year AS CHAR) = ?';
+    params.push(String(yearFilter).trim());
+  }
+
+  const rows = await query(
+    `SELECT subject, score, term, academic_year, created_at
+     FROM results
+     ${where}
+     ORDER BY academic_year DESC, term DESC, created_at DESC`,
+    params
+  );
+
+  if (!rows.length) return null;
+
+  const targetYear = rows[0].academic_year;
+  const targetTerm = rows[0].term;
+  const selectedRows = rows.filter((row) => String(row.academic_year) === String(targetYear) && String(row.term || '') === String(targetTerm || ''));
+  const transcript = {
+    id: null,
+    adm: student.admission_number,
+    name: student.name,
+    stream: student.stream,
+    term: targetTerm,
+    academic_year: targetYear,
+    created_at: rows[0].created_at
+  };
+
+  selectedRows.forEach((row) => {
+    const column = transcriptColumnForSubject(row.subject);
+    const score = Number(row.score);
+    if (column && Number.isFinite(score)) transcript[column] = score;
+  });
+
+  const scores = SUBJECT_FIELDS.map((field) => transcript[field]).filter((value) => Number.isFinite(Number(value)));
+  transcript.total = scores.length ? scores.reduce((sum, value) => sum + Number(value), 0) : null;
+  transcript.avg = scores.length ? Number((transcript.total / scores.length).toFixed(2)) : null;
+  transcript.grade = gradeFromScore(transcript.avg);
+  transcript.remark = scores.length
+    ? `Generated from published result entries for ${targetTerm || 'the selected term'}.`
+    : 'No subject marks are available for this academic period.';
+
+  return transcript;
 }
 
 async function createTranscript(req, res) {
@@ -712,19 +817,24 @@ async function searchStudent(req, res) {
 async function getStudentTranscriptByAdm(req, res) {
   const { adm } = req.params;
   const { form, term } = req.query;
+  const requestedAdm = String(adm || '').trim();
 
-  if (!adm || String(adm).trim().length === 0) {
+  if (!requestedAdm) {
     return res.status(400).json({ success: false, message: 'Admission number is required' });
   }
 
-  if (!req.user || !req.user.admission_number || String(req.user.admission_number).trim() !== String(adm).trim()) {
+  const canViewAny = ['admin', 'rba'].includes(req.user?.role);
+  if (!canViewAny && (!req.user || !req.user.admission_number || String(req.user.admission_number).trim().toLowerCase() !== requestedAdm.toLowerCase())) {
     return res.status(403).json({ success: false, message: 'You are not authorized to view this transcript' });
   }
 
   try {
     const studentRows = await query(
-      `SELECT id, name, admission_number, class_name, stream_name FROM students WHERE admission_number = ? LIMIT 1`,
-      [adm.trim()]
+      `SELECT id, name, admission_number, class_name, stream
+       FROM students
+       WHERE LOWER(admission_number) = LOWER(?)
+       LIMIT 1`,
+      [requestedAdm]
     );
     const student = studentRows[0];
     if (!student) {
@@ -744,8 +854,8 @@ async function getStudentTranscriptByAdm(req, res) {
     }
 
     const transcriptQueries = tableNames.map((table) => {
-      let sql = `SELECT *, '${table}' AS source_table FROM ${table} WHERE adm = ?`;
-      const params = [adm.trim()];
+      let sql = `SELECT *, '${table}' AS source_table FROM ${table} WHERE LOWER(adm) = LOWER(?)`;
+      const params = [requestedAdm];
       if (term && String(term).trim().length > 0) {
         sql += ' AND LOWER(term) = LOWER(?)';
         params.push(term.trim());
@@ -754,10 +864,27 @@ async function getStudentTranscriptByAdm(req, res) {
       return query(sql, params);
     });
 
-    const results = await Promise.all(transcriptQueries);
-    const transcriptRow = results.find(r => r && r.length > 0)?.[0];
-    
+    let results = await Promise.all(transcriptQueries);
+    let transcriptRow = results.find(r => r && r.length > 0)?.[0];
+
     if (!transcriptRow) {
+      const fallbackQueries = tableNames.map((table) => {
+        let sql = `SELECT *, '${table}' AS source_table FROM ${table} WHERE student_id = ?`;
+        const params = [student.id];
+        if (term && String(term).trim().length > 0) {
+          sql += ' AND LOWER(term) = LOWER(?)';
+          params.push(term.trim());
+        }
+        sql += ' ORDER BY academic_year DESC, term DESC LIMIT 1';
+        return query(sql, params);
+      });
+      const fallbackResults = await Promise.all(fallbackQueries);
+      transcriptRow = fallbackResults.find(r => r && r.length > 0)?.[0];
+    }
+    
+    const transcriptData = transcriptRow || await buildTranscriptFromResults(student, term);
+
+    if (!transcriptData) {
       return res.status(404).json({ success: false, message: 'No transcript found for this admission number and selected filters' });
     }
 
@@ -768,32 +895,33 @@ async function getStudentTranscriptByAdm(req, res) {
           id: student.id,
           adm: student.admission_number,
           name: student.name,
-          stream: student.stream_name,
+          stream: student.stream,
           class: student.class_name
         },
         transcript: {
-          id: transcriptRow.id,
-          adm: transcriptRow.adm,
-          name: transcriptRow.name,
-          stream: transcriptRow.stream,
-          eng: transcriptRow.eng,
-          kisw: transcriptRow.kisw,
-          mat: transcriptRow.mat,
-          bio: transcriptRow.bio,
-          che: transcriptRow.che,
-          phy: transcriptRow.phy,
-          cre: transcriptRow.cre,
-          his: transcriptRow.his,
-          geo: transcriptRow.geo,
-          comp: transcriptRow.comp,
-          bus: transcriptRow.bus,
-          agr: transcriptRow.agr,
-          total: transcriptRow.total,
-          avg: transcriptRow.avg,
-          grade: transcriptRow.grade,
-          term: transcriptRow.term,
-          academic_year: transcriptRow.academic_year,
-          created_at: transcriptRow.created_at
+          id: transcriptData.id,
+          adm: transcriptData.adm,
+          name: transcriptData.name,
+          stream: transcriptData.stream,
+          eng: transcriptData.eng,
+          kisw: transcriptData.kisw,
+          mat: transcriptData.mat,
+          bio: transcriptData.bio,
+          che: transcriptData.che,
+          phy: transcriptData.phy,
+          cre: transcriptData.cre,
+          his: transcriptData.his,
+          geo: transcriptData.geo,
+          comp: transcriptData.comp,
+          bus: transcriptData.bus,
+          agr: transcriptData.agr,
+          total: transcriptData.total,
+          avg: transcriptData.avg,
+          grade: transcriptData.grade,
+          term: transcriptData.term,
+          academic_year: transcriptData.academic_year,
+          created_at: transcriptData.created_at,
+          remark: transcriptData.remark
         }
       }
     });

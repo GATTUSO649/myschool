@@ -1,15 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRESENT HIGH SCHOOL - Admin Portal</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="admin-dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="dashboard.css">`n<link rel="stylesheet" href="admin-dashboard.css">
 </head>
-<body>
+<body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
       <div class="brand-bar">
@@ -36,10 +33,6 @@
         <a class="sidebar-link" href="admin-academics.html">Academics</a>
         <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
         <a class="sidebar-link" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
-        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-        <a class="sidebar-link" href="admin-reports.html">Reports</a>
-        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
       </div>
       <div class="sidebar-section">
@@ -51,15 +44,6 @@
 
     <main class="dashboard-main">
       <section id="dashboard" class="admin-section">
-        <div class="hero-panel">
-          <div>
-            <p class="eyebrow">Admin portal</p>
-            <h1>Welcome back, <span id="adminName">Administrator</span></h1>
-            <p id="adminSummary">Manage student accounts, admissions, fees, academics, and notices from one place.</p>
-          </div>
-          <div class="hero-badge">Enterprise control</div>
-        </div>
-
         <section class="stats-grid">
           <article class="stat-card accent-teal">
             <span class="stat-label">Pending applications</span>
@@ -67,69 +51,76 @@
             <small>Admissions awaiting review</small>
           </article>
           <article class="stat-card accent-blue">
+            <span class="stat-label">Approved applications</span>
+            <strong id="approvedApplications">0</strong>
+            <small>Admissions accepted</small>
+          </article>
+          <article class="stat-card accent-green">
+            <span class="stat-label">Rejected applications</span>
+            <strong id="rejectedApplications">0</strong>
+            <small>Admissions declined</small>
+          </article>
+          <article class="stat-card accent-rose">
             <span class="stat-label">Active students</span>
             <strong id="totalStudents">0</strong>
             <small>Registered learners</small>
           </article>
-          <article class="stat-card accent-gold">
-            <span class="stat-label">Classes</span>
-            <strong id="totalClasses">0</strong>
-            <small>Available school classes</small>
+          <article class="stat-card accent-indigo">
+            <span class="stat-label">Total billed</span>
+            <strong id="totalCharged">KSh 0</strong>
+            <small>Fees issued this term</small>
           </article>
-          <article class="stat-card accent-rose">
-            <span class="stat-label">Results entries</span>
-            <strong id="totalResults">0</strong>
-            <small>Recorded academic results</small>
+          <article class="stat-card accent-lime">
+            <span class="stat-label">Collected</span>
+            <strong id="totalPaid">KSh 0</strong>
+            <small>Payments received</small>
           </article>
         </section>
 
         <section class="module-grid">
           <article class="module-card accent-teal">
-            <div class="module-icon"><i class="fas fa-file-alt"></i></div>
             <h3>Applications</h3>
             <p>Review admissions, approve or reject requests, and manage documents.</p>
             <a href="admin-applications.html">Open applications</a>
           </article>
           <article class="module-card accent-blue">
-            <div class="module-icon"><i class="fas fa-user-graduate"></i></div>
             <h3>Students</h3>
             <p>Register learners, manage access, and monitor student records.</p>
             <a href="admin-students.html">Open students</a>
           </article>
           <article class="module-card accent-gold">
-            <div class="module-icon"><i class="fas fa-book-open"></i></div>
             <h3>Academics</h3>
             <p>Track notes, revision papers, results, and transcripts.</p>
             <a href="admin-academics.html">Open academics</a>
           </article>
           <article class="module-card accent-rose">
-            <div class="module-icon"><i class="fas fa-cloud-upload-alt"></i></div>
             <h3>Uploads</h3>
             <p>Manage documents, notices, and academic files for the school.</p>
             <a href="admin-uploads.html">Open uploads</a>
           </article>
         </section>
 
-        <section class="section-grid">
-          <div class="dashboard-panel">
+        <section class="section-grid analytics-grid">
+          <div class="dashboard-panel analytics-panel">
             <div class="panel-header">
-              <h3>Recent activities</h3>
-              <span class="panel-pill">Live operations</span>
+              <h3>Finance overview</h3>
+              <span class="panel-pill">Paid vs balance</span>
             </div>
-            <div id="dashboardChart" class="chart-shell"></div>
-            <div class="mini-list" id="activityFeed"></div>
+            <div id="financeOverviewChart" class="analytics-chart-shell"></div>
           </div>
-          <div class="dashboard-panel">
+          <div class="dashboard-panel analytics-panel">
             <div class="panel-header">
-              <h3>System overview</h3>
-              <span class="panel-pill">Daily summary</span>
+              <h3>Academic performance</h3>
+              <span class="panel-pill">Average by class</span>
             </div>
-            <div class="info-grid">
-              <div class="info-box"><span>Fee collected</span><strong>KSh 0</strong></div>
-              <div class="info-box"><span>Outstanding balances</span><strong>KSh 0</strong></div>
-              <div class="info-box"><span>Announcements</span><strong>0</strong></div>
-              <div class="info-box"><span>Notifications</span><strong>0</strong></div>
+            <div id="academicPerformanceChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Payment trend</h3>
+              <span class="panel-pill">Fee collections by form</span>
             </div>
+            <div id="paymentTrendChart" class="analytics-chart-shell"></div>
           </div>
         </section>
       </section>
@@ -137,8 +128,11 @@
     </main>
   </div>
 
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
 </body>
 </html>
+

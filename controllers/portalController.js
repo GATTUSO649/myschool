@@ -1,6 +1,10 @@
 const path = require('path');
 const { query } = require('../config/db');
 
+// Socket IO instance (set by server)
+let io = null;
+function setIO(ioInstance) { io = ioInstance; }
+
 async function exams(req, res) {
   res.json(await query('SELECT * FROM exams ORDER BY exam_date DESC, start_time DESC'));
 }
@@ -89,19 +93,47 @@ async function downloadAssignment(req, res) {
 }
 
 async function notes(req, res) {
-  res.json(await query(
-    `SELECT n.id, n.title, n.subject, n.class_name, n.class_name AS class,
+  try {
+    const params = [];
+    let sql = `SELECT n.id, n.title, n.subject, n.class_name, n.class_name AS class,
             n.topic, n.description, n.filename, n.file_size, n.downloads,
             n.created_at, n.created_at AS upload_date,
             s.name AS lecturer_name
      FROM notes n
-     LEFT JOIN students s ON s.id = n.uploaded_by
-     ORDER BY n.created_at DESC`
-  ));
+     LEFT JOIN students s ON s.id = n.uploaded_by`;
+
+    if (req.query.subject) {
+      sql += ' WHERE LOWER(n.subject) = LOWER(?)';
+      params.push(req.query.subject);
+    }
+
+    if (req.query.className || req.query.class_name) {
+      sql += params.length ? ' AND ' : ' WHERE ';
+      sql += '(n.class_name IS NULL OR n.class_name = ? OR n.class_name LIKE ?)';
+      const className = req.query.className || req.query.class_name;
+      params.push(className, `${className}%`);
+    } else if (req.user?.role === 'student' && req.user?.class_name) {
+      sql += params.length ? ' AND ' : ' WHERE ';
+      sql += '(n.class_name IS NULL OR n.class_name = ? OR ? LIKE CONCAT(n.class_name, "%"))';
+      params.push(req.user.class_name, req.user.class_name);
+    }
+
+    sql += ' ORDER BY n.created_at DESC';
+
+    const rows = await query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('Notes list error:', err);
+    res.status(500).json({ success: false, message: 'Could not load notes' });
+  }
 }
 
 async function uploadNote(req, res) {
   const file = req.file;
+  const uploaderId = Number(req.user?.id) > 0 ? Number(req.user.id) : null;
+  console.log('uploadNote called by user:', req.user && { id: req.user.id, role: req.user.role });
+  console.log('uploadNote req.file:', !!file, file && { filename: file.filename, originalname: file.originalname, size: file.size });
+  console.log('uploadNote body keys:', Object.keys(req.body || {}));
   const result = await query(
     `INSERT INTO notes (title, subject, class_name, topic, description, filename, file_size, uploaded_by)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -113,7 +145,7 @@ async function uploadNote(req, res) {
       req.body.description || null,
       file?.filename || null,
       file?.size || 0,
-      req.user.id
+      uploaderId
     ]
   );
   const created = await query(
@@ -123,6 +155,10 @@ async function uploadNote(req, res) {
     [result.insertId]
   );
   res.status(201).json(created[0]);
+  // Emit event for student portals to refresh notes
+  try {
+    if (io) io.emit('new_portal_note', created[0]);
+  } catch (e) { console.warn('Could not emit new_portal_note', e.message || e); }
 }
 
 async function deleteNote(req, res) {
@@ -138,6 +174,25 @@ async function downloadNote(req, res) {
 }
 
 async function revisionMaterials(req, res) {
+  const params = [];
+  const clauses = [];
+
+  if (req.query.subject) {
+    clauses.push('LOWER(r.subject) = LOWER(?)');
+    params.push(req.query.subject);
+  }
+
+  if (req.query.className || req.query.class_name) {
+    const className = req.query.className || req.query.class_name;
+    clauses.push('(r.class_name IS NULL OR r.class_name = ? OR r.class_name LIKE ?)');
+    params.push(className, `${className}%`);
+  } else if (req.user?.role === 'student' && req.user?.class_name) {
+    clauses.push('(r.class_name IS NULL OR r.class_name = ? OR ? LIKE CONCAT(r.class_name, "%"))');
+    params.push(req.user.class_name, req.user.class_name);
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
   res.json(await query(
     `SELECT r.id, r.title, r.subject, r.class_name, r.topic,
             r.category, r.category AS type, r.exam_year, r.difficulty, r.description,
@@ -146,12 +201,18 @@ async function revisionMaterials(req, res) {
             s.name AS lecturer_name
      FROM revision_materials r
      LEFT JOIN students s ON s.id = r.uploaded_by
-     ORDER BY r.created_at DESC`
+     ${where}
+     ORDER BY r.created_at DESC`,
+    params
   ));
 }
 
 async function uploadRevision(req, res) {
   const file = req.file;
+  const uploaderId = Number(req.user?.id) > 0 ? Number(req.user.id) : null;
+  console.log('uploadRevision called by user:', req.user && { id: req.user.id, role: req.user.role });
+  console.log('uploadRevision req.file:', !!file, file && { filename: file.filename, originalname: file.originalname, size: file.size });
+  console.log('uploadRevision body keys:', Object.keys(req.body || {}));
   const result = await query(
     `INSERT INTO revision_materials
      (title, subject, class_name, topic, category, exam_year, difficulty, description, filename, estimated_time, uploaded_by)
@@ -167,7 +228,7 @@ async function uploadRevision(req, res) {
       req.body.description || null,
       file?.filename || null,
       req.body.estimated_time || null,
-      req.user.id
+      uploaderId
     ]
   );
   const created = await query(
@@ -178,6 +239,13 @@ async function uploadRevision(req, res) {
     [result.insertId]
   );
   res.status(201).json(created[0]);
+  // Emit real-time event so student portals refresh when new revision material is published
+  try {
+    if (io) {
+      io.emit('new_portal_note', created[0]);
+      io.emit('new_portal_revision', created[0]);
+    }
+  } catch (e) { console.warn('Could not emit new_portal_note for revision', e.message || e); }
 }
 
 async function markStudied(req, res) {
@@ -296,3 +364,4 @@ module.exports = {
   transcriptMarks
   , downloadAssignment
 };
+module.exports.setIO = setIO;

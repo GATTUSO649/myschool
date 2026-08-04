@@ -25,24 +25,60 @@ exports.getStats = async (req, res) => {
     );
     const totalClasses = classes[0]?.count || 0;
 
-    // Fee Collection (This Term)
-    const [fees] = await query(
-      'SELECT SUM(amount) as total FROM fee_payments WHERE YEAR(payment_date) = YEAR(NOW())'
-    );
-    const feeCollection = fees[0]?.total || 0;
+    // Application counts by status
+    const [pendingAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'pending'");
+    const [approvedAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'approved'");
+    const [rejectedAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'rejected'");
 
-    // Active Users Today
-    const [active] = await query(
-      'SELECT COUNT(*) as count FROM users WHERE DATE(last_login) = CURDATE()'
+    // Fee totals
+    const [chargedRows] = await query('SELECT COALESCE(SUM(amount), 0) AS totalCharged FROM fee_charges');
+    const [paidRows] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM fee_payments');
+
+    // Academic counts and averages
+    const [resultsRows] = await query('SELECT COUNT(*) AS count FROM results');
+    const formAverageRows = await query(
+      `SELECT s.class_name AS className, AVG(r.score) AS average
+       FROM results r
+       JOIN students s ON r.student_id = s.id
+       WHERE r.score IS NOT NULL
+       GROUP BY s.class_name
+       ORDER BY FIELD(s.class_name, 'Form 1', 'Form 2', 'Form 3', 'Form 4')`
     );
-    const activeToday = active[0]?.count || 0;
+
+    const paymentRows = await query(
+      `SELECT s.class_name AS className, COALESCE(SUM(fp.amount), 0) AS total_paid
+       FROM fee_payments fp
+       JOIN students s ON fp.student_id = s.id
+       GROUP BY s.class_name
+       ORDER BY FIELD(s.class_name, 'Form 1', 'Form 2', 'Form 3', 'Form 4')`
+    );
+
+    const formAverages = formAverageRows.map((row) => ({
+      className: row.className || 'Class',
+      average: Number(row.average || 0).toFixed(1)
+    }));
+
+    const formPaymentSummary = paymentRows.map((row) => ({
+      className: row.className || 'Class',
+      paidAmount: Number(row.total_paid || 0)
+    }));
 
     res.json({
       totalStudents,
       totalTeachers,
       totalClasses,
-      feeCollection,
-      activeToday
+      applicationCounts: {
+        pending: pendingAppsRows[0]?.count || 0,
+        approved: approvedAppsRows[0]?.count || 0,
+        rejected: rejectedAppsRows[0]?.count || 0
+      },
+      totalResults: resultsRows[0]?.count || 0,
+      totalCharged: chargedRows[0]?.totalCharged || 0,
+      totalPaid: paidRows[0]?.totalPaid || 0,
+      totalBilled: chargedRows[0]?.totalCharged || 0,
+      balance: Math.max((chargedRows[0]?.totalCharged || 0) - (paidRows[0]?.totalPaid || 0), 0),
+      formAverages,
+      formPaymentSummary
     });
   } catch (error) {
     console.error('Error getting stats:', error);

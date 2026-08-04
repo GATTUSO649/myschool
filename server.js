@@ -59,6 +59,19 @@ app.use('/api/auth', wrapAsyncRoutes(authRoutes));
 // Initialize Socket.IO for all route handlers
 const applicationController = require('./controllers/applicationController');
 applicationController.setIO(io);
+// Attach io to other controllers that emit events
+try {
+  const academicController = require('./controllers/academicController');
+  if (academicController && typeof academicController.setIO === 'function') academicController.setIO(io);
+} catch (e) { console.warn('Could not set IO on academicController', e.message || e); }
+try {
+  const financeController = require('./controllers/financeController');
+  if (financeController && typeof financeController.setIO === 'function') financeController.setIO(io);
+} catch (e) { console.warn('Could not set IO on financeController', e.message || e); }
+try {
+  const portalController = require('./controllers/portalController');
+  if (portalController && typeof portalController.setIO === 'function') portalController.setIO(io);
+} catch (e) { console.warn('Could not set IO on portalController', e.message || e); }
 
 app.use('/api/applications', wrapAsyncRoutes(applicationRoutes));
 app.use('/api/students', wrapAsyncRoutes(studentRoutes));
@@ -111,6 +124,16 @@ async function start() {
   }
 
   const port = Number(process.env.PORT || 5001);
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Stop the old Node server before starting a new one.`);
+      process.exit(1);
+    }
+
+    console.error('Server startup error:', error);
+    process.exit(1);
+  });
+
   server.listen(port, () => {
     console.log(`Cresent High School Portal running at http://localhost:${port}`);
     console.log(`MySQL database status: ${process.env.DB_NAME || 'cresent_high_school_portal'} (startup continued in fallback mode if unavailable)`);
@@ -125,7 +148,9 @@ async function start() {
   });
 }
 
-start();
+if (require.main === module) {
+  start();
+}
 
 // Export io instance for use in routes and controllers
-module.exports = { app, server, io };
+module.exports = { app, server, io, start };

@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRESENT HIGH SCHOOL - Exams</title>
-    <link rel="stylesheet" href="exams.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
+    <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="exams.css">
 </head>
-<body>
+<body class="student-portal">
     <header class="dashboard-header">
       <div class="header-content">
-        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-brand">
+          <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+          <div class="header-tagline">Student Portal</div>
+        </div>
         <div class="header-actions">
-          <span class="header-pill">Student Portal</span>
+          <span class="header-pill">Student</span>
           <button class="logout-button" onclick="logout()" title="Logout">Logout</button>
         </div>
       </div>

@@ -3,6 +3,21 @@
 let subjectChart = null;
 let trendChart = null;
 let academicData = {};
+let availableResultYears = [];
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value ?? '';
+  }
+}
+
+function setBarWidth(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.style.width = `${Math.min(100, Math.max(0, value || 0))}%`;
+  }
+}
 
 // Initialize academic page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -11,15 +26,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Load student info
-  const student = getStudentInfo();
+  // Load student info from the backend or fallback to local cache
+  const serverStudent = await loadStudentProfile();
+  const student = serverStudent || getStudentInfo();
   populateStudentInfo(student);
+  initializeResultFilters();
 
   // Fetch and display academic and finance data
   await loadAcademicData();
   await loadStudentDashboardSummary();
   initializeCharts();
 });
+
+async function loadStudentProfile() {
+  try {
+    const response = await fetchWithAuth('/students/me');
+    if (!response.ok) return null;
+    const profile = await response.json();
+    if (profile && profile.id) {
+      localStorage.setItem('student', JSON.stringify(profile));
+      return profile;
+    }
+  } catch (error) {
+    console.warn('Could not refresh student profile:', error);
+  }
+  return null;
+}
 
 // Populate student information in the hero section
 function populateStudentInfo(student) {
@@ -30,10 +62,10 @@ function populateStudentInfo(student) {
   const form = student.className || student.class || 'Form 1';
 
   // Update welcome section
-  document.getElementById('welcomeTitle').textContent = `Welcome, ${name}`;
-  document.getElementById('studentForm').textContent = form;
-  document.getElementById('studentAdmNo').textContent = admNo;
-  document.getElementById('formBadge').textContent = form;
+  setText('welcomeTitle', `Welcome, ${name}`);
+  setText('studentForm', form);
+  setText('studentAdmNo', admNo);
+  setText('formBadge', form);
 }
 
 // Fetch academic data for the student
@@ -42,29 +74,30 @@ async function loadAcademicData() {
     const student = getStudentInfo();
     if (!student) throw new Error('Student info not found');
 
-    const admNo = student.admission_number || student.admissionNumber;
-    const term = getCurrentTerm();
-    const year = new Date().getFullYear();
+    const term = document.getElementById('resultsTermFilter')?.value || '';
+    const year = document.getElementById('resultsYearFilter')?.value || '';
+    const params = new URLSearchParams();
+    if (term) params.set('term', term);
+    if (year) params.set('academic_year', year);
 
     // Fetch results for current term from API (uses auth token)
-    const resultsRes = await fetchWithAuth(`/api/results`);
+    const resultsRes = await fetchWithAuth(`/api/results${params.toString() ? `?${params}` : ''}`);
 
     if (resultsRes.ok) {
       const results = await resultsRes.json();
+      updateResultYearOptions(results);
       academicData = parseAcademicResults(results);
       updateAcademicStats();
       populateSubjectTable();
     } else {
       console.warn('No results found for current term');
-      // Use mock data for demonstration
-      academicData = generateMockData();
+      academicData = emptyAcademicData();
       updateAcademicStats();
       populateSubjectTable();
     }
   } catch (err) {
     console.error('Error loading academic data:', err);
-    // Fall back to mock data
-    academicData = generateMockData();
+    academicData = emptyAcademicData();
     updateAcademicStats();
     populateSubjectTable();
   }
@@ -73,14 +106,14 @@ async function loadAcademicData() {
 // Parse results from API response
 function parseAcademicResults(results) {
   if (!Array.isArray(results) || results.length === 0) {
-    return generateMockData();
+    return emptyAcademicData();
   }
 
   const subjects = [];
   let totalMarks = 0;
 
   results.forEach(result => {
-    const mark = Number(result.mark || 0);
+    const mark = Number(result.score || result.mark || 0);
     const subject = normalizeSubjectName(result.subject_name || result.subject || 'Unknown');
     const grade = getGradeFromMark(mark);
 
@@ -111,31 +144,17 @@ function parseAcademicResults(results) {
   };
 }
 
-// Generate mock data for demonstration
-function generateMockData() {
-  const subjects = [
-    { subject: 'English', mark: 78, grade: 'A', remarks: 'Excellent' },
-    { subject: 'Math', mark: 85, grade: 'A', remarks: 'Excellent' },
-    { subject: 'Physics', mark: 72, grade: 'B+', remarks: 'Very Good' },
-    { subject: 'Chemistry', mark: 68, grade: 'B', remarks: 'Good' },
-    { subject: 'Biology', mark: 75, grade: 'B+', remarks: 'Very Good' },
-    { subject: 'History', mark: 80, grade: 'A', remarks: 'Excellent' },
-    { subject: 'Geography', mark: 70, grade: 'B', remarks: 'Good' },
-    { subject: 'Kiswahili', mark: 82, grade: 'A', remarks: 'Excellent' }
-  ];
-
-  const average = Math.round(subjects.reduce((sum, s) => sum + s.mark, 0) / subjects.length);
-
+function emptyAcademicData() {
   return {
-    subjects,
-    average,
-    bestSubject: { ...subjects.reduce((a, b) => a.mark > b.mark ? a : b), grade: subjects.reduce((a, b) => a.mark > b.mark ? a : b).grade },
-    gpa: (average / 25).toFixed(2),
-    subjectCount: subjects.length,
+    subjects: [],
+    average: 0,
+    bestSubject: { subject: '-', mark: 0, grade: '-' },
+    gpa: 0,
+    subjectCount: 0,
     termData: [
-      { term: 'Term 1', average: average - 8 },
-      { term: 'Term 2', average: average - 3 },
-      { term: 'Term 3', average }
+      { term: 'Term 1', average: 0 },
+      { term: 'Term 2', average: 0 },
+      { term: 'Term 3', average: 0 }
     ]
   };
 }
@@ -177,17 +196,17 @@ function updateAcademicStats() {
   const average = academicData.average || 0;
   const performanceLabel = getPerformanceLabel(average);
 
-  document.getElementById('overallAverage').textContent = `${average}%`;
-  document.getElementById('subjectCount').textContent = academicData.subjectCount || 0;
-  document.getElementById('studentMarks').textContent = `${average}%`;
-  document.getElementById('overallPerformanceValue').textContent = `${average}%`;
-  document.getElementById('performanceSummary').textContent = `${performanceLabel} performance across this term with steady academic progress.`;
-  document.getElementById('performanceStatus').textContent = performanceLabel;
-  document.getElementById('overallPerformanceBar').style.width = `${Math.min(100, Math.max(0, average))}%`;
+  setText('overallAverage', `${average}%`);
+  setText('subjectCount', academicData.subjectCount || 0);
+  setText('studentMarks', `${average}%`);
+  setText('overallPerformanceValue', `${average}%`);
+  setText('performanceSummary', `${performanceLabel} performance across this term with steady academic progress.`);
+  setText('performanceStatus', performanceLabel);
+  setBarWidth('overallPerformanceBar', average);
   
   if (academicData.bestSubject) {
-    document.getElementById('bestSubject').textContent = academicData.bestSubject.subject || '-';
-    document.getElementById('bestSubjectGrade').textContent = `Grade: ${academicData.bestSubject.grade || '-'}`;
+    setText('bestSubject', academicData.bestSubject.subject || '-');
+    setText('bestSubjectGrade', `Grade: ${academicData.bestSubject.grade || '-'}`);
   }
 }
 
@@ -199,9 +218,11 @@ function getPerformanceLabel(average) {
   return 'Needs improvement';
 }
 
-// Populate subject details table
+// Retained for compatibility with older cached markup.
 function populateSubjectTable() {
   const tbody = document.getElementById('subjectTableBody');
+
+  if (!tbody) return;
   
   if (!academicData.subjects || academicData.subjects.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" class="text-center">No subject data available</td></tr>';
@@ -376,4 +397,97 @@ function logout() {
   localStorage.removeItem('student');
   localStorage.removeItem('rememberMe');
   window.location.href = 'login.html';
+}
+
+function initializeResultFilters() {
+  const termFilter = document.getElementById('resultsTermFilter');
+  const yearFilter = document.getElementById('resultsYearFilter');
+  const searchButton = document.getElementById('resultsSearchButton');
+  if (!termFilter || !yearFilter || !searchButton) return;
+
+  searchButton.addEventListener('click', searchFilteredTranscript);
+}
+
+async function searchFilteredTranscript() {
+  const term = document.getElementById('resultsTermFilter')?.value || '';
+  const year = document.getElementById('resultsYearFilter')?.value || '';
+  const searchButton = document.getElementById('resultsSearchButton');
+  const status = document.getElementById('transcriptFilterStatus');
+
+  const params = new URLSearchParams();
+  if (year) params.set('year', year);
+  if (term) params.set('term', term);
+
+  searchButton.disabled = true;
+  searchButton.textContent = 'Searching...';
+  if (status) {
+    status.textContent = year || term ? 'Loading transcript records...' : 'Loading all transcript records...';
+  }
+
+  try {
+    await loadAcademicData();
+    const response = await fetchWithAuth(`/transcript?${params.toString()}`);
+    const records = await response.json();
+    if (!response.ok || !Array.isArray(records)) {
+      throw new Error(records.message || 'Could not load transcript records');
+    }
+    renderFilteredTranscript(records);
+    if (status) {
+      status.textContent = records.length
+        ? `${records.length} transcript record${records.length === 1 ? '' : 's'} found for ${term || 'all terms'}, ${year}.`
+        : `No transcript records found for ${term || 'all terms'}, ${year}.`;
+    }
+  } catch (error) {
+    console.error('Transcript search error:', error);
+    renderFilteredTranscript([]);
+    if (status) status.textContent = error.message || 'Could not load transcript records.';
+  } finally {
+    searchButton.disabled = false;
+    searchButton.textContent = 'Search';
+  }
+}
+
+function renderFilteredTranscript(records) {
+  const wrap = document.getElementById('filteredTranscriptWrap');
+  const body = document.getElementById('filteredTranscriptBody');
+  const count = document.getElementById('filteredTranscriptCount');
+  if (!wrap || !body || !count) return;
+
+  wrap.hidden = false;
+  count.textContent = `${records.length} record${records.length === 1 ? '' : 's'}`;
+  body.innerHTML = records.length
+    ? records.map((record) => `
+        <tr>
+          <td>${record.year || record.academic_year || '-'}</td>
+          <td>${record.term || '-'}</td>
+          <td>${record.total ?? '-'}</td>
+          <td>${record.avg ?? '-'}</td>
+          <td>${record.grade || '-'}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="5" class="text-center">No transcript records found.</td></tr>';
+}
+
+function updateResultYearOptions(results) {
+  const yearFilter = document.getElementById('resultsYearFilter');
+  if (!yearFilter || !Array.isArray(results)) return;
+
+  const selectedYear = yearFilter.value;
+  const years = results
+    .map((result) => result.academic_year ?? result.year)
+    .filter((year) => year !== null && year !== undefined && String(year).trim() !== '')
+    .map((year) => String(year))
+    .filter((year, index, values) => values.indexOf(year) === index)
+    .sort((first, second) => Number(second) - Number(first));
+
+  if (years.join('|') === availableResultYears.join('|')) return;
+  availableResultYears = years;
+  yearFilter.innerHTML = '<option value="">All years</option>';
+  years.forEach((year) => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearFilter.appendChild(option);
+  });
+  yearFilter.value = years.includes(selectedYear) ? selectedYear : '';
 }

@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const bcrypt = require('bcryptjs');
 const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
 const { schoolEmail } = require('./emailUtils');
@@ -92,15 +93,46 @@ async function approveApplication(req, res) {
       : await getAdmissionAssignmentForApplication(app);
     const { admissionNumber, stream } = assignment;
 
+    const reviewerId = req.user?.id && Number(req.user.id) > 0 ? req.user.id : null;
+
     await query(
       `UPDATE applications
        SET status = 'approved', admission_number = ?, stream = ?, reviewed_by = ?, reviewed_at = NOW()
        WHERE id = ?`,
-      [admissionNumber, stream, req.user.id, id]
+      [admissionNumber, stream, reviewerId, id]
     );
     
-    await logActivity(req.user.id, 'application_approved', `Approved application #${id}`, req.ip);
-    
+    await logActivity(reviewerId, 'application_approved', `Approved application #${id}`, req.ip);
+
+    // Create student record if it does not already exist
+    try {
+      const existing = await query('SELECT id FROM students WHERE admission_number = ? OR email = ? LIMIT 1', [admissionNumber, app.email || null]);
+      if (!existing || existing.length === 0) {
+        const passwordHash = await bcrypt.hash(admissionNumber || String(Date.now()), 10);
+        const emailValue = schoolEmail(app.email, admissionNumber || app.full_name);
+        const insertRes = await query(
+          `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            app.full_name || app.fullName || null,
+            null,
+            emailValue || null,
+            admissionNumber,
+            passwordHash,
+            'student',
+            app.class_name || app.className || null,
+            stream,
+            app.phone || null,
+            app.parent_name || app.parentName || null,
+            app.parent_phone || app.parentPhone || null
+          ]
+        );
+        await logActivity(req.user.id, 'student_created_from_application', `Created student record ${admissionNumber}`, req.ip);
+      }
+    } catch (e) {
+      console.warn('Could not auto-create student on approval:', e.message || e);
+    }
+
     // Emit real-time event to admin dashboard
     if (io) {
       io.to('role:rba').emit('student_approved', {
@@ -111,7 +143,7 @@ async function approveApplication(req, res) {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     res.json({ success: true, admissionNumber, stream, message: 'Application approved successfully' });
   } catch (error) {
     console.error('Approve application error:', error);

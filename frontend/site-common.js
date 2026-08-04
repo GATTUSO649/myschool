@@ -1,45 +1,33 @@
 (function () {
   const SCHOOL_HTML = '<span class="cresent-brand">CRESENT</span> HIGH SCHOOL';
   const FOOTER_TEXT = '\u00a9 2026 CRESENT HIGH SCHOOL. All rights reserved.';
-  const TOP_NAV = [
-    ['dashboard.html', 'Dashboard'],
-    ['academic.html', 'Academics'],
-    ['finance.html', 'Finance']
-  ];
-  const MENU_LINKS = [
-    ['help.html', 'fa-question-circle', 'Help'],
-    ['settings.html', 'fa-cog', 'Settings']
-  ];
-
   const SIDEBAR_SECTIONS = [
     {
       title: 'Main',
       links: [
-        ['dashboard.html', 'Dashboard'],
-        ['academic.html', 'Academics']
+        ['dashboard.html', 'Dashboard']
       ]
     },
     {
       title: 'Academics',
       links: [
+        ['academic.html', 'Academics'],
         ['notes.html', 'Notes'],
-        ['revision.html', 'Revision'],
-        ['exams.html', 'Exams'],
-        ['student-transcript.html', 'Transcript']
+        ['transcript.html', 'Transcript']
       ]
     },
     {
       title: 'Finance',
       links: [
-        ['finance.html', 'Fee Balance'],
-        ['paymentreceipts.html', 'Receipts'],
-        ['feestatement.html', 'Fee Statements']
+        ['finance.html', 'Finance'],
+        ['feestatement.html', 'Fee Statements'],
+        ['finance.html#payment', 'Fee Payment'],
+        ['paymentreceipts.html', 'Receipts']
       ]
     },
     {
       title: 'Support',
       links: [
-        ['settings.html', 'Settings'],
         ['help.html', 'Help']
       ]
     }
@@ -48,6 +36,16 @@
   function currentPage() {
     const path = window.location.pathname.split('/').pop();
     return decodeURIComponent(path || 'index.html').toLowerCase();
+  }
+
+  function getStudentDisplayName() {
+    try {
+      const student = JSON.parse(localStorage.getItem('student') || 'null');
+      if (student?.name) return student.name.split(' ')[0];
+    } catch (error) {
+      // ignore
+    }
+    return 'Student';
   }
 
   function normalizeBrandText(root) {
@@ -60,44 +58,25 @@
     });
   }
 
-  function buildNav(page) {
-    return TOP_NAV.map(([href, label]) => {
-      const active = page === href.toLowerCase() ? ' class="active"' : '';
-      return `<a href="${href}"${active}>${label}</a>`;
-    }).join('');
-  }
-
-  function buildDropdown(page) {
-    const links = MENU_LINKS.map(([href, icon, label]) => {
-      const active = page === href.toLowerCase() ? ' class="active"' : '';
-      return `<a href="${href}"${active}>${label}</a>`;
-    }).join('');
-
-    return `
-      <div class="menu-dropdown-wrapper">
-        <button class="site-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
-          <i class="fas fa-ellipsis-v"></i>
-        </button>
-        <div class="menu-dropdown" id="menuDropdown">
-          ${links}
-          <button class="logout-button" type="button">Logout</button>
-        </div>
-      </div>
-    `;
-  }
-
   function normalizeDashboardHeaders() {
     const page = currentPage();
     document.querySelectorAll('header.dashboard-header').forEach((header) => {
-      if (page === 'admin-dashboard.html') return;
+      if (page.startsWith('admin-')) return;
+      const existingTagline = header.querySelector('.header-note')?.textContent.trim() || 'Student Portal';
 
       header.innerHTML = `
         <div class="header-content">
-          <div class="header-brand">
+          <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="brand-bar header-brand">
             <div class="school-name">${SCHOOL_HTML}</div>
-            <div class="header-tagline">Student Portal</div>
+            <div class="header-note header-tagline">${existingTagline}</div>
           </div>
-          ${buildDropdown(page)}
+          <div class="header-actions">
+            <span class="header-pill">${getStudentDisplayName()}</span>
+            <button class="logout-button" type="button">Logout</button>
+          </div>
         </div>
       `;
     });
@@ -109,7 +88,8 @@
         <div class="sidebar-section">
           <h3>${section.title}</h3>
           ${section.links.map(([href, label]) => {
-            const active = page === href.toLowerCase() ? ' active' : '';
+            const hrefPath = href.split('?')[0].toLowerCase();
+            const active = page === hrefPath ? ' active' : '';
             return `<a href="${href}" class="sidebar-link${active}">${label}</a>`;
           }).join('')}
         </div>
@@ -120,15 +100,32 @@
   function ensureStudentSidebar() {
     const page = currentPage();
     if (!document.querySelector('header.dashboard-header')) return;
-    if (document.querySelector('.student-sidebar') || document.querySelector('.settings-sidebar') || document.querySelector('.admin-sidebar')) return;
-
+    if (page.startsWith('admin-') || document.querySelector('.settings-sidebar') || document.querySelector('.admin-sidebar')) return;
+    const existingSidebar = document.querySelector('.student-sidebar');
     const main = document.querySelector('main');
+
+    if (existingSidebar) {
+      existingSidebar.innerHTML = buildSidebarMarkup(page);
+      const shell = existingSidebar.closest('.student-shell');
+      if (!shell && main) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'student-shell';
+        main.parentNode.insertBefore(wrapper, main);
+        wrapper.appendChild(existingSidebar);
+        wrapper.appendChild(main);
+      }
+      return;
+    }
+
     if (!main) return;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'student-shell';
-    wrapper.innerHTML = `<aside class="student-sidebar">${buildSidebarMarkup(page)}</aside>`;
     main.parentNode.insertBefore(wrapper, main);
+    const sidebar = document.createElement('aside');
+    sidebar.className = 'student-sidebar';
+    sidebar.innerHTML = buildSidebarMarkup(page);
+    wrapper.appendChild(sidebar);
     wrapper.appendChild(main);
   }
 
@@ -138,6 +135,14 @@
   }
 
   function wireMenus() {
+    document.querySelectorAll('.mobile-sidebar-toggle').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        document.querySelector('.student-sidebar')?.classList.toggle('is-open');
+      });
+    });
+
     document.querySelectorAll('.site-menu-toggle, .menu-toggle').forEach((button) => {
       button.addEventListener('click', (event) => {
         event.preventDefault();
@@ -159,6 +164,11 @@
         const toggle = wrapper ? wrapper.querySelector('.site-menu-toggle, .menu-toggle') : null;
         if (toggle) toggle.setAttribute('aria-expanded', 'false');
       });
+
+      const sidebar = document.querySelector('.student-sidebar');
+      if (sidebar && sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && !event.target.closest('.mobile-sidebar-toggle')) {
+        sidebar.classList.remove('is-open');
+      }
     });
 
     document.querySelectorAll('.logout-button').forEach((button) => {
@@ -194,8 +204,24 @@
     });
   }
 
+  function cleanupLegacyLayout() {
+    document.querySelectorAll('nav.dashboard-nav, .dashboard-top-nav, .portal-nav, .legacy-nav').forEach((nav) => nav.remove());
+
+    const footers = [...document.querySelectorAll('footer')];
+    if (footers.length > 1) {
+      footers.slice(1).forEach((footer) => footer.remove());
+    }
+
+    const legacyFooters = [...document.querySelectorAll('.dashboard-footer, .site-footer')];
+    if (legacyFooters.length > 1) {
+      legacyFooters.slice(1).forEach((footer) => footer.remove());
+    }
+  }
+
   function ensureFooter() {
     document.body.classList.add('has-site-footer');
+    cleanupLegacyLayout();
+
     let footer = document.querySelector('footer');
     if (!footer) {
       footer = document.createElement('footer');
@@ -204,8 +230,10 @@
       document.body.appendChild(footer);
       return;
     }
-    footer.classList.add('site-footer');
-    footer.textContent = FOOTER_TEXT;
+    footer.classList.add('site-footer', 'dashboard-footer');
+    if (!footer.textContent.trim()) {
+      footer.textContent = FOOTER_TEXT;
+    }
   }
 
   function loadScript(src) {
@@ -233,10 +261,6 @@
     if (!supportedPages.has(currentPage())) return;
 
     try {
-      if (!window.React || !window.ReactDOM) {
-        await loadScript('https://unpkg.com/react@18/umd/react.production.min.js');
-        await loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js');
-      }
       await loadScript('react-portal.js');
     } catch (error) {
       console.warn('React portal layer could not be loaded. Falling back to static page behavior.', error);
@@ -244,6 +268,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    cleanupLegacyLayout();
     ensureIconFont();
     normalizeDashboardHeaders();
     ensureStudentSidebar();
@@ -253,4 +278,21 @@
     wireMenus();
     loadReactPortal();
   });
+  
+  // Toast helper
+  window.showToast = function(message, type = 'info', timeout = 4000) {
+    try {
+      let container = document.querySelector('.toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = message;
+      container.appendChild(t);
+      setTimeout(() => { t.remove(); if (!container.children.length) container.remove(); }, timeout);
+    } catch (e) { console.warn('Toast failed', e); }
+  };
 }());

@@ -1,20 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academics - Admin Portal</title>
+  <link rel="stylesheet" href="site-common.css">
   <link rel="stylesheet" href="dashboard.css">
   <link rel="stylesheet" href="admin-dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
 </head>
-<body>
+<body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
       <div class="brand-bar">
         <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
-        <div class="header-note">Academic management</div>
+        <div class="header-note">Academic command center</div>
       </div>
       <div class="header-actions">
         <span class="header-pill" id="adminNamePill">Administrator</span>
@@ -34,66 +33,136 @@
         <a class="sidebar-link active" href="admin-academics.html">Academics</a>
         <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
         <a class="sidebar-link" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
-        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-        <a class="sidebar-link" href="admin-reports.html">Reports</a>
-        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
       </div>
     </aside>
 
     <main class="dashboard-main">
       <section class="admin-section">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Academics</p>
-            <h2>Academic management</h2>
+        <div class="dashboard-panel page-intro">
+          <div class="panel-header">
+            <div>
+              <h2>Academics command center</h2>
+              <p class="footer-note">Monitor academic performance, manage marks and transcripts, and keep every stream aligned from one polished workspace.</p>
+            </div>
           </div>
-          <button class="primary-button" data-admin-action="publish-results">Publish results</button>
         </div>
-        <div class="section-grid">
-          <div class="dashboard-panel">
-            <div class="panel-header"><h3>Academic entry</h3><span class="panel-pill">Live marks entry</span></div>
-            <form id="academicEntryForm" class="admin-form">
-              <div class="form-row">
-                <label>Academic year<input name="academicYear" value="2026" required></label>
-                <label>Term<select name="term"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></label>
-              </div>
-              <div class="form-row">
-                <label>Class<select id="entryClass" name="className"><option value="">Select class</option><option>Form 1</option><option>Form 2</option><option>Form 3</option><option>Form 4</option></select></label>
-                <label>Stream<input name="stream" placeholder="A / B / C"></label>
-              </div>
-              <div class="form-row">
-                <label>Examination type<select name="examType"><option>CAT 1</option><option>CAT 2</option><option>Mid-Term</option><option>End-Term</option><option>Mock</option></select></label>
-                <label>Subject<select name="subject"><option>English</option><option>Kiswahili</option><option>Mathematics</option><option>Biology</option><option>Physics</option><option>Chemistry</option><option>History and Government</option><option>Geography</option><option>Christian Religious Education</option><option>Business Studies</option><option>Agriculture</option><option>Computer Studies</option></select></label>
-              </div>
-              <button type="submit" class="primary-button">Save marks</button>
-            </form>
-            <div class="table-wrapper" style="margin-top:16px;">
-              <table>
-                <thead>
-                  <tr><th>Student</th><th>Adm. no.</th><th>Mark</th></tr>
-                </thead>
-                <tbody id="academicEntryTableBody"></tbody>
-              </table>
-            </div>
+
+        <div class="academics-metrics">
+          <div class="academics-metric-card accent-blue">
+            <span class="metric-label">Portal students</span>
+            <strong id="academicModuleStudents">0</strong>
+            <small>registered and active</small>
           </div>
-          <div class="dashboard-panel">
-            <div class="panel-header"><h3>Academic statistics</h3><span class="panel-pill">Performance overview</span></div>
-            <div class="info-grid">
-              <div class="info-box"><span>Students</span><strong id="academicStudentsCount">0</strong></div>
-              <div class="info-box"><span>Uploaded notes</span><strong id="academicNotesCount">0</strong></div>
-              <div class="info-box"><span>Revision papers</span><strong id="academicRevisionCount">0</strong></div>
-              <div class="info-box"><span>Results published</span><strong id="academicResultsCount">0</strong></div>
+          <div class="academics-metric-card accent-teal">
+            <span class="metric-label">Study materials</span>
+            <strong id="academicModuleNotes">0</strong>
+            <small>notes and revision files</small>
+          </div>
+          <div class="academics-metric-card accent-gold">
+            <span class="metric-label">Results published</span>
+            <strong id="academicModuleResults">0</strong>
+            <small>marks already live</small>
+          </div>
+          <div class="academics-metric-card accent-rose">
+            <span class="metric-label">School average</span>
+            <strong id="academicModuleAverage">0%</strong>
+            <small>latest score snapshot</small>
+          </div>
+        </div>
+
+        <div class="academics-grid admin-cards-grid">
+          <div class="academics-panel">
+            <div class="academics-sheet-top-row">
+              <div class="dashboard-panel sheet-action-card">
+                <div class="panel-header">
+                  <h3>New sheet</h3>
+                </div>
+                <div class="panel-body">
+                  <p>Create a fresh sheet for the selected class and stream.</p>
+                  <button class="secondary-button" id="createNewSheetButton">Create new sheet</button>
+                </div>
+              </div>
+              <div class="dashboard-panel sheet-action-card">
+                <div class="panel-header">
+                  <h3>Existing sheets</h3>
+                </div>
+                <div class="panel-body">
+                  <label class="sheet-filter-label">Filter saved sheets
+                    <input type="search" id="savedSheetFilter" placeholder="Search saved sheets" />
+                  </label>
+                  <div class="saved-sheet-list" id="savedSheetsList">No saved sheets yet.</div>
+                </div>
+              </div>
             </div>
-            <div id="academicsDashboardChart" class="chart-shell"></div>
+
+            <div class="academics-stream-row" id="academicsStreamRow">
+              <button class="academics-stream-card active" data-stream="A">Stream A</button>
+              <button class="academics-stream-card" data-stream="B">Stream B</button>
+              <button class="academics-stream-card" data-stream="C">Stream C</button>
+              <button class="academics-stream-card" data-stream="D">Stream D</button>
+            </div>
+
+            <div class="sheet-card sheet-card-accent academics-sheet-card">
+              <div class="sheet-header-row">
+                <div>
+                  <span class="eyebrow">Selected stream</span>
+                  <h3 id="academicsSheetTitle">Stream A marks sheet</h3>
+                </div>
+                <div class="sheet-actions">
+                  <label>
+                    <span>Term</span>
+                    <select id="academicsTermSelect">
+                      <option>Term 1</option>
+                      <option>Term 2</option>
+                      <option>Term 3</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Year</span>
+                    <input id="academicsYearInput" type="number" value="2026" min="2024" max="2030">
+                  </label>
+                  <label>
+                    <span>Exam</span>
+                    <input id="academicsExamTypeInput" type="text" value="End Term" placeholder="End Term">
+                  </label>
+                  <button class="sheet-button primary" id="saveAcademicsMarksButton">Save sheet</button>
+                  <button class="sheet-button secondary-button" id="downloadAcademicsSheetButton" type="button">Download sheet</button>
+                </div>
+              </div>
+
+              <div class="panel-body academics-sheet-summary">
+                <div class="sheet-summary-item">Students loaded: <strong id="academicsStudentsCount">0</strong></div>
+                <div class="sheet-summary-item">Subjects: <strong id="academicsSubjectsCount">12</strong></div>
+              </div>
+
+              <div class="panel-body sheet-table-wrapper">
+                <table class="admin-table sheet-table">
+                  <thead id="academicsTableHead">
+                    <tr>
+                      <th>Adm No.</th>
+                      <th>Student Name</th>
+                      <th>Class</th>
+                      <th>Stream</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody id="academicsStudentsBody">
+                    <tr><td colspan="5">Loading student records...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </main>
   </div>
 
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
 </body>
 </html>
+

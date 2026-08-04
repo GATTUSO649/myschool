@@ -28,7 +28,7 @@ async function authMiddleware(req, res, next) {
     }
 
     const rows = await query(
-      'SELECT id, name, username, email, admission_number, role, class_name, stream, avatar, active FROM students WHERE id = ? LIMIT 1',
+      'SELECT id, name, username, email, admission_number, role, class_name, stream, avatar, subject, active FROM students WHERE id = ? LIMIT 1',
       [decoded.id]
     );
     const user = rows[0];

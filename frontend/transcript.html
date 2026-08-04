@@ -1,415 +1,491 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRESENT HIGH SCHOOL - Transcripts</title>
-    <link rel="stylesheet" href="transcript.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRESENT HIGH SCHOOL - Transcript</title>
   <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="transcript.css">
 </head>
-<body>
-    <header class="dashboard-header">
-        <div class="hamburger" id="hamburger" onclick="toggleMenu()">
-            <span></span>
-            <span></span>
-            <span></span>
+<body class="student-portal transcript-page">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Student transcript</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="studentNamePill">Student</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">My Portal</div>
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link active" href="transcript.html">Transcript</a>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="exams.html">Exams</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Fee Balance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main transcript-page">
+      <section class="admin-section transcript-doc-shell">
+        <div class="document-toolbar">
+          <div>
+            <p class="eyebrow">Academics</p>
+            <h2>Official Transcript</h2>
+          </div>
+          <div class="document-toolbar-actions">
+            <button class="primary-button" type="button" id="downloadTranscriptButton">Download / Print</button>
+          </div>
         </div>
-        <div class="school-name">CRESENT HIGH SCHOOL</div>
-        <nav class="dashboard-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="academic.html">Academics</a>
-            <a href="finance.html">Finance</a>
-            <a href="exams.html">Exams</a>
-            <a href="transcript.html" class="active">Transcripts</a>
-            <a href="notifications.html">Notifications</a>
-            <a href="clearance-request.html">clearence & request</a>
-            <a href="lecturer interaction.html">Lecturer Interaction</a>
-        </nav>
-    </header>
 
-    <!-- Side Menu for Navigation -->
-    <nav class="side-menu" id="sideMenu">
-        <a href="dashboard.html">Dashboard</a>
-        <a href="academic.html">Academics</a>
-        <a href="finance.html">Finance</a>
-        <a href="exams.html">Exams</a>
-        <a href="transcript.html" class="active">Transcripts</a>
-        <a href="notifications.html">Notifications</a>
-        <a href="clearance-request.html">clearence & request</a>
-        <a href="lecturer interaction.html">Lecturer Interaction</a>
-        <a href="#" onclick="logout()" class="logout">Logout</a>
-    </nav>
-
-    <main class="transcript-main">
-        <section class="transcript-header">
-            <h2>Academic Transcripts</h2>
-            <p>View your academic records and grades.</p>
+        <section class="transcript-filter-panel dashboard-panel document-filter-panel">
+          <div class="transcript-filter-header">
+            <div>
+              <p class="eyebrow">Transcript search</p>
+              <h3>Filter by year and term</h3>
+            </div>
+            <p id="transcriptFilterStatus" class="transcript-filter-status">Choose a year and term, then click Search to filter transcript records.</p>
+          </div>
+          <div class="transcript-filters">
+            <label for="transcriptYearFilter">
+              <span>Academic year</span>
+              <select id="transcriptYearFilter">
+                <option value="">All years</option>
+              </select>
+            </label>
+            <label for="transcriptTermFilter">
+              <span>Term</span>
+              <select id="transcriptTermFilter">
+                <option value="">All terms</option>
+                <option value="Term 1">Term 1</option>
+                <option value="Term 2">Term 2</option>
+                <option value="Term 3">Term 3</option>
+              </select>
+            </label>
+            <button type="button" class="primary-button" id="transcriptSearchButton">Search</button>
+          </div>
         </section>
 
-        <section id="transcriptSummary" class="transcript-summary">
-            <div class="transcript-summary-inner">
+        <div class="transcript-empty-state" id="transcriptEmptyState">Search for transcript records to view the document.</div>
+        <div class="transcript-print-shell" id="transcriptPrintShell" hidden>
+          <div class="transcript-print-container">
+            <div class="transcript-header-sheet">
+              <div class="transcript-branding">
+                <div class="crest-badge">C</div>
                 <div>
-                    <h3 class="transcript-summary-school">CRESENT HIGH SCHOOL</h3>
-                    <p class="transcript-summary-subtitle">Official Student Transcript</p>
+                  <div class="transcript-title">CRESCENT HIGH SCHOOL</div>
+                  <div class="transcript-subtitle">OFFICIAL ACADEMIC TRANSCRIPT</div>
                 </div>
-                <div class="transcript-summary-side">
-                    <div class="transcript-summary-title">Student Transcript</div>
-                    <div class="transcript-summary-note">Generated for the logged-in student</div>
-                </div>
+              </div>
+              <div class="transcript-contact">
+                <div>P.O. Box 123-90100</div>
+                <div>Machakos, Kenya</div>
+                <div>+254 700 000 000</div>
+                <div>support@cresenthigh.ac.ke</div>
+              </div>
             </div>
-            <div class="transcript-summary-grid">
-                <div><strong>Name:</strong> <span id="transcriptStudentName">-</span></div>
-                <div><strong>Admission No.:</strong> <span id="transcriptAdmissionNumber">-</span></div>
-                <div><strong>Class / Stream:</strong> <span id="transcriptClassStream">-</span></div>
-                <div><strong>Academic Year:</strong> <span id="transcriptAcademicYear">-</span></div>
-            </div>
-        </section>
 
+            <div class="transcript-section transcript-details-grid">
+              <div class="details-card">
+                <h3>Student Details</h3>
+                <dl>
+                  <dt>Admission Number</dt><dd id="detailAdmission">-</dd>
+                  <dt>Student Name</dt><dd id="detailName">-</dd>
+                  <dt>Form</dt><dd id="detailForm">-</dd>
+                  <dt>Stream</dt><dd id="detailStream">-</dd>
+                  <dt>Graduation Year</dt><dd id="detailGraduationYear">-</dd>
+                </dl>
+              </div>
 
-
-        <section class="transcript-table-section">
-            <table class="transcript-table">
-                <thead>
-                    <tr>
-                        <th>Course</th>
-                        <th>Grade</th>
+              <div class="performance-card">
+                <h3>Academic Performance</h3>
+                <div class="performance-table-wrap">
+                  <table class="performance-table">
+                    <thead>
+                      <tr>
+                        <th>Subject</th>
                         <th>Score</th>
-                        <th>Year</th>
-                        <th>Term</th>
-                        <th>Exam Type</th>
-                    </tr>
-                </thead>
-                <tbody id="transcriptTableBody">
-                    <tr><td colspan="6" class="text-center">Loading transcripts...</td></tr>
-                </tbody>
-            </table>
-        </section>
+                        <th>Grade</th>
+                        <th>Points</th>
+                      </tr>
+                    </thead>
+                    <tbody id="subjectTableBody">
+                      <tr><td colspan="4" class="empty-row">Loading transcript data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
 
-        <section class="transcript-table-section admin-highlight">
-            <h3>Student Marks Report</h3>
-            <button class="btn btn-secondary download-button" onclick="downloadMarkReport()">Download as CSV</button>
-            <table class="transcript-table">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Adm. No.</th>
-                        <th>ENG</th>
-                        <th>MAT</th>
-                        <th>KISW</th>
-                        <th>BIO</th>
-                        <th>CHE</th>
-                        <th>PHY</th>
-                        <th>Created</th>
-                    </tr>
-                </thead>
-                <tbody id="marksTableBody">
-                    <tr><td colspan="9" class="text-center">Loading marks...</td></tr>
-                </tbody>
-            </table>
-        </section>
+            <div class="transcript-section summary-grid">
+              <div class="summary-card summary-large">
+                <h4>Summary</h4>
+                <dl>
+                  <dt>Total Marks</dt><dd id="summaryTotal">-</dd>
+                  <dt>Average</dt><dd id="summaryAverage">-</dd>
+                  <dt>Mean Grade</dt><dd id="summaryGrade">-</dd>
+                  <dt>KCSE Points</dt><dd id="summaryPoints">-</dd>
+                  <dt>Term</dt><dd id="summaryTerm">-</dd>
+                  <dt>Academic Year</dt><dd id="summaryYear">-</dd>
+                </dl>
+              </div>
+
+              <div class="summary-card grade-key-card">
+                <h4>Grade Key</h4>
+                <div class="grade-key-grid">
+                  <div><strong>80 - 100</strong><span>A</span><span>12</span></div>
+                  <div><strong>75 - 79</strong><span>A-</span><span>11</span></div>
+                  <div><strong>70 - 74</strong><span>B+</span><span>10</span></div>
+                  <div><strong>65 - 69</strong><span>B</span><span>9</span></div>
+                  <div><strong>60 - 64</strong><span>B-</span><span>8</span></div>
+                  <div><strong>50 - 59</strong><span>C</span><span>6</span></div>
+                  <div><strong>45 - 49</strong><span>C-</span><span>5</span></div>
+                  <div><strong>35 - 44</strong><span>D</span><span>3</span></div>
+                  <div><strong>0 - 34</strong><span>E</span><span>1</span></div>
+                </div>
+              </div>
+              <div class="summary-card grade-key-qr-panel" id="gradeKeyQrPanel">
+                <div class="grade-key-qr-box" id="gradeKeyQrCode"></div>
+                <span>Scan to open this transcript in print-ready view</span>
+              </div>
+            </div>
+
+            <div class="transcript-section signatory-section">
+              <div class="signatory-line"><span>Class Teacher</span><span>Date</span></div>
+              <div class="signatory-line"><span>Director of Studies</span><span>Date</span></div>
+              <div class="signatory-line"><span>Principal</span><span>Date</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
+  </div>
 
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    const SUBJECT_LABELS = {
+      eng: 'English',
+      kisw: 'Kiswahili',
+      mat: 'Mathematics',
+      bio: 'Biology',
+      che: 'Chemistry',
+      phy: 'Physics',
+      cre: 'CRE',
+      his: 'History',
+      geo: 'Geography',
+      comp: 'Computer Studies',
+      bus: 'Business Studies',
+      agr: 'Agriculture'
+    };
 
-    <footer class="dashboard-footer">
-        &copy; 2025 CRESENT HIGH SCHOOL. All rights reserved.
-    </footer>
+    function money(amount) {
+      return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
+    function gradeFromScore(score) {
+      if (!Number.isFinite(Number(score))) return 'E';
+      const value = Number(score);
+      if (value >= 80) return 'A';
+      if (value >= 75) return 'A-';
+      if (value >= 70) return 'B+';
+      if (value >= 65) return 'B';
+      if (value >= 60) return 'B-';
+      if (value >= 50) return 'C';
+      if (value >= 45) return 'C-';
+      if (value >= 35) return 'D';
+      return 'E';
+    }
 
-    <script>
-        // Helper to fetch with authentication
-        async function fetchWithAuth(endpoint, options = {}) {
-            const token = getAuthToken();
-            const isForm = options.body instanceof FormData;
-            const defaultHeaders = isForm ? {} : { 'Content-Type': 'application/json' };
-            const headers = { ...defaultHeaders, ...(options.headers || {}) };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            
-            return fetch(getApiUrl() + endpoint, { ...options, headers });
+    const GRADE_POINTS = { A: 12, 'A-': 11, 'B+': 10, B: 9, 'B-': 8, C: 6, 'C-': 5, D: 3, E: 1 };
+
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+
+    function setHtml(id, html) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.innerHTML = html;
+      }
+    }
+
+    function setTranscriptVisibility(hasContent, message) {
+      const shell = document.getElementById('transcriptPrintShell');
+      const emptyState = document.getElementById('transcriptEmptyState');
+      if (shell) shell.hidden = !hasContent;
+      if (emptyState) {
+        emptyState.hidden = hasContent;
+        emptyState.textContent = message || 'Search for transcript records to view the document.';
+      }
+    }
+
+    function renderTranscript(rows) {
+      const student = getStudentInfo() || {};
+      const studentId = Number(student.id ?? 0);
+
+      const safeRows = Array.isArray(rows)
+        ? rows.filter((row) => {
+            if (!studentId) return true;
+            const rowStudentId = Number(row.student_id ?? row.studentId ?? 0);
+            if (rowStudentId && rowStudentId !== studentId) return false;
+            return true;
+          })
+        : [];
+
+      const selected = safeRows.length ? safeRows[0] : {};
+      const hasTranscriptData = safeRows.length > 0;
+      const displayRows = Object.entries(SUBJECT_LABELS)
+        .map(([key, label]) => {
+          const score = Number(selected[key]);
+          if (!Number.isFinite(score)) return null;
+          const grade = gradeFromScore(score);
+          return { subject: label, score, grade, points: GRADE_POINTS[grade] ?? '-' };
+        })
+        .filter(Boolean);
+
+      setText('detailAdmission', selected.admission_number || selected.adm || student.admissionNumber || student.admission_number || student.adm || '-');
+      setText('detailName', student.name || selected.student_name || selected.name || '-');
+      setText('detailForm', student.className || student.class_name || selected.class_name || selected.class || '-');
+      setText('detailStream', student.stream || selected.stream || '-');
+      setText('detailGender', selected.gender || '-');
+      setText('detailDob', selected.date_of_birth || selected.dob || '-');
+      setText('detailAdmissionDate', selected.admission_date || selected.admissionDate || '-');
+      setText('detailGraduationYear', selected.academic_year || selected.year || '-');
+
+      const tbody = document.getElementById('subjectTableBody');
+      if (!displayRows.length) {
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No academic performance records available.</td></tr>';
         }
+      } else if (tbody) {
+        tbody.innerHTML = displayRows.map((row) => `
+          <tr>
+            <td>${row.subject}</td>
+            <td>${row.score}</td>
+            <td>${row.grade}</td>
+            <td>${row.points}</td>
+          </tr>
+        `).join('');
+      }
 
-        let transcripts = [];
-        let students = [];
-        let isAdmin = false;
-        const TRANSCRIPT_SUBJECTS = [
-            'English', 'Kiswahili', 'Mathematics', 'Biology', 'Physics', 'Chemistry',
-            'History and Government', 'Geography', 'Christian Religious Education',
-            'Business Studies', 'Computer Studies', 'Agriculture', 'Art and Design'
-        ];
-        const TRANSCRIPT_FORMS = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
+      if (!hasTranscriptData || !displayRows.length) {
+        setTranscriptVisibility(false, 'No transcript records found for the selected filters.');
+        return;
+      }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!checkAuth()) {
-                window.location.href = 'login.html';
-                return;
-            }
+      setTranscriptVisibility(true);
 
-            const student = getStudentInfo();
-            isAdmin = student && (student.role === 'lecturer' || student.role === 'rba');
-            
-            if (isAdmin) {
-                const adminControls = document.getElementById('adminControls');
-                if (adminControls) {
-                    adminControls.style.display = 'flex';
-                }
-                const studentHeader = document.getElementById('studentHeader');
-                const actionsHeader = document.getElementById('actionsHeader');
-                const csvBtn = document.getElementById('csvUploadBtn');
-                if (studentHeader) studentHeader.style.display = 'table-cell';
-                if (actionsHeader) actionsHeader.style.display = 'table-cell';
-                if (csvBtn) csvBtn.style.display = 'inline-flex';
-                loadStudents();
-            }
+      const total = displayRows.reduce((sum, row) => sum + row.score, 0);
+      const avg = displayRows.length ? total / displayRows.length : null;
+      const meanGrade = avg !== null ? gradeFromScore(avg) : '-';
 
-            loadTranscripts();
-            loadMarkRecords();
+      setText('summaryTotal', displayRows.length ? total : '-');
+      setText('summaryAverage', avg !== null ? avg.toFixed(2) : '-');
+      setText('summaryGrade', meanGrade);
+      setText('summaryPoints', displayRows.length ? (GRADE_POINTS[meanGrade] ?? '-') : '-');
+      setText('summaryTerm', selected.term || '-');
+      setText('summaryYear', selected.year || selected.academic_year || '-');
+
+      const detailAdmissionText = document.getElementById('detailAdmission')?.textContent || '-';
+      const detailFormText = document.getElementById('detailForm')?.textContent || '-';
+      const detailStreamText = document.getElementById('detailStream')?.textContent || '-';
+      setText('transcriptName', student.name || '-');
+      setText('transcriptAdmNo', detailAdmissionText);
+      setText('transcriptForm', `${detailFormText} ${detailStreamText}`.trim());
+
+      const status = document.getElementById('transcriptFilterStatus');
+      if (status && safeRows.length) {
+        status.textContent = `${safeRows.length} record${safeRows.length === 1 ? '' : 's'} found for the current student.`;
+      }
+    }
+
+    async function renderGradeKeyQrCode() {
+      const qrTarget = document.getElementById('gradeKeyQrCode');
+      if (!qrTarget) return;
+
+      const shareUrl = new URL(window.location.href);
+      shareUrl.searchParams.set('print', '1');
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=${encodeURIComponent(shareUrl.toString())}`;
+
+      qrTarget.innerHTML = '';
+      const image = document.createElement('img');
+      image.alt = 'QR code for this transcript';
+      image.src = qrUrl;
+      image.style.width = '100%';
+      image.style.height = '100%';
+      image.style.objectFit = 'contain';
+      image.onerror = () => {
+        qrTarget.innerHTML = '<div style="font-size:0.7rem;color:#64748b;text-align:center;">QR unavailable</div>';
+      };
+      qrTarget.appendChild(image);
+    }
+
+    async function loadTranscriptOverview() {
+      const student = getStudentInfo();
+      setText('studentNamePill', student?.name || 'Student');
+      setText('transcriptName', student?.name || '-');
+      setText('transcriptAdmNo', formatAdmissionNumber(student?.admissionNumber || student?.admission_number || student?.adm) || '-');
+      setText('transcriptForm', `${student?.className || student?.class_name || '-'} ${student?.stream || ''}`.trim());
+
+      const status = document.getElementById('transcriptFilterStatus');
+      if (status) {
+        status.textContent = 'Loading transcript filter options...';
+      }
+
+      try {
+        const response = await fetchWithAuth('/transcript');
+        if (!response.ok) {
+          throw new Error(response.status === 401 ? 'Please sign in again to view your transcript.' : 'Transcript records could not be loaded');
+        }
+        const json = await response.json();
+        const rows = Array.isArray(json) ? json : [];
+        populateTranscriptFilters(rows);
+        if (status) {
+          status.textContent = 'Choose a year and term, then click Search to filter transcript records.';
+        }
+      } catch (error) {
+        if (status) {
+          status.textContent = error.message || 'Unable to load transcript filters.';
+        }
+        console.error('Transcript overview load error:', error);
+      }
+    }
+
+    function initializeTranscriptFilters() {
+      const searchButton = document.getElementById('transcriptSearchButton');
+      if (!searchButton) return;
+      searchButton.addEventListener('click', searchTranscriptRecords);
+    }
+
+    function populateTranscriptFilters(rows) {
+      const yearFilter = document.getElementById('transcriptYearFilter');
+      if (!yearFilter || !Array.isArray(rows)) return;
+
+      const years = Array.from(new Set(rows
+        .map((row) => row.academic_year || row.year)
+        .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+        .map((year) => String(year))
+      )).sort((a, b) => Number(b) - Number(a));
+
+      yearFilter.innerHTML = '<option value="">All years</option>' + years.map((year) => `<option value="${year}">${year}</option>`).join('');
+    }
+
+    async function searchTranscriptRecords() {
+      const year = document.getElementById('transcriptYearFilter')?.value || '';
+      const term = document.getElementById('transcriptTermFilter')?.value || '';
+      const status = document.getElementById('transcriptFilterStatus');
+      const button = document.getElementById('transcriptSearchButton');
+
+      const params = new URLSearchParams();
+      if (year) params.set('year', year);
+      if (term) params.set('term', term);
+
+      button.disabled = true;
+      button.textContent = 'Searching...';
+      if (status) {
+        status.textContent = 'Filtering transcript records...';
+      }
+
+      try {
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetchWithAuth(`/transcript${queryString}`);
+        if (!response.ok) {
+          throw new Error(response.status === 401 ? 'Please sign in again to view your transcript.' : 'Transcript filter request failed');
+        }
+        const rows = await response.json();
+        const filtered = Array.isArray(rows) ? rows : [];
+        renderTranscript(filtered);
+        if (status) {
+          const yearText = year || 'all years';
+          const termText = term || 'all terms';
+          status.textContent = filtered.length
+            ? `${filtered.length} record${filtered.length === 1 ? '' : 's'} found for ${termText}, ${yearText}.`
+            : `No transcript records found for ${termText}, ${yearText}.`;
+        }
+      } catch (error) {
+        if (status) status.textContent = error.message || 'Could not load transcript records.';
+        console.error('Transcript search error:', error);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Search';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      initializeTranscriptFilters();
+      setTranscriptVisibility(false, 'Search for transcript records to view the document.');
+
+      const downloadButton = document.getElementById('downloadTranscriptButton');
+      if (downloadButton) {
+        downloadButton.addEventListener('click', () => {
+          document.body.classList.add('transcript-printing');
+          window.setTimeout(() => {
+            window.print();
+            window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+          }, 120);
         });
+      }
 
-        async function loadTranscripts() {
-            try {
-                const url = isAdmin ? '/admin/transcripts' : '/transcript';
-                const res = await fetchWithAuth(url);
-                if (!res.ok) throw new Error('Failed to load transcripts');
-                
-                transcripts = await res.json();
-                renderTranscripts(transcripts);
-                renderTranscriptSummary();
-            } catch (err) {
-                console.error('Error loading transcripts:', err);
-                document.getElementById('transcriptTableBody').innerHTML = 
-                    '<tr><td colspan="6" class="text-center">Failed to load transcripts</td></tr>';
-            }
-        }
+      const shouldAutoPrint = new URLSearchParams(window.location.search).get('print') === '1';
+      if (shouldAutoPrint) {
+        window.setTimeout(() => {
+          document.body.classList.add('transcript-printing');
+          window.print();
+          window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+        }, 400);
+      }
 
-        async function loadStudents() {
-            try {
-                const res = await fetchWithAuth('/admin/students');
-                if (res.ok) {
-                    students = await res.json();
-                    const select = document.getElementById('studentSelect');
-                    select.innerHTML = '<option value="">Select Student</option>';
-                    students.forEach(student => {
-                        select.innerHTML += `<option value="${student.id}">${student.name} (${student.email})</option>`;
-                    });
-                }
-            } catch (err) {
-                console.error('Error loading students:', err);
-            }
-        }
+      try {
+        await Promise.all([loadTranscriptOverview(), renderGradeKeyQrCode()]);
+      } catch (error) {
+        setHtml('transcriptResults', `<p class="error">${error.message}</p>`);
+      }
+    });
 
-        function renderTranscripts(data) {
-            const tbody = document.getElementById('transcriptTableBody');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No transcripts found</td></tr>';
-                return;
-            }
+    function formatAdmissionNumber(raw) {
+      if (!raw) return '';
+      const s = String(raw).trim();
+      const re = /^CRES\/\d{3}\/\d{4}$/i;
+      if (re.test(s)) return s.toUpperCase();
 
-            tbody.innerHTML = data.map(transcript => `
-                <tr>
-                    ${isAdmin ? `<td>${transcript.student_name || 'Unknown'}</td>` : ''}
-                    <td>${transcript.course}</td>
-                    <td>${transcript.grade}</td>
-                    <td>${transcript.score || '-'}</td>
-                    <td>${transcript.year}</td>
-                    <td>${transcript.term || '-'}</td>
-                    <td>${transcript.exam_type || '-'}</td>
-                    ${isAdmin ? `
-                        <td>
-                            <button class="btn btn-sm" onclick="editTranscript(${transcript.id})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteTranscript(${transcript.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    ` : ''}
-                </tr>
-            `).join('');
-        }
-
-        function renderTranscriptSummary() {
-            const student = getStudentInfo();
-            const summary = document.getElementById('transcriptSummary');
-            if (!summary || !student || isAdmin) {
-                if (summary) summary.style.display = 'none';
-                return;
-            }
-
-            const years = Array.from(new Set(transcripts.map(t => t.year))).filter(Boolean);
-            const yearLabel = years.length === 1 ? years[0] : (years.length ? 'All years' : new Date().getFullYear());
-
-            document.getElementById('transcriptStudentName').textContent = student.name || '-';
-            document.getElementById('transcriptAdmissionNumber').textContent = student.admissionNumber || student.admission_number || '-';
-            document.getElementById('transcriptClassStream').textContent = `${student.className || student.class_name || '-'} ${student.stream || ''}`.trim();
-            document.getElementById('transcriptAcademicYear').textContent = yearLabel;
-            summary.style.display = 'block';
-        }
-
-        function filterTranscripts() {
-            const query = document.getElementById('studentFilter').value.toLowerCase();
-            const filtered = transcripts.filter(t => 
-                !query || 
-                (t.student_name && t.student_name.toLowerCase().includes(query)) ||
-                (t.student_email && t.student_email.toLowerCase().includes(query))
-            );
-            renderTranscripts(filtered);
-        }
-
-
-        function showAddTranscriptModal() {
-            document.getElementById('modalTitle').textContent = 'Add Transcript';
-            document.getElementById('transcriptForm').reset();
-            document.getElementById('transcriptModal').style.display = 'block';
-        }
-
-        function editTranscript(id) {
-            const transcript = transcripts.find(t => t.id === id);
-            if (!transcript) return;
-            
-            document.getElementById('modalTitle').textContent = 'Edit Transcript';
-            document.getElementById('studentSelect').value = transcript.student_id;
-            document.getElementById('course').value = transcript.course;
-            document.getElementById('grade').value = transcript.grade;
-            document.getElementById('score').value = transcript.score || '';
-            document.getElementById('year').value = transcript.year;
-            document.getElementById('term').value = transcript.term || '';
-            document.getElementById('examType').value = transcript.exam_type || '';
-            
-            document.getElementById('transcriptForm').dataset.editId = id;
-            document.getElementById('transcriptModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('transcriptModal').style.display = 'none';
-            document.getElementById('transcriptForm').reset();
-            delete document.getElementById('transcriptForm').dataset.editId;
-        }
-
-        async function deleteTranscript(id) {
-            if (!confirm('Are you sure you want to delete this transcript?')) return;
-            
-            try {
-                const res = await fetchWithAuth(`/admin/transcripts/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    loadTranscripts();
-                    alert('Transcript deleted successfully');
-                } else {
-                    alert('Failed to delete transcript');
-                }
-            } catch (err) {
-                console.error('Error deleting transcript:', err);
-                alert('Failed to delete transcript');
-            }
-        }
-
-        function triggerCsvUpload() {
-            const input = document.getElementById('csvUploadInput');
-            if (input) {
-                input.click();
-            }
-        }
-
-        async function handleCsvUploadFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert('Please upload a CSV file exported from Excel.');
-                event.target.value = '';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const res = await fetchWithAuth('/admin/transcripts/upload_csv', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    throw new Error(data.message || `Upload failed (${res.status})`);
-                }
-
-                const result = await res.json();
-                const summary = [`Imported ${result.imported} transcripts.`];
-                if (result.errors && result.errors.length) {
-                    summary.push(`${result.errors.length} rows failed.`);
-                }
-                alert(summary.join(' '));
-                loadTranscripts();
-            } catch (err) {
-                console.error('Error uploading CSV:', err);
-                alert(err.message || 'Failed to upload transcript CSV');
-            } finally {
-                event.target.value = '';
-            }
-        }
-
-        async function loadMarkRecords() {
-            try {
-                const res = await fetchWithAuth('/transcript/marks');
-                if (!res.ok) throw new Error('Failed to load mark records');
-
-                const marks = await res.json();
-                const tbody = document.getElementById('marksTableBody');
-                if (!marks || marks.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No mark records found</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = marks.map(mark => `
-                    <tr>
-                        <td>${mark.student_name || 'You'}</td>
-                        <td>${mark.admission_number || ''}</td>
-                        <td>${mark.eng || ''}</td>
-                        <td>${mark.mat || ''}</td>
-                        <td>${mark.kisw || ''}</td>
-                        <td>${mark.bio || ''}</td>
-                        <td>${mark.che || ''}</td>
-                        <td>${mark.phy || ''}</td>
-                        <td>${new Date(mark.created_at).toLocaleString()}</td>
-                    </tr>
-                `).join('');
-            } catch (err) {
-                console.error('Error loading mark records:', err);
-                document.getElementById('marksTableBody').innerHTML = '<tr><td colspan="9" class="text-center">Failed to load marks</td></tr>';
-            }
-        }
-
-        function downloadMarkReport() {
-            const rows = Array.from(document.querySelectorAll('#marksTableBody tr'))
-                .filter(r => !r.textContent.includes('No mark records found') && !r.textContent.includes('Failed to load marks'))
-                .map(row => {
-                    const cols = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-                    return cols.join(',');
-                });
-
-            if (!rows.length) {
-                alert('No marks to download');
-                return;
-            }
-
-            const header = 'Student,AdmissionNumber,ENG,MAT,KISW,BIO,CHE,PHY,CreatedAt';
-            const csv = [header, ...rows].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'transcript-marks.csv';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function toggleMenu() {
-            const menu = document.getElementById('sideMenu');
-            menu.classList.toggle('active');
-        }
-    </script>
+      // extract digits
+      const digits = (s.match(/(\d+)/) || [])[0];
+      const yearMatch = s.match(/(20\d{2})/);
+      const year = yearMatch ? yearMatch[1] : new Date().getFullYear();
+      if (digits) {
+        const n = String(digits).padStart(3, '0');
+        return `CRES/${n}/${year}`;
+      }
+      return s;
+    }
+  </script>
   <script src="site-common.js"></script>
 </body>
 </html>

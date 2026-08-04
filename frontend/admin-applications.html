@@ -1,15 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Applications - Admin Portal</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="admin-dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="dashboard.css">`n<link rel="stylesheet" href="admin-dashboard.css">
 </head>
-<body>
+<body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
       <div class="brand-bar">
@@ -34,10 +31,6 @@
         <a class="sidebar-link" href="admin-academics.html">Academics</a>
         <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
         <a class="sidebar-link" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-announcements.html">Announcements</a>
-        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-        <a class="sidebar-link" href="admin-reports.html">Reports</a>
-        <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
       </div>
     </aside>
@@ -51,18 +44,48 @@
           </div>
           <button class="primary-button" data-admin-action="create-review">New review</button>
         </div>
+
+        <section class="stats-grid">
+          <article class="stat-card accent-teal">
+            <span class="stat-label">Pending applications</span>
+            <strong id="pendingApplications">0</strong>
+            <small>Awaiting review</small>
+          </article>
+          <article class="stat-card accent-blue">
+            <span class="stat-label">Approved students</span>
+            <strong id="approvedApplications">0</strong>
+            <small>Ready to enroll</small>
+          </article>
+          <article class="stat-card accent-gold">
+            <span class="stat-label">Rejected applications</span>
+            <strong id="rejectedApplications">0</strong>
+            <small>Declined requests</small>
+          </article>
+          <article class="stat-card accent-rose">
+            <span class="stat-label">Total applications</span>
+            <strong id="totalApplicationsCount">0</strong>
+            <small>All submissions</small>
+          </article>
+        </section>
+
         <div class="dashboard-panel">
           <div class="panel-header">
-            <h3>Pending applications</h3>
+            <h3>Admissions review queue</h3>
             <span class="panel-pill">Approve / reject</span>
+          </div>
+          <div class="sheet-actions application-filters">
+            <button class="sheet-button secondary active" data-application-filter="all">All</button>
+            <button class="sheet-button secondary" data-application-filter="pending">Pending</button>
+            <button class="sheet-button secondary" data-application-filter="approved">Approved</button>
+            <button class="sheet-button secondary" data-application-filter="rejected">Rejected</button>
           </div>
           <div class="table-wrapper">
             <table class="admin-table">
               <thead>
-                <tr><th>Applicant</th><th>Parent</th><th>Phone</th><th>Status</th><th>Action</th></tr>
+                <tr><th>Applicant</th><th>Class</th><th>Stream</th><th>Parent</th><th>Phone</th><th>Documents</th><th>Submitted</th><th>Status</th><th>Action</th></tr>
               </thead>
               <tbody>
-                <tr><td colspan="5">No applications loaded yet. The admissions workflow is ready for integration.</td></tr>
+                  <tr><td colspan="9">Loading applicationsâ€¦</td></tr>
               </tbody>
             </table>
           </div>
@@ -72,6 +95,132 @@
   </div>
 
   <script src="auth.js"></script>
+  <script>
+    let applicationFilter = 'all';
+    let applicationRows = [];
+
+    function updateApplicationFilterButtons() {
+      document.querySelectorAll('[data-application-filter]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.applicationFilter === applicationFilter);
+      });
+    }
+
+    async function loadApplications(filter = 'all') {
+      if (!checkAuth()) return;
+      applicationFilter = filter;
+      updateApplicationFilterButtons();
+
+      const tbody = document.querySelector('.admin-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="9">Loading applicationsâ€¦</td></tr>';
+
+      try {
+        const url = applicationFilter === 'all'
+          ? '/applications'
+          : `/applications?status=${encodeURIComponent(applicationFilter)}`;
+        const res = await fetchWithAuth(url);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Could not load applications');
+
+        applicationRows = Array.isArray(data) ? data : [];
+
+        if (!applicationRows.length) {
+          tbody.innerHTML = `<tr><td colspan="9">No ${applicationFilter === 'all' ? 'applications' : applicationFilter + ' applications'} found.</td></tr>`;
+          updateApplicationSummary();
+          return;
+        }
+
+        tbody.innerHTML = applicationRows.map((app) => {
+          const status = String(app.status || 'pending').toLowerCase();
+          const statusClass = status === 'approved' ? 'active' : status === 'rejected' ? 'inactive' : 'pending';
+          const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+          const docs = [
+            ['Birth cert', app.birth_certificate_path],
+            ['KCPE', app.kcpe_certificate_path],
+            ['Medical', app.medical_form_path]
+          ].filter(([, path]) => path).map(([label, path]) => `<a class="action-link" href="${path}" target="_blank" rel="noreferrer">${label}</a>`).join('<br>') || '<span class="status-pill pending">Missing</span>';
+          const submittedAt = app.created_at ? new Date(app.created_at).toLocaleDateString() : 'â€”';
+          return `
+            <tr data-id="${app.id}">
+              <td>${app.full_name || app.fullName || 'â€”'}<br><small>${app.email || ''}</small></td>
+              <td>${app.class_name || app.className || 'Not set'}</td>
+              <td>${app.stream_preference || app.streamPreference || app.stream || 'Not set'}</td>
+              <td>${app.parent_name || app.parentName || 'â€“'}</td>
+              <td>${app.phone || ''}</td>
+              <td>${docs}</td>
+              <td>${submittedAt}</td>
+              <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+              <td>
+                ${status !== 'approved' ? `<button class="approve-button" data-action="approve" data-id="${app.id}">Approve</button>` : '<span class="status-pill active">Approved</span>'}
+                ${status !== 'rejected' ? `<button class="reject-button" data-action="reject" data-id="${app.id}">Reject</button>` : '<span class="status-pill inactive">Rejected</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.querySelectorAll('button[data-action]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const action = btn.dataset.action;
+            const confirmMsg = action === 'approve' ? 'Approve this application?' : 'Reject this application?';
+            if (!confirm(confirmMsg)) return;
+            try {
+              const endpoint = `/applications/${id}/${action}`;
+              const response = await fetchWithAuth(endpoint, { method: 'POST' });
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.message || 'Action failed');
+              showAlert(result.message || 'Action completed', 'success');
+              await loadApplications(applicationFilter);
+              await loadApplicationSummary();
+            } catch (err) {
+              console.error('Application action error', err);
+              showAlert(err.message || 'Unable to perform action', 'error');
+            }
+          });
+        });
+
+        updateApplicationSummary();
+      } catch (err) {
+        console.error('Load applications error', err);
+        tbody.innerHTML = '<tr><td colspan="9">Unable to load applications.</td></tr>';
+      }
+    }
+
+    function updateApplicationSummary() {
+      const pending = applicationRows.filter((app) => String(app.status || 'pending').toLowerCase() === 'pending').length;
+      const approved = applicationRows.filter((app) => String(app.status || 'pending').toLowerCase() === 'approved').length;
+      const rejected = applicationRows.filter((app) => String(app.status || 'pending').toLowerCase() === 'rejected').length;
+      document.getElementById('pendingApplications').textContent = pending;
+      document.getElementById('approvedApplications').textContent = approved;
+      document.getElementById('rejectedApplications').textContent = rejected;
+      document.getElementById('totalApplicationsCount').textContent = applicationRows.length;
+    }
+
+    async function loadApplicationSummary() {
+      if (!checkAuth()) return;
+      try {
+        const response = await fetchWithAuth('/applications');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Could not load summary');
+        applicationRows = Array.isArray(data) ? data : [];
+        updateApplicationSummary();
+      } catch (error) {
+        console.error('Load application summary error', error);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateApplicationFilterButtons();
+      document.querySelectorAll('[data-application-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          loadApplications(button.dataset.applicationFilter);
+        });
+      });
+      loadApplications('all');
+      loadApplicationSummary();
+    });
+  </script>
   <script src="admin-dashboard.js"></script>
-</body>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n</body>
 </html>
+

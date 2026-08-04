@@ -1,1904 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revision Materials - CRESENT HIGH SCHOOL</title>
-    <link rel="stylesheet" href="academic.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revision - CRESENT HIGH SCHOOL</title>
   <link rel="stylesheet" href="site-common.css">
+  <style>
+    .student-main { padding-top: 122px !important; min-height: calc(100vh - 180px); }
+    .student-main-content { padding: 24px; min-height: calc(100vh - 220px); }
+    .revision-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0;
+      flex-wrap: wrap;
+    }
+    .revision-search {
+      min-width: 240px;
+      flex: 1;
+      max-width: 420px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 11px 12px;
+      font-size: 0.95rem;
+    }
+    .revision-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .revision-select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.95rem;
+    }
+    .subject-tiles { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:16px; }
+    .subject-tile {
+      background:#fff;
+      padding:18px;
+      border-radius:8px;
+      border:1px solid #e2e8f0;
+      box-shadow:0 6px 18px rgba(2,6,23,0.06);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:150px;
+    }
+    .subject-tile h3 { margin:0; color:#102033; }
+    .subject-tile p { margin:0; color:#526173; line-height:1.5; }
+    .subject-count { font-size:0.85rem; color:#0f766e; font-weight:700; }
+    .subject-button {
+      align-self:flex-start;
+      display:inline-block;
+      margin-top:auto;
+      padding:8px 12px;
+      background:#0b67ff;
+      color:#fff;
+      border-radius:6px;
+      text-decoration:none;
+    }
+    .empty-card {
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:8px;
+      padding:24px;
+      color:#526173;
+      text-align:center;
+    }
+    .notes-page-header { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+    .notes-page-header h1 { margin: 0 0 8px !important; }
+  </style>
 </head>
-<body>
-    <header class="dashboard-header">
-        <div class="header-content">
-            <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
-            <div class="header-actions">
-                <span class="header-pill">Student Portal</span>
-                <button class="logout-button" onclick="logout()">Logout</button>
-            </div>
-        </div>
-    </header>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+      <div class="header-actions">
+        <span class="header-pill">Student Portal</span>
+        <button class="logout-button" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
 
-    <main class="profile-main">
-        <section class="profile-header">
-            <h2><i class="fas fa-graduation-cap"></i> Revision Materials</h2>
-            <p>Comprehensive revision resources including past papers, mock exams, and study guides</p>
+  <main class="student-main">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link active" href="transcript.html">Transcript</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="help.html">Help</a>
+      </div>
+    </aside>
 
-            <!-- Quick Stats -->
-            <div class="revision-stats">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalMaterials">0</div>
-                    <div class="stat-label">Total Materials</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="pastPapers">0</div>
-                    <div class="stat-label">Past Papers</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="mockExams">0</div>
-                    <div class="stat-label">Mock Exams</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="studyGuides">0</div>
-                    <div class="stat-label">Study Guides</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Search and Filter Bar -->
-        <div class="filter-section">
-            <div class="filter-controls">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="revisionSearch" placeholder="Search revision materials...">
-                </div>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="past-papers">Past Papers</button>
-                    <button class="filter-btn" data-filter="mock-exams">Mock Exams</button>
-                    <button class="filter-btn" data-filter="study-guides">Study Guides</button>
-                    <button class="filter-btn" data-filter="topic-revision">Topic Revision</button>
-                    <button class="filter-btn" data-filter="exam-tips">Exam Tips</button>
-                </div>
-                <div class="view-controls">
-                    <button class="view-btn active" data-view="grid" title="Grid View">
-                        <i class="fas fa-th"></i>
-                    </button>
-                    <button class="view-btn" data-view="list" title="List View">
-                        <i class="fas fa-list"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Advanced Filters -->
-            <div class="advanced-filters">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="subjectFilter">Subject:</label>
-                        <select id="subjectFilter">
-                            <option value="all">All Subjects</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="yearFilter">Exam Year:</label>
-                        <select id="yearFilter">
-                            <option value="all">All Years</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="difficultyFilter">Difficulty:</label>
-                        <select id="difficultyFilter">
-                            <option value="all">All Levels</option>
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="sortFilter">Sort by:</label>
-                        <select id="sortFilter">
-                            <option value="recent">Most Recent</option>
-                            <option value="downloads">Most Downloaded</option>
-                            <option value="rating">Highest Rated</option>
-                            <option value="year">Exam Year</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+    <section class="student-main-content">
+      <div class="notes-page-shell">
+        <div class="notes-page-header">
+          <div>
+            <p class="eyebrow">Student portal</p>
+            <h1>Revision Materials</h1>
+            <p>Browse uploaded revision resources by subject.</p>
+          </div>
         </div>
 
-        <!-- Materials Container -->
-        <div id="materialsContainer" class="materials-container">
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading revision materials...</p>
-            </div>
+        <div class="revision-toolbar">
+          <input id="revisionSearch" class="revision-search" type="search" placeholder="Search subject">
+          <span id="revisionStatus" class="header-pill">Loading materials</span>
         </div>
 
-        <!-- Upload Section for Lecturers/Admins -->
-        <div id="uploadSection" class="upload-section hidden">
-            <div class="upload-card">
-                <h3><i class="fas fa-upload"></i> Upload Revision Material</h3>
-                <form id="uploadForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="materialTitle">Title *</label>
-                            <input type="text" id="materialTitle" name="title" placeholder="e.g., KCSE 2023 Mathematics Paper 1" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="materialType">Material Type *</label>
-                            <select id="materialType" name="type" required>
-                                <option value="">Select Type</option>
-                                <option value="past-paper">Past Paper</option>
-                                <option value="mock-exam">Mock Exam</option>
-                                <option value="study-guide">Study Guide</option>
-                                <option value="topic-revision">Topic Revision</option>
-                                <option value="exam-tips">Exam Tips</option>
-                                <option value="answers">Answers/Solutions</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="materialSubject">Subject *</label>
-                            <select id="materialSubject" name="subject" required>
-                                <option value="">Select Subject</option>
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="English">English</option>
-                                <option value="Kiswahili">Kiswahili</option>
-                                <option value="Science">Science</option>
-                                <option value="Social Studies">Social Studies</option>
-                                <option value="CRE">CRE</option>
-                                <option value="Geography">Geography</option>
-                                <option value="History">History</option>
-                                <option value="Physics">Physics</option>
-                                <option value="Chemistry">Chemistry</option>
-                                <option value="Biology">Biology</option>
-                                <option value="Computer Studies">Computer Studies</option>
-                                <option value="Business Studies">Business Studies</option>
-                                <option value="Agriculture">Agriculture</option>
-                                <option value="Art">Art</option>
-                                <option value="Music">Music</option>
-                                <option value="Physical Education">Physical Education</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="examYear">Exam Year</label>
-                            <select id="examYear" name="exam_year">
-                                <option value="">Select Year</option>
-                                <script>
-                                    const currentYear = new Date().getFullYear();
-                                    for (let year = currentYear; year >= currentYear - 10; year--) {
-                                        document.write(`<option value="${year}">${year}</option>`);
-                                    }
-                                </script>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="difficulty">Difficulty Level</label>
-                            <select id="difficulty" name="difficulty">
-                                <option value="beginner">Beginner</option>
-                                <option value="intermediate" selected>Intermediate</option>
-                                <option value="advanced">Advanced</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="topic">Specific Topic/Chapter</label>
-                            <input type="text" id="topic" name="topic" placeholder="e.g., Chapter 5: Quadratic Equations">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="materialDescription">Description</label>
-                        <textarea id="materialDescription" name="description" placeholder="Brief description of the material content, what students will learn, etc." rows="3"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="materialFile">File *</label>
-                        <input type="file" id="materialFile" name="file" accept="application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" required>
-                        <small class="file-hint">Supported formats: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX (Max 15MB)</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="estimatedTime">Estimated Study Time (minutes)</label>
-                        <input type="number" id="estimatedTime" name="estimated_time" placeholder="e.g., 120" min="1">
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="cancelUpload()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Upload Material
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="revision-filters">
+          <div class="filter-group">
+            <label for="revisionClass">Class</label>
+            <select id="revisionClass" class="revision-select">
+              <option value="">All classes</option>
+              <option value="Form 1">Form 1</option>
+              <option value="Form 2">Form 2</option>
+              <option value="Form 3">Form 3</option>
+              <option value="Form 4">Form 4</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="revisionCategory">Revision category</label>
+            <select id="revisionCategory" class="revision-select">
+              <option value="">All categories</option>
+            </select>
+          </div>
         </div>
 
-        <!-- Material Detail Modal -->
-        <div id="materialModal" class="modal">
-            <div class="modal-content large-modal">
-                <div class="modal-header">
-                    <h2 id="materialModalTitle">Material Details</h2>
-                    <button class="modal-close" onclick="closeModal('materialModal')">&times;</button>
-                </div>
-                <div class="modal-body" id="materialDetails">
-                    <!-- Material details will be populated here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions FAB -->
-        <div class="fab-container">
-            <button class="fab-main" id="fabMain" onclick="toggleFAB()">
-                <i class="fas fa-plus"></i>
-            </button>
-            <div class="fab-menu" id="fabMenu">
-                <button class="fab-item" onclick="showUploadSection()" title="Upload Material">
-                    <i class="fas fa-upload"></i>
-                </button>
-                <button class="fab-item" onclick="refreshMaterials()" title="Refresh">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-            </div>
-        </div>
-    </main>
-
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script src="site-common.js"></script>
-    <script>
-        let materials = [];
-        let currentFilter = 'all';
-        let currentView = 'grid';
-        let currentSubject = 'all';
-        let currentYear = 'all';
-        let currentDifficulty = 'all';
-        let currentSort = 'recent';
-        let userRole = 'student';
-
-        // Initialize page
-        if (!checkAuth()) {
-            window.location.href = 'login.html';
-        } else {
-            const user = JSON.parse(localStorage.getItem('student') || '{}');
-            userRole = user.role || 'student';
-            if (userRole === 'lecturer' || userRole === 'rba') {
-                document.getElementById('uploadSection').style.display = 'block';
-                document.querySelector('.fab-container').style.display = 'block';
-            }
-            loadMaterials();
-        }
-
-        async function loadMaterials() {
-            try {
-                const response = await fetchWithAuth('/api/revision-materials');
-                if (response.ok) {
-                    materials = await response.json();
-                    updateStats();
-                    populateFilters();
-                    renderMaterials();
-                } else {
-                    showError('Failed to load revision materials');
-                }
-            } catch (error) {
-                console.error('Error loading materials:', error);
-                showError('Error loading revision materials');
-            }
-        }
-
-        function updateStats() {
-            const stats = {
-                total: materials.length,
-                'past-paper': 0,
-                'mock-exam': 0,
-                'study-guide': 0,
-                'topic-revision': 0,
-                'exam-tips': 0,
-                answers: 0
-            };
-
-            materials.forEach(material => {
-                if (stats[material.type] !== undefined) {
-                    stats[material.type]++;
-                }
-            });
-
-            document.getElementById('totalMaterials').textContent = stats.total;
-            document.getElementById('pastPapers').textContent = stats['past-paper'];
-            document.getElementById('mockExams').textContent = stats['mock-exam'];
-            document.getElementById('studyGuides').textContent = stats['study-guide'];
-        }
-
-        function populateFilters() {
-            // Subject filter
-            const subjectFilter = document.getElementById('subjectFilter');
-            const subjects = [...new Set(materials.map(m => m.subject))].sort();
-            subjectFilter.innerHTML = '<option value="all">All Subjects</option>';
-            subjects.forEach(subject => {
-                subjectFilter.innerHTML += `<option value="${subject}">${subject}</option>`;
-            });
-
-            // Year filter
-            const yearFilter = document.getElementById('yearFilter');
-            const years = [...new Set(materials.map(m => m.exam_year).filter(y => y))].sort((a, b) => b - a);
-            yearFilter.innerHTML = '<option value="all">All Years</option>';
-            years.forEach(year => {
-                yearFilter.innerHTML += `<option value="${year}">${year}</option>`;
-            });
-        }
-
-        function renderMaterials() {
-            const container = document.getElementById('materialsContainer');
-            const filteredMaterials = filterAndSortMaterials(materials);
-
-            if (filteredMaterials.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-book-open"></i>
-                        <h3>No materials found</h3>
-                        <p>${getEmptyMessage()}</p>
-                    </div>
-                `;
-                return;
-            }
-
-            if (currentView === 'grid') {
-                container.innerHTML = `
-                    <div class="materials-grid">
-                        ${filteredMaterials.map(material => `
-                            <div class="material-card ${material.type}" onclick="viewMaterial(${material.id})">
-                                <div class="material-header">
-                                    <div class="material-icon">
-                                        <i class="fas ${getMaterialIcon(material.type)}"></i>
-                                    </div>
-                                    <div class="material-actions">
-                                        <button class="action-btn favorite ${isFavorite(material.id) ? 'active' : ''}"
-                                                onclick="event.stopPropagation(); toggleFavorite(${material.id})"
-                                                title="Add to favorites">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
-                                        <button class="action-btn download"
-                                                onclick="event.stopPropagation(); downloadMaterial(${material.id})"
-                                                title="Download">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="material-content">
-                                    <h4 class="material-title">${material.title}</h4>
-                                    <div class="material-meta">
-                                        <span class="subject">${material.subject}</span>
-                                        <span class="type">${formatType(material.type)}</span>
-                                        ${material.exam_year ? `<span class="year">${material.exam_year}</span>` : ''}
-                                    </div>
-                                    ${material.topic ? `<div class="material-topic">${material.topic}</div>` : ''}
-                                    <div class="material-stats">
-                                        <span><i class="fas fa-download"></i> ${material.downloads || 0}</span>
-                                        <span><i class="fas fa-star"></i> ${material.rating || 0}</span>
-                                        <span><i class="fas fa-clock"></i> ${material.estimated_time || 'N/A'}</span>
-                                    </div>
-                                </div>
-
-                                <div class="material-footer">
-                                    <span class="lecturer">By ${material.lecturer_name || 'Unknown'}</span>
-                                    <div class="difficulty-badge ${material.difficulty || 'intermediate'}">
-                                        ${capitalizeFirst(material.difficulty || 'intermediate')}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div class="materials-list">
-                        ${filteredMaterials.map(material => `
-                            <div class="material-list-item" onclick="viewMaterial(${material.id})">
-                                <div class="material-list-icon">
-                                    <i class="fas ${getMaterialIcon(material.type)}"></i>
-                                </div>
-                                <div class="material-list-content">
-                                    <div class="material-list-header">
-                                        <h4>${material.title}</h4>
-                                        <div class="material-list-meta">
-                                            <span class="subject">${material.subject}</span>
-                                            <span class="type">${formatType(material.type)}</span>
-                                            ${material.exam_year ? `<span class="year">${material.exam_year}</span>` : ''}
-                                            <span class="difficulty ${material.difficulty || 'intermediate'}">${capitalizeFirst(material.difficulty || 'intermediate')}</span>
-                                        </div>
-                                        <div class="material-list-actions">
-                                            <button class="action-btn favorite ${isFavorite(material.id) ? 'active' : ''}"
-                                                    onclick="event.stopPropagation(); toggleFavorite(${material.id})">
-                                                <i class="fas fa-heart"></i>
-                                            </button>
-                                            <button class="action-btn download"
-                                                    onclick="event.stopPropagation(); downloadMaterial(${material.id})">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="material-list-details">
-                                        ${material.description ? `<div class="description">${material.description}</div>` : ''}
-                                        <div class="stats">
-                                            <span><i class="fas fa-download"></i> ${material.downloads || 0} downloads</span>
-                                            <span><i class="fas fa-star"></i> ${material.rating || 0} rating</span>
-                                            <span><i class="fas fa-clock"></i> ${material.estimated_time || 'N/A'} min</span>
-                                            <span><i class="fas fa-calendar"></i> ${formatDate(material.upload_date)}</span>
-                                        </div>
-                                    </div>
-                                    <div class="material-list-footer">
-                                        <span class="lecturer">Uploaded by ${material.lecturer_name || 'Unknown'}</span>
-                                        ${material.topic ? `<span class="topic">${material.topic}</span>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-        }
-
-        function filterAndSortMaterials(materials) {
-            let filtered = materials.filter(material => {
-                // Type filter
-                const filterTypeMap = {
-                    'past-papers': 'past-paper',
-                    'mock-exams': 'mock-exam',
-                    'study-guides': 'study-guide'
-                };
-                const selectedType = filterTypeMap[currentFilter] || currentFilter;
-                if (currentFilter !== 'all' && material.type !== selectedType) {
-                    return false;
-                }
-
-                // Subject filter
-                if (currentSubject !== 'all' && material.subject !== currentSubject) {
-                    return false;
-                }
-
-                // Year filter
-                if (currentYear !== 'all' && material.exam_year != currentYear) {
-                    return false;
-                }
-
-                // Difficulty filter
-                if (currentDifficulty !== 'all' && material.difficulty !== currentDifficulty) {
-                    return false;
-                }
-
-                // Text search
-                const searchTerm = document.getElementById('revisionSearch').value.toLowerCase();
-                if (searchTerm) {
-                    return material.title.toLowerCase().includes(searchTerm) ||
-                           material.subject.toLowerCase().includes(searchTerm) ||
-                           (material.topic && material.topic.toLowerCase().includes(searchTerm)) ||
-                           (material.description && material.description.toLowerCase().includes(searchTerm));
-                }
-
-                return true;
-            });
-
-            // Sort
-            filtered.sort((a, b) => {
-                switch (currentSort) {
-                    case 'downloads':
-                        return (b.downloads || 0) - (a.downloads || 0);
-                    case 'rating':
-                        return (b.rating || 0) - (a.rating || 0);
-                    case 'year':
-                        return (b.exam_year || 0) - (a.exam_year || 0);
-                    case 'recent':
-                    default:
-                        return new Date(b.upload_date) - new Date(a.upload_date);
-                }
-            });
-
-            return filtered;
-        }
-
-        function getMaterialIcon(type) {
-            const icons = {
-                'past-paper': 'fa-file-alt',
-                'mock-exam': 'fa-clipboard-check',
-                'study-guide': 'fa-book',
-                'topic-revision': 'fa-chalkboard-teacher',
-                'exam-tips': 'fa-lightbulb',
-                'answers': 'fa-check-circle'
-            };
-            return icons[type] || 'fa-file';
-        }
-
-        function formatType(type) {
-            return type.split('-').map(word => capitalizeFirst(word)).join(' ');
-        }
-
-        function capitalizeFirst(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
-
-        function getEmptyMessage() {
-            switch (currentFilter) {
-                case 'past-papers': return 'No past papers available.';
-                case 'mock-exams': return 'No mock exams available.';
-                case 'study-guides': return 'No study guides available.';
-                case 'topic-revision': return 'No topic revision materials available.';
-                case 'exam-tips': return 'No exam tips available.';
-                default: return 'No revision materials found for the selected criteria.';
-            }
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-
-        function isFavorite(materialId) {
-            const favorites = JSON.parse(localStorage.getItem('revisionFavorites') || '[]');
-            return favorites.includes(materialId);
-        }
-
-        function toggleFavorite(materialId) {
-            const favorites = JSON.parse(localStorage.getItem('revisionFavorites') || '[]');
-            const index = favorites.indexOf(materialId);
-
-            if (index > -1) {
-                favorites.splice(index, 1);
-            } else {
-                favorites.push(materialId);
-            }
-
-            localStorage.setItem('revisionFavorites', JSON.stringify(favorites));
-            renderMaterials();
-        }
-
-        async function downloadMaterial(materialId) {
-            try {
-                const response = await fetchWithAuth(`/api/revision-materials/${materialId}/download`);
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    const material = materials.find(m => m.id === materialId);
-                    a.download = material ? material.filename : `material_${materialId}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
-                    // Update download count
-                    material.downloads = (material.downloads || 0) + 1;
-                    updateStats();
-                } else {
-                    alert('Failed to download material');
-                }
-            } catch (error) {
-                console.error('Error downloading material:', error);
-                alert('Failed to download material');
-            }
-        }
-
-        function viewMaterial(materialId) {
-            const material = materials.find(m => m.id === materialId);
-            if (material) {
-                showMaterialModal(material);
-            }
-        }
-
-        function showMaterialModal(material) {
-            const modal = document.getElementById('materialModal');
-            const title = document.getElementById('materialModalTitle');
-            const details = document.getElementById('materialDetails');
-
-            title.textContent = material.title;
-
-            details.innerHTML = `
-                <div class="material-detail">
-                    <div class="material-detail-header">
-                        <div class="material-detail-icon">
-                            <i class="fas ${getMaterialIcon(material.type)}"></i>
-                        </div>
-                        <div class="material-detail-meta">
-                            <h3>${material.title}</h3>
-                            <div class="meta-tags">
-                                <span class="tag subject">${material.subject}</span>
-                                <span class="tag type">${formatType(material.type)}</span>
-                                ${material.exam_year ? `<span class="tag year">${material.exam_year}</span>` : ''}
-                                <span class="tag difficulty ${material.difficulty || 'intermediate'}">${capitalizeFirst(material.difficulty || 'intermediate')}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="material-detail-content">
-                        ${material.description ? `
-                            <div class="material-description">
-                                <h4>Description</h4>
-                                <p>${material.description}</p>
-                            </div>
-                        ` : ''}
-
-                        <div class="material-info-grid">
-                            <div class="info-item">
-                                <span class="label">Subject:</span>
-                                <span class="value">${material.subject}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Type:</span>
-                                <span class="value">${formatType(material.type)}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Uploaded:</span>
-                                <span class="value">${formatDate(material.upload_date)}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Downloads:</span>
-                                <span class="value">${material.downloads || 0}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Rating:</span>
-                                <span class="value">${material.rating || 0}/5</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Lecturer:</span>
-                                <span class="value">${material.lecturer_name || 'Unknown'}</span>
-                            </div>
-                            ${material.estimated_time ? `
-                                <div class="info-item">
-                                    <span class="label">Study Time:</span>
-                                    <span class="value">${material.estimated_time} minutes</span>
-                                </div>
-                            ` : ''}
-                            ${material.topic ? `
-                                <div class="info-item">
-                                    <span class="label">Topic:</span>
-                                    <span class="value">${material.topic}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <div class="material-detail-actions">
-                        <button class="btn btn-primary" onclick="downloadMaterial(${material.id})">
-                            <i class="fas fa-download"></i> Download Material
-                        </button>
-                        <button class="btn btn-secondary" onclick="toggleFavorite(${material.id})">
-                            <i class="fas fa-heart ${isFavorite(material.id) ? '' : 'far'}"></i>
-                            ${isFavorite(material.id) ? 'Remove from Favorites' : 'Add to Favorites'}
-                        </button>
-                        ${userRole === 'lecturer' || userRole === 'rba' ? `
-                            <button class="btn btn-danger" onclick="deleteMaterial(${material.id})">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-
-            openModal('materialModal');
-        }
-
-        async function deleteMaterial(materialId) {
-            if (!confirm('Are you sure you want to delete this revision material?')) return;
-
-            try {
-                const response = await fetchWithAuth(`/api/revision-materials/${materialId}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    materials = materials.filter(material => material.id !== materialId);
-                    updateStats();
-                    renderMaterials();
-                    closeModal('materialModal');
-                    alert('Material deleted successfully');
-                } else {
-                    alert('Failed to delete material');
-                }
-            } catch (error) {
-                console.error('Error deleting material:', error);
-                alert('Failed to delete material');
-            }
-        }
-
-        // Upload functionality
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const formData = new FormData();
-            formData.append('title', document.getElementById('materialTitle').value);
-            formData.append('type', document.getElementById('materialType').value);
-            formData.append('subject', document.getElementById('materialSubject').value);
-            formData.append('exam_year', document.getElementById('examYear').value);
-            formData.append('difficulty', document.getElementById('difficulty').value);
-            formData.append('topic', document.getElementById('topic').value);
-            formData.append('description', document.getElementById('materialDescription').value);
-            formData.append('estimated_time', document.getElementById('estimatedTime').value);
-            formData.append('file', document.getElementById('materialFile').files[0]);
-
-            try {
-                const response = await fetchWithAuth('/api/revision-materials/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const newMaterial = await response.json();
-                    materials.unshift(newMaterial);
-                    updateStats();
-                    populateFilters();
-                    renderMaterials();
-                    cancelUpload();
-                    alert('Revision material uploaded successfully!');
-                } else {
-                    alert('Failed to upload revision material');
-                }
-            } catch (error) {
-                console.error('Error uploading material:', error);
-                alert('Failed to upload revision material');
-            }
-        });
-
-        function showUploadSection() {
-            document.getElementById('uploadSection').scrollIntoView({ behavior: 'smooth' });
-            document.getElementById('materialTitle').focus();
-        }
-
-        function cancelUpload() {
-            document.getElementById('uploadForm').reset();
-            document.getElementById('uploadSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function createStudyPlan() {
-            // Placeholder for study plan creation
-            alert('Study plan creation feature coming soon!');
-        }
-
-        function showProgress() {
-            // Scroll to progress tracker
-            document.querySelector('.progress-tracker').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function refreshMaterials() {
-            loadMaterials();
-        }
-
-        function loadStudyPlan() {
-            // Placeholder for study plan loading
-            const container = document.getElementById('studyPlanContainer');
-            container.innerHTML = `
-                <div class="study-plan-placeholder">
-                    <i class="fas fa-calendar-alt"></i>
-                    <h4>Personalized Study Plan</h4>
-                    <p>Get a customized study schedule based on your subjects and exam dates.</p>
-                    <button class="btn btn-primary" onclick="createStudyPlan()">
-                        <i class="fas fa-plus"></i> Create Study Plan
-                    </button>
-                </div>
-            `;
-        }
-
-        // Search functionality
-        document.getElementById('revisionSearch').addEventListener('input', function() {
-            renderMaterials();
-        });
-
-        // Filter functionality
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.filter;
-                renderMaterials();
-            });
-        });
-
-        // Subject filter
-        document.getElementById('subjectFilter').addEventListener('change', function() {
-            currentSubject = this.value;
-            renderMaterials();
-        });
-
-        // Year filter
-        document.getElementById('yearFilter').addEventListener('change', function() {
-            currentYear = this.value;
-            renderMaterials();
-        });
-
-        // Difficulty filter
-        document.getElementById('difficultyFilter').addEventListener('change', function() {
-            currentDifficulty = this.value;
-            renderMaterials();
-        });
-
-        // Sort filter
-        document.getElementById('sortFilter').addEventListener('change', function() {
-            currentSort = this.value;
-            renderMaterials();
-        });
-
-        // View toggle
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentView = this.dataset.view;
-                renderMaterials();
-            });
-        });
-
-        // FAB functionality
-        function toggleFAB() {
-            const fabMenu = document.getElementById('fabMenu');
-            fabMenu.classList.toggle('active');
-        }
-
-        function showError(message) {
-            const container = document.getElementById('materialsContainer');
-            container.innerHTML = `
-                <div class="error-state">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error Loading Materials</h3>
-                    <p>${message}</p>
-                    <button class="btn btn-primary" onclick="loadMaterials()">Try Again</button>
-                </div>
-            `;
-        }
-
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('student');
-            localStorage.removeItem('rememberMe');
-            window.location.href = 'login.html';
-        }
-
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-    </script>
-
-    <style>
-        .revision-stats {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: rgba(255,255,255,0.9);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(26,35,126,0.1);
-            min-width: 100px;
-        }
-
-        .stat-number {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1a237e;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 5px;
-        }
-
-        .progress-tracker {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(26,35,126,0.06);
-        }
-
-        .progress-tracker h3 {
-            margin-bottom: 20px;
-            color: #1a237e;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .progress-overview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .progress-item {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .progress-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #1a237e, #1565c0);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .filter-section {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(26,35,126,0.06);
-        }
-
-        .filter-controls {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-
-        .search-box {
-            position: relative;
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 10px 12px 10px 40px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            font-size: 14px;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: #1a237e;
-            box-shadow: 0 0 0 2px rgba(26,35,126,0.1);
-        }
-
-        .filter-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: #1a237e;
-            color: white;
-            border-color: #1a237e;
-        }
-
-        .view-controls {
-            display: flex;
-            gap: 5px;
-            margin-left: auto;
-        }
-
-        .view-btn {
-            width: 35px;
-            height: 35px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .view-btn:hover,
-        .view-btn.active {
-            background: #1a237e;
-            color: white;
-            border-color: #1a237e;
-        }
-
-        .advanced-filters {
-            border-top: 1px solid #e9ecef;
-            padding-top: 15px;
-        }
-
-        .filter-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .filter-group select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .materials-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-            overflow: hidden;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .materials-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .material-card {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            overflow: hidden;
-        }
-
-        .material-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(26,35,126,0.15);
-        }
-
-        .material-card.past-paper {
-            border-left: 4px solid #2196f3;
-        }
-
-        .material-card.mock-exam {
-            border-left: 4px solid #ff9800;
-        }
-
-        .material-card.study-guide {
-            border-left: 4px solid #4caf50;
-        }
-
-        .material-card.topic-revision {
-            border-left: 4px solid #9c27b0;
-        }
-
-        .material-card.exam-tips {
-            border-left: 4px solid #ff5722;
-        }
-
-        .material-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 15px 0 15px;
-        }
-
-        .material-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: #1a237e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .material-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .action-btn.favorite {
-            background: #ffebee;
-            color: #e57373;
-        }
-
-        .action-btn.favorite.active {
-            background: #e57373;
-            color: white;
-        }
-
-        .action-btn.download {
-            background: #e3f2fd;
-            color: #2196f3;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .material-content {
-            padding: 15px;
-        }
-
-        .material-title {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            color: #1a237e;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .material-meta {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-
-        .material-meta span {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-
-        .material-meta .subject {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .material-meta .type {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .material-meta .year {
-            background: #e8f5e8;
-            color: #388e3c;
-        }
-
-        .material-topic {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 8px;
-            font-style: italic;
-        }
-
-        .material-stats {
-            display: flex;
-            gap: 15px;
-            font-size: 11px;
-            color: #666;
-        }
-
-        .material-footer {
-            padding: 0 15px 15px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .material-footer .lecturer {
-            font-size: 12px;
-            color: #666;
-            font-style: italic;
-        }
-
-        .difficulty-badge {
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .difficulty-badge.beginner {
-            background: #e8f5e8;
-            color: #4caf50;
-        }
-
-        .difficulty-badge.intermediate {
-            background: #fff3e0;
-            color: #ff9800;
-        }
-
-        .difficulty-badge.advanced {
-            background: #ffebee;
-            color: #f44336;
-        }
-
-        .materials-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .material-list-item {
-            display: flex;
-            gap: 15px;
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .material-list-item:hover {
-            background: #f8f9fa;
-        }
-
-        .material-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .material-list-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #1a237e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .material-list-content {
-            flex: 1;
-        }
-
-        .material-list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .material-list-header h4 {
-            margin: 0;
-            color: #1a237e;
-        }
-
-        .material-list-meta {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 12px;
-            margin-bottom: 8px;
-        }
-
-        .material-list-meta span {
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .material-list-meta .subject {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .material-list-meta .type {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .material-list-meta .year {
-            background: #e8f5e8;
-            color: #388e3c;
-        }
-
-        .material-list-meta .difficulty.beginner {
-            background: #e8f5e8;
-            color: #4caf50;
-        }
-
-        .material-list-meta .difficulty.intermediate {
-            background: #fff3e0;
-            color: #ff9800;
-        }
-
-        .material-list-meta .difficulty.advanced {
-            background: #ffebee;
-            color: #f44336;
-        }
-
-        .material-list-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .material-list-details {
-            margin-bottom: 10px;
-        }
-
-        .material-list-details .description {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 8px;
-        }
-
-        .material-list-details .stats {
-            display: flex;
-            gap: 15px;
-            font-size: 12px;
-            color: #666;
-            flex-wrap: wrap;
-        }
-
-        .material-list-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .material-list-footer .topic {
-            font-style: italic;
-        }
-
-        .study-plan-section {
-            margin-top: 30px;
-        }
-
-        .study-plan-section h3 {
-            color: #1a237e;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .study-plan-container {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(26,35,126,0.06);
-        }
-
-        .study-plan-placeholder {
-            text-align: center;
-            color: #666;
-        }
-
-        .study-plan-placeholder i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        .study-plan-placeholder h4 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .upload-section {
-            margin-top: 30px;
-        }
-
-        .upload-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 16px rgba(26,35,126,0.1);
-        }
-
-        .upload-card h3 {
-            margin-bottom: 20px;
-            color: #1a237e;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .file-hint {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        .fab-container {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            display: none;
-        }
-
-        .fab-main {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #1a237e;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(26,35,126,0.3);
-            transition: all 0.3s;
-        }
-
-        .fab-main:hover {
-            transform: scale(1.1);
-        }
-
-        .fab-menu {
-            position: absolute;
-            bottom: 70px;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
-        .fab-menu.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .fab-item {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: white;
-            border: 2px solid #1a237e;
-            color: #1a237e;
-            font-size: 16px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(26,35,126,0.2);
-            transition: all 0.2s;
-        }
-
-        .fab-item:hover {
-            transform: scale(1.1);
-            background: #1a237e;
-            color: white;
-        }
-
-        .material-detail-header {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .material-detail-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #1a237e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .material-detail-meta h3 {
-            margin: 0 0 10px 0;
-            color: #1a237e;
-        }
-
-        .meta-tags {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .tag {
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .tag.subject {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .tag.type {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .tag.year {
-            background: #e8f5e8;
-            color: #388e3c;
-        }
-
-        .tag.difficulty.beginner {
-            background: #e8f5e8;
-            color: #4caf50;
-        }
-
-        .tag.difficulty.intermediate {
-            background: #fff3e0;
-            color: #ff9800;
-        }
-
-        .tag.difficulty.advanced {
-            background: #ffebee;
-            color: #f44336;
-        }
-
-        .material-description {
-            margin-bottom: 20px;
-        }
-
-        .material-description h4 {
-            margin-bottom: 8px;
-            color: #1a237e;
-        }
-
-        .material-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .info-item .label {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .info-item .value {
-            color: #666;
-        }
-
-        .material-detail-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .study-session {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .study-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .study-header h3 {
-            margin-bottom: 10px;
-            color: #1a237e;
-        }
-
-        .study-info {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .study-timer {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .timer-display {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1a237e;
-            font-family: monospace;
-            margin-bottom: 15px;
-        }
-
-        .timer-controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .study-progress {
-            margin-bottom: 25px;
-        }
-
-        .study-progress h4 {
-            margin-bottom: 15px;
-            color: #1a237e;
-        }
-
-        .progress-checklist {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .progress-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .progress-item:hover {
-            background: #f8f9fa;
-        }
-
-        .progress-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-
-        .progress-item span {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .study-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: #1a237e;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1565c0;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-secondary:hover {
-            background: #e9ecef;
-        }
-
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #d32f2f;
-        }
-
-        .empty-state,
-        .loading-state,
-        .error-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state i,
-        .loading-state i,
-        .error-state i {
-            font-size: 48px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .empty-state h3,
-        .error-state h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        @media (max-width: 768px) {
-            .revision-stats {
-                flex-wrap: wrap;
-                justify-content: space-around;
-            }
-
-            .progress-overview {
-                grid-template-columns: 1fr;
-            }
-
-            .filter-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box {
-                min-width: auto;
-            }
-
-            .materials-grid {
-                grid-template-columns: 1fr;
-                padding: 15px;
-            }
-
-            .material-list-item {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .material-info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .study-info {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .timer-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .material-detail-actions,
-            .study-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .fab-container {
-                bottom: 20px;
-                right: 20px;
-            }
-        }
-    </style>
-    <script>
-      if(!checkAuth()) window.location.href='login.html';
-      loadDocs('revision');
-    </script>
+        <div id="subjectTiles" class="subject-tiles"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script src="site-common.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const subjects = [
+      'Mathematics', 'English', 'Kiswahili', 'Biology', 'Physics', 'Chemistry',
+      'History', 'Geography', 'CRE', 'Business', 'Computer', 'Agriculture'
+    ];
+    let revisionCounts = {};
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderSubjectTiles() {
+      const container = document.getElementById('subjectTiles');
+      const search = document.getElementById('revisionSearch')?.value.trim().toLowerCase() || '';
+      const classFilter = document.getElementById('revisionClass')?.value.trim().toLowerCase() || '';
+      const categoryFilter = document.getElementById('revisionCategory')?.value.trim().toLowerCase() || '';
+      if (!container) return;
+
+      const visible = subjects.filter((subject) => {
+        const matchesSearch = !search || subject.toLowerCase().includes(search);
+        const matchesClass = !classFilter || revisionCounts[subject.toLowerCase()]?.classes?.includes(classFilter);
+        const matchesCategory = !categoryFilter || revisionCounts[subject.toLowerCase()]?.categories?.includes(categoryFilter);
+        return matchesSearch && matchesClass && matchesCategory;
+      });
+      if (!visible.length) {
+        container.innerHTML = '<div class="empty-card">No matching subjects found.</div>';
+        return;
+      }
+
+      container.innerHTML = visible.map((subject) => {
+        const count = revisionCounts[subject.toLowerCase()]?.count || 0;
+        return `
+          <article class="subject-tile">
+            <h3>${escapeHtml(subject)}</h3>
+            <p>Open revision materials for ${escapeHtml(subject.toLowerCase())}.</p>
+            <span class="subject-count">${count} uploaded file${count === 1 ? '' : 's'}</span>
+            <a class="subject-button" href="subject.html?subject=${encodeURIComponent(subject)}&type=revision">Open</a>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadRevisionCounts() {
+      const status = document.getElementById('revisionStatus');
+      try {
+        const student = getStudentInfo() || {};
+        const className = student.class_name || student.className || '';
+        const response = await fetchWithAuth(`/revision-materials${className ? `?className=${encodeURIComponent(className)}` : ''}`);
+        if (!response.ok) throw new Error('Could not load revision materials');
+        const materials = await response.json();
+        revisionCounts = {};
+        const categories = new Set();
+        materials.forEach((item) => {
+          const subjectKey = String(item.subject || '').trim().toLowerCase();
+          const classNameKey = String(item.class_name || item.className || '').trim().toLowerCase();
+          const categoryKey = String(item.category || item.type || '').trim().toLowerCase();
+          if (!subjectKey) return;
+
+          if (!revisionCounts[subjectKey]) {
+            revisionCounts[subjectKey] = { count: 0, classes: new Set(), categories: new Set() };
+          }
+          revisionCounts[subjectKey].count += 1;
+          if (classNameKey) revisionCounts[subjectKey].classes.add(classNameKey);
+          if (categoryKey) revisionCounts[subjectKey].categories.add(categoryKey);
+          if (categoryKey) categories.add(categoryKey);
+        });
+
+        Object.keys(revisionCounts).forEach((subject) => {
+          revisionCounts[subject].classes = Array.from(revisionCounts[subject].classes);
+          revisionCounts[subject].categories = Array.from(revisionCounts[subject].categories);
+        });
+
+        const total = materials.length;
+        status.textContent = `${total} material${total === 1 ? '' : 's'}`;
+
+        const categorySelect = document.getElementById('revisionCategory');
+        if (categorySelect) {
+          categorySelect.innerHTML = '<option value="">All categories</option>' + Array.from(categories).sort().map((category) => `
+            <option value="${escapeHtml(category)}">${escapeHtml(category.charAt(0).toUpperCase() + category.slice(1))}</option>`).join('');
+        }
+      } catch (error) {
+        console.error('Revision materials failed:', error);
+        status.textContent = 'Unavailable';
+      }
+      renderSubjectTiles();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      renderSubjectTiles();
+      loadRevisionCounts();
+      document.getElementById('revisionSearch')?.addEventListener('input', renderSubjectTiles);
+      document.getElementById('revisionClass')?.addEventListener('change', renderSubjectTiles);
+      document.getElementById('revisionCategory')?.addEventListener('change', renderSubjectTiles);
+
+      try {
+        const socket = io();
+        socket.on('new_portal_note', loadRevisionCounts);
+        socket.on('new_academic_doc', (doc) => {
+          if (doc?.type === 'revision') loadRevisionCounts();
+        });
+        socket.on('new_portal_revision', loadRevisionCounts);
+      } catch (error) {
+        console.warn('Socket connection unavailable:', error);
+      }
+    });
+  </script>
 </body>
 </html>

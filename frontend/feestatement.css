@@ -96,31 +96,212 @@
     justify-content: center;
 }
 
-.finance-table {
+.finance-table,
+.compact-table,
+.marks-table,
+.statement-table {
     border-collapse: collapse;
-    width: 90%;
-    max-width: 800px;
+    width: 100%;
+    min-width: 100%;
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(26,35,126,0.10);
-    overflow: hidden;
 }
 
-.finance-table th, .finance-table td {
-    padding: 16px 12px;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 1rem;
+.finance-table th,
+.finance-table td,
+.compact-table th,
+.compact-table td,
+.marks-table th,
+.marks-table td,
+.statement-table th,
+.statement-table td {
+    padding: 14px 16px;
+    border: 1px solid #e0e0e0;
+    font-size: 0.95rem;
+    color: #334155;
 }
 
-.finance-table th {
-    background: #1565c0;
+.finance-table th,
+.compact-table th,
+.marks-table th,
+.statement-table th {
+    background: #1a237e;
     color: #fff;
     font-weight: 600;
 }
 
-.finance-table tr:last-child td {
-    border-bottom: none;
+.finance-table tbody tr:hover,
+.compact-table tbody tr:hover,
+.marks-table tbody tr:hover,
+.statement-table tbody tr:hover {
+    background: #eff6ff;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.section-divider {
+    margin: 1.75rem 0 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+}
+
+.section-divider h4 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.fee-table-wrapper,
+.payment-table-wrapper,
+.marks-table-wrapper,
+.record-table-wrapper {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    margin-top: 10px;
+}
+
+.compact-table th,
+.marks-table th,
+.statement-table th,
+.record-table th {
+    text-align: left;
+}
+
+.compact-table td,
+.marks-table td,
+.statement-table td,
+.record-table td {
+    text-align: left;
+}
+
+.fee-total td {
+    font-weight: 700;
+    background: #f8fafc;
+}
+
+.notice-section {
+    margin-top: 1.5rem;
+    padding: 1.2rem 1.4rem;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+}
+
+.notice-section strong {
+    display: block;
+    margin-bottom: 0.55rem;
+}
+
+.form-controls {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background: #f8fafc;
+}
+
+.control-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.control-row label {
+    display: block;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.control-row select {
+    width: 100%;
+    margin-top: 0.55rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+}
+
+.btn {
+    padding: 0.9rem 1.15rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    background: #0f4c81;
+}
+
+.student-info-grid {
+    display: grid;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+}
+
+.student-info-grid div {
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.transcript-results {
+    display: grid;
+    gap: 1rem;
+}
+
+.term-section {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 1rem;
+    background: #fff;
+}
+
+.term-title {
+    font-weight: 700;
+    color: #0f4c81;
+    margin-bottom: 0.75rem;
+}
+
+.term-average {
+    margin-top: 0.85rem;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985;
+    font-weight: 700;
+}
+
+.empty {
+    padding: 1rem 0;
+    text-align: center;
+    color: #64748b;
+}
+
+@media (max-width: 1100px) {
+    .finance-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .finance-left,
+    .finance-right {
+        padding: 1.25rem;
+    }
+    .summary-grid { grid-template-columns: 1fr; }
+    .control-row { grid-template-columns: 1fr; }
 }
 
 .dashboard-footer {

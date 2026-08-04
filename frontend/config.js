@@ -18,7 +18,8 @@ const CONFIG = {
     'academic.html',
     'finance.html',
     'exams.html',
-    'admin-dashboard.html'
+    'admin-dashboard.html',
+    'lecturer-dashboard.html'
   ]
 };
 
