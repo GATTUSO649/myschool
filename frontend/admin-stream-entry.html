@@ -1,0 +1,319 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stream Marks Entry</title>
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="admin-dashboard.css">
+  </head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Stream marks entry</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link" href="admin-academics.html">Back</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Marks entry sheet</p>
+            <h2 id="streamTitle">Form 1 â€” Stream A</h2>
+          </div>
+          <div class="entry-controls">
+            <label>
+              Term
+              <select id="termSelect">
+                <option>Term 1</option>
+                <option>Term 2</option>
+                <option>Term 3</option>
+              </select>
+            </label>
+            <label>
+              Year
+              <input id="yearInput" type="number" min="2024" max="2040" value="2026">
+            </label>
+            <label>
+              Exam type
+              <input id="examTypeInput" type="text" placeholder="End Term" value="End Term">
+            </label>
+            <button class="primary-button" id="saveMarksBtn">Save all marks</button>
+          </div>
+        </div>
+
+        <div class="entry-summary">
+          <div class="summary-card">
+            <div>
+              <small>Students loaded</small>
+              <strong id="studentCount">0</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <small>Subjects</small>
+              <strong id="subjectCount">0</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <small>Sheet status</small>
+              <strong id="sheetStatus">Draft</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-panel">
+          <div class="table-wrapper entry-table-wrapper">
+            <table id="entrySheet" class="admin-table">
+              <thead id="entrySheetHead"></thead>
+              <tbody id="entrySheetBody">
+                <tr><td colspan="7">Loadingâ€¦</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const className = params.get('className') || params.get('class') || 'Form 1';
+    const stream = (params.get('stream') || 'A').toUpperCase();
+    const subjects = window.EIGHT_FOUR_FOUR_SUBJECTS || ['English','Kiswahili','Mathematics','Biology','Physics','Chemistry'];
+
+    let termSelect;
+    let yearInput;
+    let examTypeInput;
+    let saveMarksBtn;
+    let studentCountEl;
+    let subjectCountEl;
+    let sheetStatusEl;
+    let entrySheetHead;
+    let entrySheetBody;
+
+    function gradeForScore(score) {
+      const n = Number(score);
+      if (!Number.isFinite(n)) return '';
+      if (n >= 80) return 'A';
+      if (n >= 70) return 'A-';
+      if (n >= 60) return 'B';
+      if (n >= 50) return 'C';
+      if (n >= 40) return 'D';
+      if (n >= 30) return 'E';
+      return 'F';
+    }
+
+    function gradeForAverage(avg) {
+      return gradeForScore(Math.round(Number(avg)));
+    }
+
+    function buildTableHeader() {
+      if (!entrySheetHead) return;
+      const subjectHeaders = subjects.map((subject) => `<th>${subject}</th>`).join('');
+      entrySheetHead.innerHTML = `
+        <tr>
+          <th>Adm No.</th>
+          <th>Student Name</th>
+          ${subjectHeaders}
+          <th>Total</th>
+          <th>Avg</th>
+          <th>Grade</th>
+        </tr>
+      `;
+    }
+
+    function updateRowSummary(row) {
+      const inputs = Array.from(row.querySelectorAll('.mark-input'));
+      const scores = inputs
+        .map((input) => Number(input.value))
+        .filter((value) => Number.isFinite(value));
+      const total = scores.reduce((sum, value) => sum + value, 0);
+      const average = scores.length ? total / scores.length : 0;
+      row.querySelector('[data-total-cell]').textContent = scores.length ? total.toFixed(0) : '-';
+      row.querySelector('[data-avg-cell]').textContent = scores.length ? average.toFixed(2) : '-';
+      row.querySelector('[data-grade-cell]').textContent = scores.length ? gradeForAverage(average) : '-';
+    }
+
+    function markSheetDirty() {
+      if (sheetStatusEl) sheetStatusEl.textContent = 'Draft';
+    }
+
+    function attachEntryEvents() {
+      const entrySheet = document.getElementById('entrySheet');
+      if (!entrySheet) return;
+      entrySheet.addEventListener('focusin', (event) => {
+        if (event.target.matches('.mark-input')) collapseMarksSidebar();
+      });
+      entrySheet.addEventListener('click', (event) => {
+        if (event.target.closest('.mark-input')) collapseMarksSidebar();
+      });
+      termSelect.addEventListener('change', loadStudents);
+      yearInput.addEventListener('change', loadStudents);
+      examTypeInput.addEventListener('change', loadStudents);
+    }
+
+    async function loadStudents() {
+      if (!checkAuth()) return;
+      const academicYear = yearInput.value || String(new Date().getFullYear());
+      const term = termSelect.value || 'Term 1';
+      const examType = examTypeInput.value.trim() || 'End Term';
+      entrySheetBody.innerHTML = '<tr><td colspan="' + (subjects.length + 5) + '">Loading studentsâ€¦</td></tr>';
+      try {
+        const res = await fetchWithAuth(
+          `/academics/entry/students?className=${encodeURIComponent(className)}&stream=${encodeURIComponent(stream)}&academicYear=${encodeURIComponent(academicYear)}&term=${encodeURIComponent(term)}&examType=${encodeURIComponent(examType)}`
+        );
+        const data = await res.json();
+        if (!res.ok || !data.students) throw new Error(data.message || 'Could not load students');
+        const rows = data.students;
+        if (!rows.length) {
+          entrySheetBody.innerHTML = '<tr><td colspan="' + (subjects.length + 5) + '">No students found.</td></tr>';
+          studentCountEl.textContent = '0';
+          subjectCountEl.textContent = String(subjects.length);
+          sheetStatusEl.textContent = 'Draft';
+          return;
+        }
+
+        entrySheetBody.innerHTML = rows.map((student) => {
+          const saved = student.results || {};
+          const subjectInputs = subjects.map((subject) => {
+            const value = saved[subject]?.score;
+            return `
+              <td>
+                <input type="number" class="mark-input" min="0" max="100" step="1" data-student-id="${student.id}" data-subject="${subject}" value="${Number.isFinite(value) ? value : ''}" />
+              </td>
+            `;
+          }).join('');
+
+          return `
+            <tr data-student-id="${student.id}">
+              <td class="adm-cell">${student.admissionNumber || ''}</td>
+              <td>${student.name || ''}</td>
+              ${subjectInputs}
+              <td data-total-cell>-</td>
+              <td data-avg-cell>-</td>
+              <td data-grade-cell>-</td>
+            </tr>
+          `;
+        }).join('');
+
+        entrySheetBody.querySelectorAll('.mark-input').forEach((input) => {
+          input.addEventListener('input', (event) => {
+            markSheetDirty();
+            const row = event.target.closest('tr');
+            if (row) updateRowSummary(row);
+          });
+        });
+
+        entrySheetBody.querySelectorAll('tr').forEach(updateRowSummary);
+        studentCountEl.textContent = String(rows.length);
+        subjectCountEl.textContent = String(subjects.length);
+        sheetStatusEl.textContent = rows.some((student) => Object.keys(student.results || {}).length) ? 'Saved' : 'Draft';
+      } catch (err) {
+        console.error(err);
+        entrySheetBody.innerHTML = `<tr><td colspan="${subjects.length + 5}">Could not load students: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function saveMarks() {
+      const rows = Array.from(document.querySelectorAll('#entrySheetBody tr[data-student-id]'));
+      const academicYear = yearInput.value || String(new Date().getFullYear());
+      const term = termSelect.value || 'Term 1';
+      const examType = examTypeInput.value.trim() || 'End Term';
+      const payloads = {};
+
+      rows.forEach((row) => {
+        const studentId = Number(row.dataset.studentId);
+        if (!studentId) return;
+        Array.from(row.querySelectorAll('.mark-input')).forEach((input) => {
+          const subject = input.dataset.subject;
+          if (!subject) return;
+          const value = input.value.trim();
+          if (value === '') return;
+          const score = Number(value);
+          if (!Number.isFinite(score)) return;
+          payloads[subject] = payloads[subject] || [];
+          payloads[subject].push({ student_id: studentId, score });
+        });
+      });
+
+      const subjectEntries = Object.entries(payloads).filter(([, entries]) => entries.length);
+      if (!subjectEntries.length) {
+        showAlert('Enter at least one mark before saving.', 'error');
+        return;
+      }
+
+      saveMarksBtn.disabled = true;
+      const originalLabel = saveMarksBtn.textContent;
+      saveMarksBtn.textContent = 'Savingâ€¦';
+
+      try {
+        for (const [subject, entries] of subjectEntries) {
+          const res = await fetchWithAuth('/academics/entry/results', {
+            method: 'POST',
+            body: JSON.stringify({ subject, entries, academicYear, term, examType, className })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.message || `Could not save marks for ${subject}`);
+          }
+        }
+
+        showAlert('All marks saved successfully.', 'success');
+        sheetStatusEl.textContent = 'Saved';
+        await loadStudents();
+      } catch (err) {
+        console.error(err);
+        showAlert(err.message || 'Could not save marks.', 'error');
+        sheetStatusEl.textContent = 'Error';
+      } finally {
+        saveMarksBtn.disabled = false;
+        saveMarksBtn.textContent = originalLabel;
+      }
+    }
+
+    function collapseMarksSidebar() {
+      const sidebar = document.querySelector('.student-sidebar');
+      if (!sidebar) return;
+      if (window.matchMedia('(max-width: 980px)').matches) {
+        sidebar.classList.add('collapsed');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('streamTitle').textContent = `${className} â€” Stream ${stream}`;
+      termSelect = document.getElementById('termSelect');
+      yearInput = document.getElementById('yearInput');
+      examTypeInput = document.getElementById('examTypeInput');
+      saveMarksBtn = document.getElementById('saveMarksBtn');
+      studentCountEl = document.getElementById('studentCount');
+      subjectCountEl = document.getElementById('subjectCount');
+      sheetStatusEl = document.getElementById('sheetStatus');
+      entrySheetHead = document.getElementById('entrySheetHead');
+      entrySheetBody = document.getElementById('entrySheetBody');
+
+      buildTableHeader();
+      loadStudents();
+      attachEntryEvents();
+      if (saveMarksBtn) saveMarksBtn.addEventListener('click', saveMarks);
+    });
+  </script>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n</body>
+</html>

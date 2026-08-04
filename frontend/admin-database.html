@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database - Admin Portal</title>
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="dashboard.css">`n<link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Database control</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar"></aside>
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Database</p>
+            <h2 id="databaseName">Database</h2>
+          </div>
+        </div>
+
+        <div class="section-grid database-grid">
+          <div class="dashboard-panel">
+            <div class="panel-header">
+              <h3>Tables</h3>
+              <span class="panel-pill">Available</span>
+            </div>
+            <div class="database-table-list" id="databaseTableList"></div>
+          </div>
+
+          <div class="dashboard-panel">
+            <div class="panel-header">
+              <h3 id="databasePreviewTitle">Table preview</h3>
+              <span class="panel-pill" id="databasePreviewMeta">Select a table</span>
+            </div>
+            <form id="databaseRecordForm" class="database-record-form hidden">
+              <div class="database-record-grid" id="databaseRecordFields"></div>
+              <div class="form-actions">
+                <button class="primary-button" type="submit" id="databaseRecordSubmit">Save record</button>
+                <button class="secondary-button" type="button" id="databaseRecordCancel">Cancel</button>
+              </div>
+            </form>
+            <div id="databasePreview" class="database-output">
+              <div class="empty-chart">Choose a table to preview its first rows.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Query console</h3>
+            <span class="panel-pill">Read-only</span>
+          </div>
+          <form id="databaseQueryForm" class="sheet-form">
+            <label>SQL query
+              <textarea id="databaseQueryInput" name="sql" placeholder="SELECT * FROM students LIMIT 20"></textarea>
+            </label>
+            <div class="form-actions">
+              <button class="primary-button" type="submit">Run query</button>
+            </div>
+          </form>
+          <div id="databaseQueryResult" class="database-output"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n</body>
+</html>
+

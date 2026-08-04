@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Payments - Admin Finance</title>
+  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Fee payment entry</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="admin-applications.html">Applications</a>
+        <a class="sidebar-link" href="admin-students.html">Students</a>
+        <a class="sidebar-link" href="admin-academics.html">Academics</a>
+        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link active" href="admin-finance.html">Finance</a>
+        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Finance</p>
+            <h2>Record fee payments</h2>
+          </div>
+        </div>
+
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <div>
+              <h3>Post a new payment</h3>
+              <span class="panel-pill">Receipts and payment tracking</span>
+            </div>
+          </div>
+          <form id="financeEntryForm" class="sheet-form">
+            <div class="form-grid">
+              <label>
+                <span>Class</span>
+                <select id="financeEntryClass" name="className" required>
+                  <option value="">Select class</option>
+                  <option>Form 1</option>
+                  <option>Form 2</option>
+                  <option>Form 3</option>
+                  <option>Form 4</option>
+                </select>
+              </label>
+              <label>
+                <span>Student</span>
+                <select id="financeEntryStudent" name="student_id" required>
+                  <option value="">Select student</option>
+                </select>
+              </label>
+              <label>
+                <span>Amount</span>
+                <input id="financeEntryAmount" name="amount" type="number" min="1" placeholder="4000" required>
+              </label>
+              <label>
+                <span>Payment method</span>
+                <input id="financeEntryMethod" name="payment_method" type="text" placeholder="Cash, Mpesa, Bank">
+              </label>
+              <label>
+                <span>Reference</span>
+                <input id="financeEntryReference" name="reference" type="text" placeholder="Transaction reference">
+              </label>
+              <label>
+                <span>Date</span>
+                <input id="financeEntryDate" name="payment_date" type="date">
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="primary-button">Post payment</button>
+              <a href="admin-finance.html" class="secondary-button">Back to finance</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>

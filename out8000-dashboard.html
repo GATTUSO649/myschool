@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRESENT HIGH SCHOOL - Student Dashboard</title>
+  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" onclick="document.querySelector('.student-sidebar')?.classList.toggle('is-open')" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="brand-bar">
+        <div class="school-name">
+          <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
+        </div>
+        <div class="header-note">Student portal dashboard</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="studentNamePill">Student</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link active" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="exams.html">Exams</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Fee Balance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="lecturer interaction.html">Lecturer Interaction</a>
+      </div>
+      <div class="sidebar-section quick-access">
+        <h3>Quick Access</h3>
+        <a href="notes.html">Notes</a>
+        <a href="transcript.html">Transcript</a>
+        <a href="paymentreceipts.html">Receipts</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="hero-panel">
+        <div>
+          <p class="eyebrow">Student portal</p>
+          <h1>Welcome back, <span id="studentName">Student</span></h1>
+          <p id="studentSummary">Loading your latest academic and fee information...</p>
+        </div>
+        <div class="hero-badge">Live data</div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card accent-teal">
+          <span class="stat-label">Fee balance</span>
+          <strong id="feeBalance">KSh 0</strong>
+          <small id="feeMeta">Loading...</small>
+        </article>
+        <article class="stat-card accent-blue">
+          <span class="stat-label">Total charged</span>
+          <strong id="feeCharged">KSh 0</strong>
+          <small>Current billing</small>
+        </article>
+        <article class="stat-card accent-gold">
+          <span class="stat-label">Total paid</span>
+          <strong id="feePaid">KSh 0</strong>
+          <small>Payments posted</small>
+        </article>
+        <article class="stat-card accent-rose">
+          <span class="stat-label">Academic average</span>
+          <strong id="academicAverage">0%</strong>
+          <small id="academicMeta">Loading...</small>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Fee overview</h3>
+            <span class="panel-pill" id="feeStatus">Loading...</span>
+          </div>
+          <div class="chart-wrapper"><canvas id="feeChart"></canvas></div>
+        </div>
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Academic performance</h3>
+            <span class="panel-pill" id="academicStatus">Loading...</span>
+          </div>
+          <div class="chart-wrapper"><canvas id="academicsChart"></canvas></div>
+        </div>
+      </section>
+
+      <section class="dashboard-grid secondary">
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Recent results</h3>
+            <span class="panel-pill">Latest entries</span>
+          </div>
+          <ul id="resultsList" class="result-list"></ul>
+        </div>
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Quick links</h3>
+            <span class="panel-pill">Portal shortcuts</span>
+          </div>
+          <div class="quick-links">
+            <a href="academic.html">Academics</a>
+            <a href="finance.html">Finance</a>
+            <!-- Clearance removed -->
+            <a href="help.html">Help</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All portal updates are synced from the school management system.</footer>
+
+  <script src="chart-fallback.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    let feeChart = null;
+    let academicsChart = null;
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('student');
+      localStorage.removeItem('rememberMe');
+      window.location.href = 'login.html';
+    }
+
+    function formatCurrency(amount) {
+      return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    async function initializeDashboard() {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const student = getStudentInfo();
+      if (student) {
+        setText('studentName', student.name || 'Student');
+        setText('studentNamePill', student.name || 'Student');
+        setText('studentSummary', `${student.className || 'Student'} • ${student.admissionNumber || 'No admission'}`);
+      }
+
+      try {
+        const [profileRes, statementRes, resultsRes] = await Promise.all([
+          fetchWithAuth('/auth/me'),
+          fetchWithAuth('/finance/statement'),
+          fetchWithAuth('/results')
+        ]);
+
+        if (!profileRes.ok) throw new Error('Could not load profile');
+        const profileData = await profileRes.json();
+        const studentProfile = profileData.student || getStudentInfo();
+        if (studentProfile) {
+          setText('studentName', studentProfile.name || 'Student');
+          setText('studentNamePill', studentProfile.name || 'Student');
+          setText('studentSummary', `${studentProfile.className || 'Student'} • ${studentProfile.admissionNumber || 'No admission'}`);
+        }
+
+        let statementData = {};
+        if (statementRes.ok) {
+          statementData = await statementRes.json();
+        }
+
+        const totals = statementData.totals || statementData || {};
+        const balance = Number(totals.balance || statementData.balance || 0);
+        const charged = Number(totals.total_charges || totals.total_charged || statementData.total_charged || statementData.total_charges || 0);
+        const paid = Number(totals.total_paid || totals.paid || statementData.total_paid || statementData.paid || 0);
+
+        setText('feeBalance', formatCurrency(balance));
+        setText('feeCharged', formatCurrency(charged));
+        setText('feePaid', formatCurrency(paid));
+        setText('feeMeta', balance <= 0 ? 'No outstanding balance' : `${balance > 0 ? 'Outstanding' : 'Paid in full'} • ${formatCurrency(Math.max(balance, 0))}`);
+        setText('feeStatus', balance <= 0 ? 'Cleared' : 'Pending');
+
+        renderFeeChart(balance, charged);
+
+        let results = [];
+        if (resultsRes.ok) {
+          results = await resultsRes.json();
+        }
+
+        const recentResults = Array.isArray(results) ? results.slice(0, 6) : [];
+        const scores = recentResults.filter(item => Number(item.score) >= 0).map(item => Number(item.score));
+        const average = scores.length ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length) : 0;
+        setText('academicAverage', `${average}%`);
+        setText('academicMeta', recentResults.length ? `${recentResults.length} recent entries` : 'No results yet');
+        setText('academicStatus', recentResults.length ? 'Updated' : 'No data');
+
+        renderAcademicsChart(recentResults);
+        renderResultsList(recentResults);
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+        setText('studentSummary', 'Unable to load live data right now.');
+        setText('feeBalance', formatCurrency(0));
+        setText('feeCharged', formatCurrency(0));
+        setText('feePaid', formatCurrency(0));
+        setText('academicAverage', '0%');
+        setText('feeStatus', 'Unavailable');
+        setText('academicStatus', 'Unavailable');
+      }
+    }
+
+    function renderFeeChart(balance, charged) {
+      const ctx = document.getElementById('feeChart');
+      if (!ctx) return;
+      if (feeChart) feeChart.destroy();
+
+      const paid = Math.max(charged - balance, 0);
+      feeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Outstanding balance', 'Paid'],
+          datasets: [{
+            data: [Math.max(balance, 0), paid],
+            backgroundColor: ['#f97316', '#05cdab'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function renderAcademicsChart(results) {
+      const ctx = document.getElementById('academicsChart');
+      if (!ctx) return;
+      if (academicsChart) academicsChart.destroy();
+
+      const labels = results.length ? results.map(item => item.subject || 'Subject') : ['No data'];
+      const values = results.length ? results.map(item => Number(item.score || 0)) : [0];
+      const colors = ['#3b82f6', '#0ea5a5', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#10b981'];
+
+      academicsChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Subject marks',
+            data: values,
+            backgroundColor: labels.map((_, index) => colors[index % colors.length]),
+            borderColor: '#ffffff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 16,
+                padding: 16,
+                font: { size: 12 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const value = context.parsed;
+                  return `${context.label}: ${value}%`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderResultsList(results) {
+      const list = document.getElementById('resultsList');
+      if (!list) return;
+      if (!results.length) {
+        list.innerHTML = '<li class="result-empty">No results uploaded yet.</li>';
+        return;
+      }
+      list.innerHTML = results.map(result => `
+        <li class="result-item">
+          <div>
+            <strong>${result.subject || 'Subject'}</strong>
+            <p>${result.term || 'Term'} • ${result.academic_year || ''}</p>
+          </div>
+          <span class="result-score">${Number(result.score || 0)}%</span>
+        </li>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeDashboard();
+    });
+  </script>
+</body>
+</html>

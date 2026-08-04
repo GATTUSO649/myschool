@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academics - CRESENT</title>
+  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="academic.css">
+</head>
+<body class="student-portal page-academics">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" onclick="document.querySelector('.student-sidebar')?.classList.toggle('is-open')" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+      <div class="header-actions">
+        <span class="header-pill" id="formBadge">Form</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link active" href="academic.html">Academics</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Learning</h3>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="exams.html">Exams</a>
+        <a class="sidebar-link" href="transcript.html">Transcript</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Fee Balance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="lecturer interaction.html">Lecturer Interaction</a>
+        <a class="sidebar-link" href="help.html">Help and Support</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="student-main-content">
+      <!-- Welcome Card Section -->
+      <section class="welcome-card">
+        <div class="hero-panel academic-hero">
+          <div>
+            <p class="eyebrow">Academic Portal</p>
+            <h1 id="welcomeTitle">Welcome</h1>
+            <p id="welcomeSubtitle">Track your academic progress and performance</p>
+          </div>
+          <div class="hero-details">
+            <div class="detail-item">
+              <span class="detail-label">Form</span>
+              <strong id="studentForm">-</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Adm No.</span>
+              <strong id="studentAdmNo">-</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="results-filter-panel" aria-labelledby="resultsFilterTitle">
+        <div>
+          <p class="eyebrow">Results archive</p>
+          <h2 id="resultsFilterTitle">Filter academic results</h2>
+          <p class="filter-description">Choose a term and academic year to view the results published by the school.</p>
+        </div>
+        <div class="results-filters">
+          <label for="resultsTermFilter">
+            <span>Term</span>
+            <select id="resultsTermFilter">
+              <option value="">All terms</option>
+              <option value="Term 1">Term 1</option>
+              <option value="Term 2">Term 2</option>
+              <option value="Term 3">Term 3</option>
+            </select>
+          </label>
+          <label for="resultsYearFilter">
+            <span>Academic year</span>
+            <select id="resultsYearFilter">
+              <option value="">All years</option>
+            </select>
+          </label>
+          <button type="button" class="results-search-button" id="resultsSearchButton">Search</button>
+        </div>
+      </section>
+
+      <!-- Performance Summary Stats -->
+      <section class="academic-panels">
+        <section class="academic-summary-card">
+          <div class="summary-card-header">
+            <div>
+              <p class="eyebrow">Performance overview</p>
+              <h3>Academic summary</h3>
+            </div>
+            <span class="panel-pill">Current term</span>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item stat-average">
+              <span class="stat-label">Average score</span>
+              <strong id="overallAverage">0%</strong>
+              <small>Current term</small>
+            </div>
+            <div class="summary-item stat-subjects">
+              <span class="stat-label">Subjects taken</span>
+              <strong id="subjectCount">0</strong>
+              <small>This term</small>
+            </div>
+            <div class="summary-item stat-marks">
+              <span class="stat-label">Marks</span>
+              <strong id="studentMarks">0%</strong>
+              <small>Latest result</small>
+            </div>
+            <div class="summary-item stat-best">
+              <span class="stat-label">Best subject</span>
+              <strong id="bestSubject">-</strong>
+              <small id="bestSubjectGrade">Grade: -</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="performance-overview-card">
+          <div class="summary-card-header">
+            <div>
+              <p class="eyebrow">Progress report</p>
+              <h3>Overall performance</h3>
+            </div>
+            <span class="panel-pill panel-pill-live">Live</span>
+          </div>
+          <div class="performance-score-block">
+            <strong id="overallPerformanceValue">0%</strong>
+            <p id="performanceSummary">Performance will appear here as soon as your latest results are available.</p>
+          </div>
+          <div class="performance-progress">
+            <div class="performance-progress-bar">
+              <span id="overallPerformanceBar"></span>
+            </div>
+            <small id="performanceStatus">Awaiting update</small>
+          </div>
+        </section>
+      </section>
+
+      <section class="dashboard-panel finance-strip" id="financeSummary">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Finance</p>
+            <h3>Fee Summary</h3>
+          </div>
+          <span class="panel-pill">Balance</span>
+        </div>
+        <div class="metric metric-charged">
+          <small>Total Charged</small>
+          <strong id="totalCharged">-</strong>
+        </div>
+        <div class="metric metric-paid">
+          <small>Total Paid</small>
+          <strong id="totalPaid">-</strong>
+        </div>
+        <div class="metric metric-balance">
+          <small>Outstanding Balance</small>
+          <strong id="outstandingBalance">-</strong>
+        </div>
+        <a href="finance.html" class="btn">Open Finance</a>
+      </section>
+
+      <!-- Academic Charts -->
+      <section class="academic-charts">
+        <div class="dashboard-panel chart-card">
+          <div class="panel-header">
+            <h3>Subject Performance</h3>
+            <span class="panel-pill">Current term</span>
+          </div>
+          <div class="chart-wrapper"><canvas id="subjectChart"></canvas></div>
+        </div>
+
+        <div class="dashboard-panel chart-card">
+          <div class="panel-header">
+            <h3>Term Performance Trend</h3>
+            <span class="panel-pill">Year overview</span>
+          </div>
+          <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
+        </div>
+      </section>
+
+      <!-- Quick Links -->
+      <section class="quick-links-section">
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <h3>Quick Links</h3>
+            <span class="panel-pill">Common actions</span>
+          </div>
+          <div class="quick-links academic-quick-links">
+            <a href="notes.html">Lecture Notes</a>
+            <a href="transcript.html">View Transcript</a>
+            <a href="help.html">Help and Support</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Student Transcript -->
+      <section class="transcript-card dashboard-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Academic record</p>
+            <h3>Student Transcript</h3>
+          </div>
+          <span class="panel-pill">Official record</span>
+        </div>
+        <div class="transcript-card-content">
+          <div>
+            <p>View your complete academic record, grades, attendance, and performance history.</p>
+            <p class="transcript-filter-status" id="transcriptFilterStatus" role="status">Select a year and search to load transcript records.</p>
+          </div>
+          <a href="transcript.html" class="btn">Open Student Transcript</a>
+        </div>
+        <div class="filtered-transcript-wrap" id="filteredTranscriptWrap" hidden>
+          <div class="filtered-transcript-heading">
+            <h4>Filtered transcript records</h4>
+            <span class="panel-pill" id="filteredTranscriptCount">0 records</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="filtered-transcript-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Term</th>
+                  <th>Total</th>
+                  <th>Average</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody id="filteredTranscriptBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="chart-fallback.js"></script>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="academic.js"></script>
+  <script src="site-common.js"></script>
+</body>
+</html>

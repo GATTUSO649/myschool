@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Structure - Admin Finance</title>
+  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Fee structure management</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="admin-applications.html">Applications</a>
+        <a class="sidebar-link" href="admin-students.html">Students</a>
+        <a class="sidebar-link" href="admin-academics.html">Academics</a>
+        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link active" href="admin-finance.html">Finance</a>
+        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Finance</p>
+            <h2>Build fee structure</h2>
+          </div>
+        </div>
+
+        <div class="dashboard-panel fee-structure-panel">
+          <div class="panel-header">
+            <div>
+              <h3>Create or update fee categories</h3>
+              <span class="panel-pill">Assign structure by student, class, or all</span>
+            </div>
+          </div>
+          <form id="feeStructureForm" class="sheet-form">
+            <div class="form-grid">
+              <label>
+                <span>Apply to</span>
+                <select id="feeStructureTarget" name="target">
+                  <option value="all">All students</option>
+                  <option value="class">By class</option>
+                  <option value="student">Specific student</option>
+                </select>
+              </label>
+              <label>
+                <span>Class</span>
+                <select id="feeStructureClass" name="className">
+                  <option value="">Select class</option>
+                  <option>Form 1</option>
+                  <option>Form 2</option>
+                  <option>Form 3</option>
+                  <option>Form 4</option>
+                </select>
+              </label>
+              <label>
+                <span>Student</span>
+                <select id="feeStructureStudent" name="student_id">
+                  <option value="">Optional student</option>
+                </select>
+              </label>
+              <label>
+                <span>Term</span>
+                <input id="feeStructureTerm" name="term" type="text" placeholder="Term 1">
+              </label>
+              <label>
+                <span>Academic year</span>
+                <input id="feeStructureYear" name="academic_year" type="number" min="2023" placeholder="2026">
+              </label>
+              <label>
+                <span>Due date</span>
+                <input id="feeStructureDueDate" name="due_date" type="date">
+              </label>
+            </div>
+            <div class="form-grid" style="grid-template-columns: 1fr; gap: 14px; margin-top: 18px;">
+              <label class="checkbox-field">
+                <input type="checkbox" id="annualCharge" name="annual_charge">
+                <span>Enable annual fee charge</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="prorateFee" name="prorate_fee">
+                <span>Prorate for late admissions</span>
+              </label>
+            </div>
+            <div class="form-actions" style="justify-content: flex-end; gap: 12px; margin-top: 24px;">
+              <button type="button" class="secondary-button">Reset form</button>
+              <button type="submit" class="primary-button">Publish fee structure</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>
