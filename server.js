@@ -7,6 +7,15 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const { ensureDatabase, query } = require('./config/db');
+const authMiddleware = require('./middleware/authMiddleware');
+const {
+  createAuthRateLimiter,
+  createGeneralRateLimiter,
+  csrfProtection,
+  securityHeaders,
+  parseCookies,
+  recordSecurityEvent
+} = require('./middleware/security');
 const authRoutes = require('./routes/auth');
 const applicationRoutes = require('./routes/applications');
 const studentRoutes = require('./routes/students');
@@ -55,9 +64,15 @@ const io = new Server(server, {
   }
 });
 
+const authLimiter = createAuthRateLimiter();
+const generalLimiter = createGeneralRateLimiter();
+
+app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use(generalLimiter);
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(parseCookies);
 
 function wrapAsyncRoutes(router) {
   router.stack.forEach((layer) => {
@@ -81,7 +96,44 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Cresent High School Portal API is running' });
 });
 
+app.post('/api/auth/login', authLimiter, (req, res, next) => {
+  next();
+});
+
+app.post('/api/auth/signup', authLimiter, (req, res, next) => {
+  next();
+});
+
+const publicApiPaths = new Set([
+  '/health',
+  '/auth/login',
+  '/auth/signup',
+  '/applications'
+]);
+
+app.use('/api', (req, res, next) => {
+  const isPublicHealth = req.path === '/health';
+  const isPublicAuthRoute = req.path.startsWith('/auth/login') || req.path.startsWith('/auth/signup');
+  const isPublicApplicationCreate = req.method === 'POST' && req.path === '/applications';
+
+  if (isPublicHealth || isPublicAuthRoute || isPublicApplicationCreate) {
+    return next();
+  }
+
+  return authMiddleware(req, res, next);
+});
+
 app.use('/api/auth', wrapAsyncRoutes(authRoutes));
+
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return next();
+  }
+  if (req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/signup')) {
+    return next();
+  }
+  return csrfProtection(req, res, next);
+});
 
 // Initialize Socket.IO for all route handlers
 const applicationController = require('./controllers/applicationController');
@@ -112,6 +164,85 @@ app.use('/api/admin', wrapAsyncRoutes(adminRoutes));
 app.use('/api', wrapAsyncRoutes(portalRoutes));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const protectedPagePatterns = [
+  '/dashboard.html',
+  '/finance.html',
+  '/academics.html',
+  '/academic.html',
+  '/admissions.html',
+  '/admin.html',
+  '/admin-dashboard.html',
+  '/teacher.html',
+  '/student.html',
+  '/profile.html',
+  '/settings.html',
+  '/reports.html',
+  '/admin-security.html',
+  '/notes.html',
+  '/transcript.html',
+  '/subject.html',
+  '/paymentreceipts.html',
+  '/feestatement.html',
+  '/feestructure.html',
+  '/lecturer-dashboard.html',
+  '/student-transcript.html',
+  '/receipt_view.html',
+  '/notifications.html',
+  '/calendar.html',
+  '/clearance-request.html',
+  '/revision.html',
+  '/exams.html'
+];
+
+const protectedPageRoleMap = {
+  '/dashboard.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+  '/finance.html': ['finance', 'admin', 'student'],
+  '/academics.html': ['teacher', 'admin', 'student'],
+  '/academic.html': ['teacher', 'admin', 'student'],
+  '/admissions.html': ['admin'],
+  '/admin.html': ['admin'],
+  '/admin-dashboard.html': ['admin'],
+  '/teacher.html': ['teacher', 'admin'],
+  '/student.html': ['admin', 'teacher'],
+  '/profile.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+  '/settings.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+  '/reports.html': ['admin', 'finance', 'teacher'],
+  '/admin-security.html': ['admin'],
+  '/notes.html': ['student', 'teacher', 'admin'],
+  '/transcript.html': ['student', 'teacher', 'admin'],
+  '/subject.html': ['student', 'teacher', 'admin'],
+  '/paymentreceipts.html': ['student', 'finance', 'admin'],
+  '/feestatement.html': ['student', 'finance', 'admin'],
+  '/feestructure.html': ['student', 'finance', 'admin'],
+  '/lecturer-dashboard.html': ['teacher', 'admin'],
+  '/student-transcript.html': ['admin', 'teacher', 'student'],
+  '/receipt_view.html': ['student', 'finance', 'admin'],
+  '/notifications.html': ['student', 'teacher', 'admin', 'parent'],
+  '/calendar.html': ['student', 'teacher', 'admin', 'parent'],
+  '/clearance-request.html': ['student', 'admin'],
+  '/revision.html': ['student', 'teacher', 'admin'],
+  '/exams.html': ['student', 'teacher', 'admin']
+};
+
+app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
+  const pathname = req.path.toLowerCase();
+  const allowedRoles = protectedPageRoleMap[pathname];
+  if (!allowedRoles) {
+    return res.redirect('/login.html');
+  }
+  const userRole = req.user?.role;
+  if (!userRole || !allowedRoles.includes(userRole)) {
+    return res.status(403).redirect('/login.html');
+  }
+  const pagePath = path.join(__dirname, 'frontend', pathname.replace(/^\//, ''));
+  res.sendFile(pagePath, (error) => {
+    if (error) {
+      next(error);
+    }
+  });
+});
+
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 app.get('/', (req, res) => {
@@ -119,6 +250,9 @@ app.get('/', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err && err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ success: false, message: 'Invalid CSRF token' });
+  }
   console.error('Express error:', err);
   if (res.headersSent) return next(err);
   res.status(err.status || 500).json({ success: false, message: err.message || 'Internal server error' });

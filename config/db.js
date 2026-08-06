@@ -108,6 +108,19 @@ async function runMigrations() {
   await addColumnIfMissing('assignment_submissions', 'grade', 'DECIMAL(6,2) NULL');
   await addColumnIfMissing('assignment_submissions', 'feedback', 'TEXT NULL');
 
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS password_reset_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      student_id INT NOT NULL,
+      email VARCHAR(255) NULL,
+      otp_hash VARCHAR(255) NOT NULL,
+      temp_password_hash VARCHAR(255) NULL,
+      expires_at DATETIME NOT NULL,
+      used_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   const transcriptTables = ['form1_transcript', 'form2_transcript', 'form3_transcript', 'form4_transcript'];
   const transcriptColumns = [
     ['adm', 'VARCHAR(50) NOT NULL'],

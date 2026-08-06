@@ -1,6 +1,7 @@
 const { query, database } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { getNextAdmissionAssignment, getNextStaffAssignment } = require('./admissionAllocator');
+const { logActivity } = require('./logController');
 
 const EDITABLE_TABLES = new Set([
   'students',
@@ -174,6 +175,77 @@ async function deactivateStudent(req, res) {
   } catch (error) {
     console.error('Deactivate student error:', error);
     res.status(500).json({ success: false, message: 'Could not deactivate student' });
+  }
+}
+
+async function getSecurityDashboard(req, res) {
+  try {
+    const [failureRows] = await query(`
+      SELECT COUNT(*) AS count
+      FROM activity_logs
+      WHERE action IN ('failed_login', 'login_lockout')
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    `);
+    const [lockoutRows] = await query(`
+      SELECT COUNT(*) AS count
+      FROM activity_logs
+      WHERE action = 'login_lockout'
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    `);
+    const [loginRows] = await query(`
+      SELECT COUNT(*) AS count
+      FROM activity_logs
+      WHERE action = 'login'
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    `);
+    const recentRows = await query(`
+      SELECT action, details, ip_address AS ipAddress, created_at AS createdAt
+      FROM activity_logs
+      WHERE action IN ('login','failed_login','login_lockout','password_reset_confirmed','password_reset_requested','admission_email_sent')
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      success: true,
+      dashboard: {
+        failedAttempts: Number(failureRows?.count || 0),
+        lockouts: Number(lockoutRows?.count || 0),
+        logins: Number(loginRows?.count || 0),
+        recentEvents: recentRows || []
+      }
+    });
+  } catch (error) {
+    console.error('Security dashboard error:', error);
+    res.status(500).json({ success: false, message: 'Could not load security dashboard' });
+  }
+}
+
+async function resetStudentPassword(req, res) {
+  try {
+    const identifier = String(req.body?.identifier || req.body?.studentId || req.body?.username || req.body?.admissionNumber || '').trim();
+    const newPassword = String(req.body?.newPassword || '').trim();
+    if (!identifier || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Student identifier and new password are required' });
+    }
+
+    const rows = await query(
+      `SELECT id, username, email, admission_number FROM students WHERE id = ? OR username = ? OR admission_number = ? LIMIT 1`,
+      [identifier, identifier, identifier.toUpperCase()]
+    );
+    const student = rows[0];
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student account not found' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await query('UPDATE students SET password_hash = ? WHERE id = ?', [passwordHash, student.id]);
+    await logActivity(req.user?.id || null, 'password_reset_admin', `Admin reset password for ${student.username || student.admission_number}`, req.ip);
+
+    res.json({ success: true, message: 'Student password reset successfully' });
+  } catch (error) {
+    console.error('Admin password reset error:', error);
+    res.status(500).json({ success: false, message: 'Password reset failed' });
   }
 }
 
@@ -358,6 +430,8 @@ module.exports = {
   getStudents,
   createStudent,
   deactivateStudent,
+  getSecurityDashboard,
+  resetStudentPassword,
   getSettings,
   saveSettings,
   getPublicSettings,

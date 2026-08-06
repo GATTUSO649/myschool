@@ -801,7 +801,7 @@
     }
 
     async function loadTranscriptPage() {
-      if (!checkAuth()) { window.location.href = 'login.html'; return; }
+      if (!checkAuth()) { window.location.replace('login.html'); return; }
       const admParam = getQueryParam('adm');
       const studentData = getStudentInfo() || {};
       const admission = admParam || studentData.admission_number || studentData.adm || studentData.admissionNumber;

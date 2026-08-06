@@ -174,6 +174,40 @@ function normalizeStudentAdm(student) {
   return student.admissionNumber || student.admission_number || student.adm || '';
 }
 
+async function loadSecurityDashboard() {
+  const cards = document.getElementById('securityCards');
+  const events = document.getElementById('recentEvents');
+  if (!cards && !events) return;
+
+  try {
+    const response = await fetchWithAuth('/api/admin/security-dashboard');
+    const data = await response.json();
+    const dashboard = data.dashboard || {};
+
+    if (cards) {
+      cards.innerHTML = `
+        <div class="mini-card"><h4>Failed attempts</h4><strong>${dashboard.failedAttempts || 0}</strong></div>
+        <div class="mini-card"><h4>Lockouts</h4><strong>${dashboard.lockouts || 0}</strong></div>
+        <div class="mini-card"><h4>Successful logins</h4><strong>${dashboard.logins || 0}</strong></div>
+      `;
+    }
+
+    if (events) {
+      const rows = (dashboard.recentEvents || []).map((event) => `
+        <div class="info-box">
+          <strong>${escapeHtml(event.action || 'event')}</strong>
+          <div>${escapeHtml(event.details || 'No details')}</div>
+          <small>${escapeHtml(event.ipAddress || 'N/A')} • ${escapeHtml(event.createdAt || '')}</small>
+        </div>
+      `).join('');
+      events.innerHTML = rows || '<div class="info-box">No recent security events yet.</div>';
+    }
+  } catch (error) {
+    if (cards) cards.innerHTML = '<div class="info-box">Unable to load security dashboard.</div>';
+    if (events) events.innerHTML = '<div class="info-box">Unable to load recent security events.</div>';
+  }
+}
+
 function readPortalStore(key) {
   try {
     const value = localStorage.getItem(key);

@@ -1,6 +1,7 @@
 const express = require('express');
 const controller = require('../controllers/adminDashboardController');
 const transcripts = require('../controllers/transcriptController');
+const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { authorizeRole } = require('../middleware/adminMiddleware');
 const { documentsUpload } = require('../middleware/uploadMiddleware');
@@ -8,6 +9,9 @@ const { documentsUpload } = require('../middleware/uploadMiddleware');
 const router = express.Router();
 
 router.get('/stats', authMiddleware, authorizeRole(['admin', 'rba']), controller.getStats);
+router.get('/security-dashboard', authMiddleware, authorizeRole(['admin', 'rba']), controller.getSecurityDashboard);
+router.post('/password-reset/request', authMiddleware, authorizeRole(['admin', 'rba']), authController.requestPasswordReset);
+router.post('/password-reset/direct', authMiddleware, authorizeRole(['admin', 'rba']), controller.resetStudentPassword);
 router.get('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.getStudents);
 router.post('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.createStudent);
 router.put('/students/:studentId/deactivate', authMiddleware, authorizeRole(['admin', 'rba']), controller.deactivateStudent);

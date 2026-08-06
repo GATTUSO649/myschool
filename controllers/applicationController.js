@@ -2,7 +2,7 @@ const { query } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
-const { schoolEmail } = require('./emailUtils');
+const { schoolEmail, sendAdmissionApprovalEmail } = require('./emailUtils');
 
 function getDocumentValue(req, fieldName, fallbackValue) {
   const uploaded = req.files?.[fieldName]?.[0];
@@ -105,18 +105,25 @@ async function approveApplication(req, res) {
     
     await logActivity(reviewerId, 'application_approved', `Approved application #${id}`, req.ip);
 
-    // Create student record if it does not already exist
+    let studentAccount = null;
     try {
-      const existing = await query('SELECT id FROM students WHERE admission_number = ? OR email = ? LIMIT 1', [admissionNumber, app.email || null]);
-      if (!existing || existing.length === 0) {
-        const passwordHash = await bcrypt.hash(admissionNumber || String(Date.now()), 10);
+      const existing = await query('SELECT id, username, email, admission_number FROM students WHERE admission_number = ? OR email = ? LIMIT 1', [admissionNumber, app.email || null]);
+      studentAccount = existing && existing.length ? existing[0] : null;
+      if (!studentAccount) {
         const emailValue = schoolEmail(app.email, admissionNumber || app.full_name);
+        const baseUsername = String(app.full_name || app.fullName || 'student')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '')
+          .slice(0, 12) || 'student';
+        const username = `${baseUsername}${String(admissionNumber || '').replace(/[^0-9]/g, '').slice(-4) || Math.floor(1000 + Math.random() * 9000)}`;
+        const loginPassword = String(app.email || emailValue || admissionNumber || '').trim();
+        const passwordHash = await bcrypt.hash(loginPassword, 10);
         const insertRes = await query(
           `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
           [
             app.full_name || app.fullName || null,
-            null,
+            username,
             emailValue || null,
             admissionNumber,
             passwordHash,
@@ -128,7 +135,20 @@ async function approveApplication(req, res) {
             app.parent_phone || app.parentPhone || null
           ]
         );
+        studentAccount = { id: insertRes.insertId, username, email: emailValue };
         await logActivity(req.user.id, 'student_created_from_application', `Created student record ${admissionNumber}`, req.ip);
+      }
+
+      const recipientEmail = String(app.email || studentAccount?.email || '').trim();
+      if (recipientEmail) {
+        await sendAdmissionApprovalEmail({
+          to: recipientEmail,
+          fullName: app.full_name || app.fullName || 'Student',
+          admissionNumber,
+          username: studentAccount?.username || app.full_name || 'student',
+          password: String(app.email || recipientEmail || admissionNumber || '').trim(),
+          stream
+        });
       }
     } catch (e) {
       console.warn('Could not auto-create student on approval:', e.message || e);

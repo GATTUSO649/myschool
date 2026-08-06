@@ -2,7 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
-const { schoolEmail } = require('./emailUtils');
+const { isStrongPassword, createLoginAttemptTracker } = require('../middleware/security');
+const { schoolEmail, sendPasswordResetEmail } = require('./emailUtils');
+
+const loginTracker = createLoginAttemptTracker({ maxAttempts: 5, windowMs: 15 * 60 * 1000 });
 
 function publicStudent(row) {
   return {
@@ -29,6 +32,14 @@ function signToken(student) {
   );
 }
 
+function generateOtpCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function generateTempPassword() {
+  return `Cres${Math.random().toString(36).slice(-8)}!`;
+}
+
 async function signup(req, res) {
   try {
     const username = (req.body.username || req.body.name || '').trim();
@@ -37,6 +48,13 @@ async function signup(req, res) {
 
     if (!username || !admissionNumber || !password) {
       return res.status(400).json({ success: false, message: 'Username, admission number, and password are required' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.'
+      });
     }
 
     const usernameOwner = await query('SELECT id FROM students WHERE username = ? LIMIT 1', [username]);
@@ -100,6 +118,13 @@ async function login(req, res) {
       return res.status(400).json({ success: false, message: 'Name/email and password are required' });
     }
 
+    const attemptKey = `login:${String(identifier).toLowerCase()}`;
+    const attemptStatus = loginTracker(attemptKey);
+    if (attemptStatus.blocked) {
+      await logActivity(null, 'login_lockout', 'Blocked due to repeated failed attempts', req.ip);
+      return res.status(429).json({ success: false, message: 'Too many failed login attempts. Please try again later.' });
+    }
+
     let rows = await query(
       `SELECT * FROM students
        WHERE username = ? OR email = ? OR name = ? OR admission_number = ?
@@ -118,11 +143,11 @@ async function login(req, res) {
       student = lecturerRows[0];
     }
 
-    if (identifier.toLowerCase() === 'admin' && password === 'admin123') {
+    if (identifier.toLowerCase() === 'pickens' && password === '@pickens49823960') {
       const adminStudent = {
         id: 0,
         name: 'Administrator',
-        username: 'admin',
+        username: 'pickens',
         email: 'admin@cresenthighschool.com',
         admission_number: 'ADMIN',
         role: 'admin',
@@ -132,7 +157,13 @@ async function login(req, res) {
         active: 1,
         last_login: new Date()
       };
-      return res.json({
+      await logActivity(0, 'login', 'Successful admin login', req.ip);
+      return res.cookie('authToken', signToken(adminStudent), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      }).json({
         success: true,
         token: signToken(adminStudent),
         student: publicStudent(adminStudent)
@@ -140,6 +171,7 @@ async function login(req, res) {
     }
 
     if (!student || !student.active) {
+      await logActivity(null, 'failed_login', `Invalid login identifier: ${identifier}`, req.ip);
       return res.status(401).json({ success: false, message: 'Invalid login details' });
     }
 
@@ -154,7 +186,12 @@ async function login(req, res) {
     await logActivity(student.id, 'login', 'Successful login', req.ip);
 
     const refreshed = (await query('SELECT * FROM students WHERE id = ?', [student.id]))[0];
-    return res.json({
+    return res.cookie('authToken', signToken(refreshed), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    }).json({
       success: true,
       token: signToken(refreshed),
       student: publicStudent(refreshed)
@@ -162,6 +199,97 @@ async function login(req, res) {
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ success: false, message: 'Login failed' });
+  }
+}
+
+async function requestPasswordReset(req, res) {
+  try {
+    const identifier = String(req.body?.identifier || req.body?.email || req.body?.username || req.body?.studentId || '').trim();
+    if (!identifier) {
+      return res.status(400).json({ success: false, message: 'Student identifier is required' });
+    }
+
+    const rows = await query(
+      `SELECT * FROM students WHERE id = ? OR username = ? OR email = ? OR admission_number = ? LIMIT 1`,
+      [identifier, identifier, identifier, identifier.toUpperCase()]
+    );
+    const student = rows[0];
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student account not found' });
+    }
+
+    const otp = generateOtpCode();
+    const temporaryPassword = generateTempPassword();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const tempPasswordHash = await bcrypt.hash(temporaryPassword, 10);
+
+    await query(
+      `INSERT INTO password_reset_requests (student_id, email, otp_hash, temp_password_hash, expires_at, created_at)
+       VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW())`,
+      [student.id, student.email || schoolEmail(student.email, student.admission_number), otpHash, tempPasswordHash]
+    );
+
+    const destinationEmail = student.email || schoolEmail(student.email, student.admission_number);
+    if (destinationEmail) {
+      await sendPasswordResetEmail({ to: destinationEmail, otp, temporaryPassword });
+    }
+
+    await logActivity(req.user?.id || student.id, 'password_reset_requested', `Password reset initiated for ${student.username || student.admission_number}`, req.ip);
+    return res.json({ success: true, message: 'Password reset instructions have been sent to the student email.' });
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    return res.status(500).json({ success: false, message: 'Password reset request failed' });
+  }
+}
+
+async function confirmPasswordReset(req, res) {
+  try {
+    const identifier = String(req.body?.identifier || req.body?.username || req.body?.email || '').trim();
+    const otp = String(req.body?.otp || '').trim();
+    const newPassword = String(req.body?.newPassword || '').trim();
+
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Identifier, OTP, and a new password are required' });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.'
+      });
+    }
+
+    const rows = await query(
+      `SELECT * FROM students WHERE username = ? OR email = ? OR admission_number = ? LIMIT 1`,
+      [identifier, identifier, identifier.toUpperCase()]
+    );
+    const student = rows[0];
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student account not found' });
+    }
+
+    const resetRows = await query(
+      `SELECT * FROM password_reset_requests WHERE student_id = ? AND used_at IS NULL AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
+      [student.id]
+    );
+    const resetRequest = resetRows[0];
+    if (!resetRequest) {
+      return res.status(400).json({ success: false, message: 'No active password reset request was found' });
+    }
+
+    const otpMatch = await bcrypt.compare(otp, resetRequest.otp_hash);
+    if (!otpMatch) {
+      return res.status(400).json({ success: false, message: 'The OTP is invalid or expired' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await query('UPDATE students SET password_hash = ? WHERE id = ?', [passwordHash, student.id]);
+    await query('UPDATE password_reset_requests SET used_at = NOW() WHERE id = ?', [resetRequest.id]);
+    await logActivity(student.id, 'password_reset_confirmed', `Password reset completed for ${student.username || student.admission_number}`, req.ip);
+    return res.json({ success: true, message: 'Password reset completed successfully' });
+  } catch (error) {
+    console.error('Password reset confirm error:', error);
+    return res.status(500).json({ success: false, message: 'Password reset confirmation failed' });
   }
 }
 
@@ -173,6 +301,10 @@ module.exports = {
   login,
   signup,
   me,
+  requestPasswordReset,
+  confirmPasswordReset,
   publicStudent,
-  signToken
+  signToken,
+  generateOtpCode,
+  generateTempPassword
 };

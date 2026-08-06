@@ -69,7 +69,7 @@ POST /api/classes/courses      - Add new course
 
 ## Default Admin Account
 - **Username**: pickens
-- **Password**: admin123
+- **Password**: @pickens49823960
 - **Email**: admin@cresent.local
 ⚠️ **Change these credentials in .env for production**
 

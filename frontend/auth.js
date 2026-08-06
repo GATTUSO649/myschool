@@ -44,8 +44,10 @@ if (loginForm) {
       const response = await fetch(`${getAuthUrl()}/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'include',
         body: JSON.stringify({ name, password })
       });
 
@@ -68,6 +70,9 @@ if (loginForm) {
         // Save token and normalized student data to localStorage
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('student', JSON.stringify(student));
+
+        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = `authToken=${encodeURIComponent(data.token)}; path=/; expires=${expires}; SameSite=Lax`;
         
         console.log('✅ Token saved to localStorage');
         console.log('authToken now =', localStorage.getItem('authToken'));
@@ -140,8 +145,10 @@ if (registerForm) {
       const response = await fetch(`${getAuthUrl()}/signup`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'include',
         body: JSON.stringify({ username, admissionNumber, password, confirm })
       });
 
@@ -171,37 +178,57 @@ if (registerForm) {
 
 // Check if user is authenticated (call this on protected pages like dashboard)
 function checkAuth() {
-  // Return whether an auth token exists; also enforce role-based redirects.
   const token = localStorage.getItem('authToken');
   const student = getStudentInfo();
-  const isAuth = !!token;
-  if (!isAuth) {
-    console.warn('⚠️ checkAuth(): No authToken found in localStorage. Keys:', Object.keys(localStorage));
+  const path = window.location.pathname.toLowerCase();
+  const page = path.split('/').pop();
+
+  if (!token) {
+    if (!page.includes('login.html') && !page.includes('signup.html')) {
+      window.location.replace('login.html');
+    }
     return false;
   }
 
-  const path = window.location.pathname.toLowerCase();
-  if (student && student.role === 'rba') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const canViewStudentTranscript = path.includes('student-transcript.html') && !!urlParams.get('adm');
-    if (!path.includes('admin') && !path.includes('admin-login.html') && !canViewStudentTranscript) {
-      console.warn('Redirecting admin user away from student page', path);
-      window.location.href = 'admin-dashboard.html';
-      return false;
-    }
-  }
+  const role = (student && student.role ? student.role : '').toLowerCase();
+  const normalizedRole = role === 'rba' || role === 'admin' || role === 'super_admin' || role === 'superadmin' || role === 'school_admin' || role === 'schooladmin' ? 'admin' : role;
 
-  if (student && student.role === 'lecturer') {
-    if (!path.includes('lecturer-dashboard.html') && path.includes('admin-') && !path.includes('lecturer interaction.html')) {
-      console.warn('Redirecting lecturer user to lecturer dashboard', path);
-      window.location.href = 'lecturer-dashboard.html';
-      return false;
-    }
-  }
+  const protectedPages = {
+    'dashboard.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+    'finance.html': ['finance', 'admin', 'student'],
+    'academic.html': ['teacher', 'admin', 'student'],
+    'admissions.html': ['admin'],
+    'admin-dashboard.html': ['admin'],
+    'admin.html': ['admin'],
+    'teacher.html': ['teacher', 'admin'],
+    'student.html': ['admin', 'teacher'],
+    'profile.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+    'settings.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+    'reports.html': ['admin', 'finance', 'teacher'],
+    'notes.html': ['student', 'teacher', 'admin'],
+    'transcript.html': ['student', 'teacher', 'admin'],
+    'subject.html': ['student', 'teacher', 'admin'],
+    'paymentreceipts.html': ['student', 'finance', 'admin'],
+    'feestatement.html': ['student', 'finance', 'admin'],
+    'feestructure.html': ['student', 'finance', 'admin'],
+    'lecturer-dashboard.html': ['teacher', 'admin'],
+    'student-transcript.html': ['admin', 'teacher', 'student'],
+    'receipt_view.html': ['student', 'finance', 'admin'],
+    'notifications.html': ['student', 'teacher', 'admin', 'parent'],
+    'calendar.html': ['student', 'teacher', 'admin', 'parent'],
+    'clearance-request.html': ['student', 'admin'],
+    'revision.html': ['student', 'teacher', 'admin'],
+    'exams.html': ['student', 'teacher', 'admin']
+  };
 
-  if (student && student.role === 'student' && path.includes('admin-')) {
-    console.warn('Redirecting student user away from admin page', path);
-    window.location.href = 'dashboard.html';
+  if (protectedPages[page] && !protectedPages[page].includes(normalizedRole)) {
+    if (normalizedRole === 'admin') {
+      window.location.replace('admin-dashboard.html');
+    } else if (normalizedRole === 'teacher') {
+      window.location.replace('lecturer-dashboard.html');
+    } else {
+      window.location.replace('dashboard.html');
+    }
     return false;
   }
 
@@ -320,6 +347,7 @@ function logout() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('student');
   localStorage.removeItem('rememberMe');
+  document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   console.log('localStorage keys cleared for logout');
   window.location.href = 'login.html';
 }
@@ -411,10 +439,19 @@ document.head.appendChild(style);
 
 // Auto-login if rememberMe was enabled
 window.addEventListener('load', () => {
-  if (localStorage.getItem('rememberMe') && localStorage.getItem('authToken')) {
-    // Token is already stored, can auto-redirect to dashboard
-    if (window.location.pathname.includes('login.html')) {
-      window.location.href = 'dashboard.html';
+  const token = localStorage.getItem('authToken');
+  const student = getStudentInfo();
+  const page = window.location.pathname.split('/').pop().toLowerCase();
+
+  if (token && page.includes('login.html')) {
+    const role = (student && student.role ? student.role : '').toLowerCase();
+    const normalizedRole = role === 'rba' || role === 'admin' || role === 'super_admin' || role === 'superadmin' || role === 'school_admin' || role === 'schooladmin' ? 'admin' : role;
+    if (normalizedRole === 'admin') {
+      window.location.replace('admin-dashboard.html');
+    } else if (normalizedRole === 'teacher') {
+      window.location.replace('lecturer-dashboard.html');
+    } else {
+      window.location.replace('dashboard.html');
     }
   }
 });
@@ -445,4 +482,11 @@ window.addEventListener('DOMContentLoaded', () => {
   enforceMaintenanceMode();
   enforceSchoolAcademicOptions();
   showAdminLink();
+  const page = window.location.pathname.split('/').pop().toLowerCase();
+  const protectedPages = new Set([
+    'dashboard.html','finance.html','academic.html','academics.html','admissions.html','admin.html','admin-dashboard.html','admin-security.html','teacher.html','student.html','profile.html','settings.html','reports.html','notes.html','transcript.html','subject.html','paymentreceipts.html','feestatement.html','feestructure.html','lecturer-dashboard.html','student-transcript.html','receipt_view.html','notifications.html','calendar.html','clearance-request.html','revision.html','exams.html'
+  ]);
+  if (protectedPages.has(page)) {
+    checkAuth();
+  }
 });
