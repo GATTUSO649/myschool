@@ -69,7 +69,12 @@ const generalLimiter = createGeneralRateLimiter();
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(generalLimiter);
+app.use((req, res, next) => {
+  if (req.method === 'GET' && (req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.ico') || req.path.endsWith('.png') || req.path.endsWith('.jpg') || req.path.endsWith('.jpeg') || req.path.endsWith('.svg') || req.path.endsWith('.gif') || req.path.endsWith('.webp'))) {
+    return next();
+  }
+  return generalLimiter(req, res, next);
+});
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(parseCookies);

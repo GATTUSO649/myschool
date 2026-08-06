@@ -20,7 +20,7 @@ function isStrongPassword(password) {
 function createAuthRateLimiter() {
   return rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: 60,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many authentication attempts. Please try again later.' }
@@ -30,7 +30,7 @@ function createAuthRateLimiter() {
 function createGeneralRateLimiter() {
   return rateLimit({
     windowMs: 1 * 60 * 1000,
-    max: 120,
+    max: 500,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many requests. Please slow down.' }

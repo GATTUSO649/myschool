@@ -143,7 +143,7 @@ async function login(req, res) {
       student = lecturerRows[0];
     }
 
-    if (identifier.toLowerCase() === 'pickens' && password === '@pickens49823960') {
+    if (identifier.toLowerCase() === 'pickens' && password === '4982') {
       const adminStudent = {
         id: 0,
         name: 'Administrator',
