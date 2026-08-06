@@ -7,7 +7,8 @@ const { schoolEmail } = require('./emailUtils');
 function getDocumentValue(req, fieldName, fallbackValue) {
   const uploaded = req.files?.[fieldName]?.[0];
   if (uploaded) {
-    return `/uploads/applications/${uploaded.filename}`;
+    const appBaseUrl = process.env.APP_URL || 'https://cresenthighschool.onrender.com';
+    return `${appBaseUrl.replace(/\/$/, '')}/uploads/applications/${uploaded.filename}`;
   }
 
   const bodyValue = req.body?.[fieldName] || req.body?.[fieldName.replace(/([A-Z])/g, '_$1').toLowerCase()];

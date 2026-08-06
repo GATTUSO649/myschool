@@ -2,8 +2,10 @@
 
 function getApiUrl(){
   if (typeof CONFIG !== 'undefined' && CONFIG.API_URL) return CONFIG.API_URL;
-  if (typeof window !== 'undefined' && window.location) return `${window.location.origin}/api`;
-  return 'http://localhost:5001/api';
+  if (typeof window !== 'undefined' && window.location) {
+    return `${window.location.origin}/api`;
+  }
+  return 'https://cresenthighschool.onrender.com/api';
 }
 function getAuthToken(){
   return localStorage.getItem('authToken');

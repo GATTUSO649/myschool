@@ -47,11 +47,12 @@
             addResult('Testing backend health...');
             
             try {
-                const response = await fetch('http://localhost:5000/api/health');
+                const apiUrl = `${window.location.origin}/api/health`;
+                const response = await fetch(apiUrl);
                 const data = await response.json();
                 addResult(`✅ Backend is running!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
             } catch (error) {
-                addResult(`❌ Backend connection failed!\nError: ${error.message}\n\nMake sure backend is running:\ncd C:\\Users\\USER\\Desktop\\backend\nnpm start`, 'error');
+                addResult(`❌ Backend connection failed!\nError: ${error.message}\n\nMake sure the deployed backend is reachable.`, 'error');
             }
         }
 
@@ -68,9 +69,10 @@
                     confirm: 'Test1234'
                 };
                 
-                addResult(`Sending request to: http://localhost:5000/api/auth/signup\nWith data: ${JSON.stringify(userData, null, 2)}`);
+                const apiUrl = `${window.location.origin}/api/auth/signup`;
+                addResult(`Sending request to: ${apiUrl}\nWith data: ${JSON.stringify(userData, null, 2)}`);
                 
-                const response = await fetch('http://localhost:5000/api/auth/signup', {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData)

@@ -286,7 +286,7 @@ npm run dev
 ```
 
 ### 4. View in MySQL Workbench
-- Host: localhost
+- Host: Railway MySQL host configured via environment variables
 - User: root
 - Database: cresent_school
 - View 25+ optimized tables

@@ -21,14 +21,41 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 const server = http.createServer(app);
+const isProduction = process.env.NODE_ENV === 'production';
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  'https://cresenthighschool.onrender.com',
+  'https://www.cresenthighschool.onrender.com',
+  ...(isProduction ? [] : ['http://localhost:3000', 'http://localhost:5001', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5001']),
+  ...configuredCorsOrigins
+]);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    if (!isProduction && /^(http:\/\/localhost|http:\/\/127\.0\.0\.1)/.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
+  credentials: true
+};
+
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    origin: Array.from(allowedOrigins),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true
   }
 });
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
@@ -124,6 +151,8 @@ async function start() {
   }
 
   const port = Number(process.env.PORT || 5001);
+  const host = process.env.HOST || '0.0.0.0';
+  const appUrl = process.env.APP_URL || (isProduction ? 'https://cresenthighschool.onrender.com' : 'http://localhost:3000');
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
       console.error(`Port ${port} is already in use. Stop the old Node server before starting a new one.`);
@@ -134,9 +163,10 @@ async function start() {
     process.exit(1);
   });
 
-  server.listen(port, () => {
-    console.log(`Cresent High School Portal running at http://localhost:${port}`);
-    console.log(`MySQL database status: ${process.env.DB_NAME || 'cresent_high_school_portal'} (startup continued in fallback mode if unavailable)`);
+  server.listen(port, host, () => {
+    console.log(`Cresent High School Portal listening on ${host}:${port}`);
+    console.log(`Application URL: ${appUrl}`);
+    console.log(`MySQL database status: ${process.env.DB_NAME || process.env.DB_DATABASE || 'railway'} (startup continued in fallback mode if unavailable)`);
   });
 
   process.on('unhandledRejection', (reason) => {

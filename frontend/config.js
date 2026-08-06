@@ -1,18 +1,21 @@
 /**
  * Frontend Configuration
- * Change these values based on your deployment environment
+ * Values are environment-aware so the app works in development and production.
  */
 
+const fallbackApiUrl = (typeof window !== 'undefined' && window.location)
+  ? `${window.location.origin}/api`
+  : 'https://cresenthighschool.onrender.com/api';
+const fallbackWsUrl = (typeof window !== 'undefined' && window.location)
+  ? window.location.origin
+  : 'https://cresenthighschool.onrender.com';
+
 const CONFIG = {
-  // Backend API URL
-  // Local development: http://localhost:5001/api
-  // Production: Update this to your production backend URL
-  API_URL: 'http://localhost:5001/api',
-  
-  // Token expiration time (optional, for UI purposes)
-  TOKEN_EXPIRY: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-  
-  // Pages that require authentication
+  API_URL: (typeof window !== 'undefined' && window.__APP_API_URL__) || fallbackApiUrl,
+  WS_URL: (typeof window !== 'undefined' && window.__APP_WS_URL__) || fallbackWsUrl,
+  APP_URL: 'https://cresenthighschool.onrender.com',
+  FRONTEND_URL: 'https://cresenthighschool.onrender.com',
+  TOKEN_EXPIRY: 7 * 24 * 60 * 60 * 1000,
   PROTECTED_PAGES: [
     'dashboard.html',
     'academic.html',
@@ -23,5 +26,4 @@ const CONFIG = {
   ]
 };
 
-// Make CONFIG global
 window.CONFIG = CONFIG;

@@ -257,7 +257,7 @@
   </main>
 
   <script>
-    const API_BASE = window.CONFIG?.API_URL || 'http://localhost:5001/api';
+    const API_BASE = window.CONFIG?.API_URL || `${window.location.origin}/api`;
     
     function setStatus(message, type) {
       const status = document.getElementById('applicationStatus');

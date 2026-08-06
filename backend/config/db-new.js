@@ -1,16 +1,23 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+const dbHost = process.env.DB_HOST || process.env.DB_HOSTNAME || 'localhost';
+const dbUser = process.env.DB_USER || process.env.DB_USERNAME || 'root';
+const dbName = process.env.DB_NAME || process.env.DB_DATABASE || 'railway';
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
+  host: dbHost,
+  user: dbUser,
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'cresent_school',
+  database: dbName,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelayMs: 0
+  keepAliveInitialDelayMs: 0,
+  ...(process.env.DB_SSL === 'true'
+    ? { ssl: { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } }
+    : {})
 });
 
 // Test connection
@@ -32,11 +39,11 @@ async function ensureDatabase() {
     const connection = await pool.getConnection();
     
     // Check if database exists
-    const [databases] = await connection.query(`SHOW DATABASES LIKE '${process.env.DB_NAME || 'cresent_school'}'`);
+    const [databases] = await connection.query(`SHOW DATABASES LIKE '${dbName}'`);
     
     if (databases.length === 0) {
       console.log('Creating database...');
-      await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'cresent_school'}`);
+      await connection.query(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
       console.log('✓ Database created');
     }
     

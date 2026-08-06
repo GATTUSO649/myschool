@@ -42,7 +42,7 @@ frontend/
 
 2. **Set environment variables** (create `.env` file):
    ```
-   VITE_API_URL=http://localhost:5001/api
+   VITE_API_URL=https://cresenthighschool.onrender.com/api
    ```
 
 3. **Start development server:**

@@ -110,7 +110,7 @@
 
         function initializeChat() {
             // Initialize Socket.IO
-            socket = io('http://localhost:5000');
+            socket = io(window.CONFIG?.WS_URL || 'https://cresenthighschool.onrender.com');
 
             socket.on('connect', () => {
                 console.log('Connected to chat server');

@@ -3,18 +3,24 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+const dbHost = process.env.DB_HOST || process.env.DB_HOSTNAME || 'localhost';
+const dbUser = process.env.DB_USER || process.env.DB_USERNAME || 'root';
+
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: dbHost,
   port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'root',
+  user: dbUser,
   password: process.env.DB_PASSWORD || '',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  multipleStatements: true
+  multipleStatements: true,
+  ...(process.env.DB_SSL === 'true'
+    ? { ssl: { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } }
+    : {})
 };
 
-const database = process.env.DB_NAME || 'cresent_high_school_portal';
+const database = process.env.DB_NAME || process.env.DB_DATABASE || 'railway';
 
 let pool;
 

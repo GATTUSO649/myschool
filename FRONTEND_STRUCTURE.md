@@ -125,10 +125,11 @@ PORT=3000
 NODE_ENV=development
 
 # Database
-DB_HOST=localhost
+DB_HOST=altaria.proxy.rlwy.net
+DB_PORT=19752
 DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=cresent_school
+DB_PASSWORD=cfhEqqAmvJpVvTrgzAXJQYTNMyuiWSTB
+DB_NAME=railway
 
 # JWT
 JWT_SECRET=your_secret_key
@@ -136,8 +137,8 @@ JWT_EXPIRE=7d
 
 # App
 APP_NAME=CRESENT High School
-APP_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:3000/frontend
+APP_URL=https://cresenthighschool.onrender.com
+FRONTEND_URL=https://cresenthighschool.onrender.com
 ```
 
 ### Step 2: Database Setup
@@ -208,7 +209,7 @@ npm start
 2. Click "+" next to "MySQL Connections"
 3. Configure:
    - **Connection Name:** Cresent School
-   - **Hostname:** localhost
+   - **Hostname:** local development host only
    - **Port:** 3306 (default)
    - **Username:** root
    - **Password:** [your password]

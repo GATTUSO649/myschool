@@ -9,7 +9,9 @@ function getApiUrl() {
     return configuredUrl.replace(/\/+$/, '');
   }
 
-  const fallbackUrl = 'http://localhost:5001/api';
+  const fallbackUrl = (typeof window !== 'undefined' && window.location)
+    ? `${window.location.origin}/api`
+    : 'https://cresenthighschool.onrender.com/api';
   return fallbackUrl;
 }
 

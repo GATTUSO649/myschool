@@ -4,7 +4,7 @@
 Your school website is **fully operational** with database connection, Form 1-4 management, and all pages functional.
 
 ## Server Details
-- **URL**: http://localhost:5001
+- **URL**: https://cresenthighschool.onrender.com
 - **Database**: MySQL - `cresent_high_school_portal`
 - **Status**: Running with real-time Socket.io notifications
 
@@ -92,16 +92,16 @@ npm run dev          # Or use nodemon for auto-restart
 ## Testing the Setup
 ```bash
 # Health check
-curl http://localhost:5001/api/health
+curl https://cresenthighschool.onrender.com/api/health
 
 # List all classes
-curl http://localhost:5001/api/classes
+curl https://cresenthighschool.onrender.com/api/classes
 
 # Get Form 1-4 summary
-curl http://localhost:5001/api/classes/summary
+curl https://cresenthighschool.onrender.com/api/classes/summary
 
 # Add a course
-curl -X POST http://localhost:5001/api/classes/courses \
+curl -X POST https://cresenthighschool.onrender.com/api/classes/courses \
   -H "Content-Type: application/json" \
   -d '{"code":"BIO101","name":"Biology","form":2}'
 ```
@@ -137,7 +137,7 @@ curl -X POST http://localhost:5001/api/classes/courses \
 
 ## Support
 For database issues, check:
-- MySQL is running on localhost:3306
+- MySQL is running on the Railway public host configured in environment variables
 - DB_USER/DB_PASSWORD in .env match your MySQL Workbench connection
 - Database `cresent_high_school_portal` exists
 

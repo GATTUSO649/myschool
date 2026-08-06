@@ -62,7 +62,7 @@ SHOW TABLES;
 cp .env-example .env
 
 # Edit .env with your settings (required):
-# - DB_HOST: localhost
+# - DB_HOST: set via environment variable for the Railway MySQL host
 # - DB_USER: root
 # - DB_PASSWORD: your_password
 # - DB_NAME: cresent_school
@@ -88,8 +88,8 @@ npm run dev
 ### Step 5: Access Admin Dashboard
 
 Open browser and navigate to:
-- **Admin Login**: `http://localhost:3000/frontend/admin-login.html`
-- **Admin Dashboard**: `http://localhost:3000/frontend/admin-dashboard-new.html`
+- **Admin Login**: `https://cresenthighschool.onrender.com/frontend/admin-login.html`
+- **Admin Dashboard**: `https://cresenthighschool.onrender.com/frontend/admin-dashboard.html`
 
 ---
 
@@ -140,7 +140,7 @@ Open browser and navigate to:
 2. **Click "+" next to MySQL Connections**
 3. **Enter Connection Details**:
    - Connection Name: `Cresent School`
-   - Hostname: `127.0.0.1`
+   - Hostname: development host only when running locally
    - Port: `3306`
    - Username: `root`
    - Password: `[your password]`
@@ -308,7 +308,7 @@ Add to server.js:
 ```javascript
 const cors = require('cors');
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://cresenthighschool.onrender.com',
   credentials: true
 }));
 ```
