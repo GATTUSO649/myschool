@@ -2,7 +2,7 @@ const { query } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
-const { schoolEmail, sendAdmissionApprovalEmail } = require('./emailUtils');
+const { schoolEmail, sendAdmissionApprovalEmail, sendApplicationConfirmationEmail } = require('./emailUtils');
 
 function getDocumentValue(req, fieldName, fallbackValue) {
   const uploaded = req.files?.[fieldName]?.[0];
@@ -63,6 +63,15 @@ async function createApplication(req, res) {
     );
 
     await logActivity(null, 'application_created', `Application #${result.insertId} submitted`, req.ip);
+
+    const recipientEmail = String(body.email || '').trim();
+    if (recipientEmail) {
+      await sendApplicationConfirmationEmail({
+        to: recipientEmail,
+        fullName: fullName || body.full_name || body.name || 'Applicant'
+      });
+    }
+
     res.status(201).json({ success: true, id: result.insertId, message: 'Application submitted successfully' });
   } catch (error) {
     console.error('Application create error:', error);

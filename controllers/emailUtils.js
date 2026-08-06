@@ -89,6 +89,23 @@ async function sendPasswordResetEmail({ to, otp, temporaryPassword }) {
   return result;
 }
 
+async function sendApplicationConfirmationEmail({ to, fullName }) {
+  const subject = 'Application Submitted - Crescent High School';
+  const text = [
+    `Dear ${fullName || 'Applicant'},`,
+    '',
+    'Thank you for applying!',
+    'Your application has been submitted successfully and is now pending approval.',
+    '',
+    'Kind regards,',
+    'Crescent High School Administration'
+  ].join('\n');
+
+  const result = await deliverMail({ to, subject, text });
+  await logActivity(null, 'application_confirmation_email_sent', `Application confirmation email sent to ${to}`, null);
+  return result;
+}
+
 async function recordAuditEvent(userId, action, details, req) {
   try {
     await query(
@@ -105,5 +122,6 @@ module.exports = {
   schoolEmail,
   sendAdmissionApprovalEmail,
   sendPasswordResetEmail,
+  sendApplicationConfirmationEmail,
   recordAuditEvent
 };
