@@ -16,6 +16,18 @@
   --header-height: 100px;
 }
 
+@media (max-width: 860px) {
+  :root {
+    --header-height: 88px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --header-height: 82px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -89,7 +101,8 @@ body.has-site-footer .site-footer {
   top: 0;
   left: 0;
   right: 0;
-  height: 100px;
+  height: var(--header-height);
+  min-height: var(--header-height);
   z-index: 2000;
   background: linear-gradient(135deg, #07111f 0%, #123a66 55%, #0d6c80 100%);
   color: #ffffff;
@@ -110,7 +123,7 @@ body.student-portal .dashboard-main {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 100px;
+  min-height: var(--header-height);
 }
 
 .header-brand {
@@ -684,6 +697,26 @@ body.student-portal .dashboard-main {
 @media (max-width: 860px) {
   .mobile-sidebar-toggle {
     display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  .header-content {
+    padding: 0 18px;
+    gap: 12px;
+  }
+
+  .header-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .header-actions {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .header-pill {
+    display: none;
   }
 
   .student-shell {
@@ -692,10 +725,10 @@ body.student-portal .dashboard-main {
 
   .student-sidebar {
     position: fixed;
-    top: 100px;
+    top: var(--header-height);
     left: 0;
     bottom: 0;
-    width: min(84vw, 300px);
+    width: min(84vw, 320px);
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 1600;
@@ -715,13 +748,28 @@ body.student-portal .dashboard-main {
   .profile-main {
     margin-left: 0;
     width: 100%;
-    padding: 18px 16px 24px;
+    padding: calc(var(--header-height) + 10px) 16px 24px;
   }
 }
 
 @media (max-width: 640px) {
   .header-content {
-    padding: 14px 16px;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .school-name {
+    font-size: 1rem;
+  }
+
+  .header-tagline {
+    font-size: 0.78rem;
+  }
+
+  .logout-button,
+  .mobile-sidebar-toggle {
+    padding: 8px 11px;
+    font-size: 0.9rem;
   }
 
   .stats-grid {
@@ -730,6 +778,12 @@ body.student-portal .dashboard-main {
 
   .auth-card {
     padding: 24px;
+  }
+
+  .dashboard-main,
+  .student-main-content,
+  .profile-main {
+    padding: calc(var(--header-height) + 8px) 14px 20px;
   }
 }
 
