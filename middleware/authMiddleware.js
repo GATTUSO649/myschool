@@ -54,22 +54,6 @@ async function authMiddleware(req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'change-this-development-secret');
 
-    if (decoded.role === 'admin' && decoded.id === 0) {
-      req.user = {
-        id: 0,
-        name: 'Administrator',
-        username: 'pickens',
-        email: 'admin@cresenthighschool.com',
-        admission_number: 'ADMIN',
-        role: 'admin',
-        class_name: 'Administration',
-        stream: null,
-        avatar: null,
-        active: 1
-      };
-      return next();
-    }
-
     const rows = await query(
       'SELECT id, name, username, email, admission_number, role, class_name, stream, avatar, subject, active FROM students WHERE id = ? LIMIT 1',
       [decoded.id]

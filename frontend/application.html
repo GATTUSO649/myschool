@@ -258,6 +258,32 @@
 
   <script>
     const API_BASE = window.CONFIG?.API_URL || `${window.location.origin}/api`;
+
+    async function fetchWithAuth(endpoint, options = {}) {
+      const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+      const headers = new Headers(options.headers || {});
+      const token = localStorage.getItem('authToken');
+
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+
+      if (!(options.body instanceof FormData)) {
+        headers.set('Content-Type', 'application/json');
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include'
+      });
+
+      if (!response.ok && response.status === 401) {
+        throw new Error('Authentication required');
+      }
+
+      return response;
+    }
     
     function setStatus(message, type) {
       const status = document.getElementById('applicationStatus');

@@ -87,12 +87,12 @@ if (loginForm) {
         // Redirect after 1 second.
         setTimeout(() => {
           try {
-            const role = data.student && data.student.role;
+            const role = (data.student && data.student.role ? data.student.role : '').toLowerCase();
             const username = data.student && data.student.username;
-            if (role === 'admin' || username === 'admin' || role === 'rba') {
+            if (role === 'admin' || role === 'rba' || role === 'school_admin' || role === 'super_admin' || username === 'admin') {
               console.log('Redirecting admin to admin-dashboard.html');
               window.location.href = 'admin-dashboard.html';
-            } else if (role === 'lecturer') {
+            } else if (role === 'teacher' || role === 'lecturer') {
               console.log('Redirecting lecturer to lecturer-dashboard.html');
               window.location.href = 'lecturer-dashboard.html';
             } else {
