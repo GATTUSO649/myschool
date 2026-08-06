@@ -27,7 +27,9 @@ body {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text-primary);
   line-height: 1.6;
-  background: #ffffff; /* remove decorative radial gradients for clean SaaS background */
+  background:
+    linear-gradient(135deg, rgba(3, 10, 24, 0.72), rgba(6, 24, 44, 0.62)),
+    url('https://classnotes.ng/wp-content/uploads/2024/09/agumagu.jpeg') center/cover no-repeat;
 }
 
 .container {
@@ -39,6 +41,7 @@ body {
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.7s ease both;
+  background: transparent;
 }
 
 .glass-card {

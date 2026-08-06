@@ -138,6 +138,9 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/signup')) {
     return next();
   }
+  if (req.method === 'POST' && req.path === '/api/applications') {
+    return next();
+  }
   return csrfProtection(req, res, next);
 });
 

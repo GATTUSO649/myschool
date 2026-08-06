@@ -256,33 +256,10 @@
     </section>
   </main>
 
+  <script src="application-client.js"></script>
   <script>
-    const API_BASE = window.CONFIG?.API_URL || `${window.location.origin}/api`;
-
     async function fetchWithAuth(endpoint, options = {}) {
-      const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-      const headers = new Headers(options.headers || {});
-      const token = localStorage.getItem('authToken');
-
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      if (!(options.body instanceof FormData)) {
-        headers.set('Content-Type', 'application/json');
-      }
-
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include'
-      });
-
-      if (!response.ok && response.status === 401) {
-        throw new Error('Authentication required');
-      }
-
-      return response;
+      return window.CresentApplicationClient.request(endpoint, options);
     }
     
     function setStatus(message, type) {
@@ -298,12 +275,11 @@
       const submissionCard = document.getElementById('submissionCard');
 
       try {
-        const response = await fetchWithAuth('/api/applications', {
+        const { response, data } = await fetchWithAuth('/api/applications', {
           method: 'POST',
           body: formData
         });
-        const data = await response.json();
-        if (data.success) {
+        if (response.ok && data?.success) {
           form.reset();
           submissionCard.classList.remove('hidden');
           submissionCard.innerHTML = `
@@ -314,7 +290,7 @@
           return;
         }
 
-        setStatus(data.message || 'Application could not be submitted.', 'error');
+        setStatus(data?.message || 'Application could not be submitted.', 'error');
       } catch (error) {
         console.error('Application error:', error);
         setStatus('Could not submit application. Check that the backend server is running.', 'error');
