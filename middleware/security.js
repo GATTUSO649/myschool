@@ -50,7 +50,9 @@ function csrfProtection(req, res, next) {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
     return next();
   }
-  if (req.headers.authorization || req.headers['x-auth-token']) {
+  const hasAuthHeader = Boolean(req.headers.authorization || req.headers['x-auth-token']);
+  const hasAuthCookie = Boolean(req.cookies?.authToken || req.cookies?.token);
+  if (hasAuthHeader || hasAuthCookie) {
     return next();
   }
   return csrfMiddleware(req, res, next);

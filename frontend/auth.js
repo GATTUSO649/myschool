@@ -271,6 +271,15 @@ function getAuthToken() {
   return localStorage.getItem('authToken');
 }
 
+function getCsrfToken() {
+  const cookieValue = document.cookie
+    .split(';')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith('csrfToken='));
+  if (!cookieValue) return '';
+  return decodeURIComponent(cookieValue.split('=').slice(1).join('='));
+}
+
 async function fetchWithAuth(endpoint, options = {}) {
   const token = getAuthToken();
   const apiUrl = getApiUrl();
@@ -282,6 +291,8 @@ async function fetchWithAuth(endpoint, options = {}) {
   const isForm = options.body instanceof FormData;
   const headers = isForm ? { ...(options.headers || {}) } : { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
   let body = options.body;
   if (!isForm && body != null && Object.prototype.toString.call(body) === '[object Object]') {

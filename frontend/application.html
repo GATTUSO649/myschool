@@ -272,7 +272,7 @@
       const submissionCard = document.getElementById('submissionCard');
 
       try {
-        const response = await fetch(`${API_BASE}/applications`, {
+        const response = await fetchWithAuth('/api/applications', {
           method: 'POST',
           body: formData
         });
