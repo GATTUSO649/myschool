@@ -176,6 +176,22 @@ async function initializeFormData() {
   } catch (err) {
     console.log('Form data initialization skipped (may already exist):', err.message);
   }
+
+  try {
+    const adminRows = await query("SELECT id FROM students WHERE LOWER(username) = 'admin' OR LOWER(role) = 'admin' LIMIT 1");
+    if (!adminRows.length) {
+      const bcrypt = require('bcryptjs');
+      const passwordHash = await bcrypt.hash('Admin@2026', 10);
+      await query(
+        `INSERT INTO students (name, username, email, admission_number, password_hash, role, active, class_name, stream)
+         VALUES (?, ?, ?, ?, ?, 'admin', 1, 'Administration', 'Administration')`,
+        ['Administrator', 'admin', 'admin@cresenthighschool.com', 'ADMIN', passwordHash]
+      );
+      console.log('Seeded default admin account: username=admin password=Admin@2026');
+    }
+  } catch (err) {
+    console.log('Admin seed skipped:', err.message);
+  }
 }
 
 module.exports = {
