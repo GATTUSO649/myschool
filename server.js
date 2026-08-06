@@ -69,8 +69,9 @@ const generalLimiter = createGeneralRateLimiter();
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use(express.static(path.join(__dirname, 'frontend'), { index: false }));
 app.use((req, res, next) => {
-  if (req.method === 'GET' && (req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.ico') || req.path.endsWith('.png') || req.path.endsWith('.jpg') || req.path.endsWith('.jpeg') || req.path.endsWith('.svg') || req.path.endsWith('.gif') || req.path.endsWith('.webp'))) {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
     return next();
   }
   return generalLimiter(req, res, next);
@@ -247,8 +248,6 @@ app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
     }
   });
 });
-
-app.use(express.static(path.join(__dirname, 'frontend')));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
