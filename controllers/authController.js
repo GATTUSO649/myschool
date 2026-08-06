@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
 const { isStrongPassword, createLoginAttemptTracker } = require('../middleware/security');
+const { normalizeRole } = require('../middleware/authMiddleware');
 const { schoolEmail, sendPasswordResetEmail } = require('./emailUtils');
 
 const loginTracker = createLoginAttemptTracker({ maxAttempts: 5, windowMs: 15 * 60 * 1000 });
@@ -14,7 +15,7 @@ function publicStudent(row) {
     username: row.username,
     email: row.email,
     admissionNumber: row.admission_number,
-    role: row.role,
+    role: normalizeRole(row.role),
     className: row.class_name,
     stream: row.stream,
     subject: row.subject || null,
@@ -25,8 +26,14 @@ function publicStudent(row) {
 }
 
 function signToken(student) {
+  const payload = {
+    id: student.id,
+    role: student.role,
+    username: student.username,
+    bootstrapAdmin: Boolean(student.bootstrapAdmin)
+  };
   return jwt.sign(
-    { id: student.id, role: student.role },
+    payload,
     process.env.JWT_SECRET || 'change-this-development-secret',
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -110,6 +117,60 @@ async function signup(req, res) {
   }
 }
 
+function getBootstrapAdminUser(identifier, password) {
+  const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
+  const adminPassword = (process.env.ADMIN_PASSWORD || process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@2026').trim();
+  if (String(identifier).trim().toLowerCase() !== adminUsername) {
+    return null;
+  }
+  if (String(password).trim() !== adminPassword) {
+    return null;
+  }
+
+  return {
+    id: 0,
+    name: 'Administrator',
+    username: adminUsername,
+    email: `${adminUsername}@cresenthighschool.com`,
+    admission_number: 'ADMIN',
+    role: 'admin',
+    class_name: 'Administration',
+    stream: null,
+    avatar: null,
+    active: 1,
+    last_login: new Date(),
+    bootstrapAdmin: true
+  };
+}
+
+async function ensureBootstrapAdminAccount(identifier, password) {
+  const adminUser = getBootstrapAdminUser(identifier, password);
+  if (!adminUser) {
+    return null;
+  }
+
+  try {
+    const existingRows = await query(
+      `SELECT * FROM students WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) OR LOWER(admission_number) = LOWER(?) LIMIT 1`,
+      [adminUser.username, adminUser.email, adminUser.admission_number]
+    );
+    if (existingRows[0]) {
+      return { ...existingRows[0], bootstrapAdmin: true };
+    }
+
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@2026', 10);
+    await query(
+      `INSERT INTO students (name, username, email, admission_number, password_hash, role, active, class_name, stream)
+       VALUES (?, ?, ?, ?, ?, 'rba', 1, 'Administration', 'Administration')`,
+      [adminUser.name, adminUser.username, adminUser.email, adminUser.admission_number, passwordHash]
+    );
+  } catch (error) {
+    console.warn('Bootstrap admin account check failed:', error.message);
+  }
+
+  return adminUser;
+}
+
 async function login(req, res) {
   try {
     const identifier = (req.body.name || req.body.username || req.body.email || '').trim();
@@ -125,13 +186,31 @@ async function login(req, res) {
       return res.status(429).json({ success: false, message: 'Too many failed login attempts. Please try again later.' });
     }
 
-    let rows = await query(
-      `SELECT * FROM students
-       WHERE username = ? OR email = ? OR name = ? OR admission_number = ?
-       LIMIT 1`,
-      [identifier, identifier, identifier, identifier.toUpperCase()]
-    );
-    let student = rows[0];
+    let student = await ensureBootstrapAdminAccount(identifier, password);
+
+    let rows = [];
+    if (!student) {
+      rows = await query(
+        `SELECT * FROM students
+         WHERE username = ? OR email = ? OR name = ? OR admission_number = ?
+         LIMIT 1`,
+        [identifier, identifier, identifier, identifier.toUpperCase()]
+      );
+      student = rows[0];
+    }
+
+    if (student && student.bootstrapAdmin) {
+      return res.cookie('authToken', signToken(student), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      }).json({
+        success: true,
+        token: signToken(student),
+        student: publicStudent(student)
+      });
+    }
 
     if (!student) {
       const lecturerRows = await query(
