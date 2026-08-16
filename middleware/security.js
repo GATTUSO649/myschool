@@ -58,13 +58,21 @@ function csrfProtection(req, res, next) {
   return csrfMiddleware(req, res, next);
 }
 
+// Allow configuring additional image sources via CSP_IMG_SRC env var (comma-separated)
+const extraImgSrcs = (process.env.CSP_IMG_SRC || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+// Allow the QR code generator host by default so externally-generated QR images render
+const defaultImgHosts = ['https://api.qrserver.com'];
+
 const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:'],
+      imgSrc: ["'self'", 'data:', 'blob:', ...defaultImgHosts, ...extraImgSrcs],
       connectSrc: ["'self'", 'https://cresenthighschool.onrender.com'],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],

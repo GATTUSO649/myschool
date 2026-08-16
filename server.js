@@ -29,6 +29,12 @@ const classRoutes = require('./routes/classes');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
+// Configure trust proxy based on environment (set TRUST_PROXY=true when behind a reverse proxy)
+const trustProxy = (typeof process.env.TRUST_PROXY !== 'undefined')
+  ? (String(process.env.TRUST_PROXY).toLowerCase() === 'true')
+  : (!!process.env.RENDER || isProduction);
+app.set('trust proxy', trustProxy);
+console.log('Express trust proxy set to', trustProxy);
 const server = http.createServer(app);
 const isProduction = process.env.NODE_ENV === 'production';
 const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')

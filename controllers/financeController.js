@@ -552,6 +552,18 @@ async function listDocs(req, res) {
     const offset = Number.isFinite(Number(req.query.offset)) ? Number(req.query.offset) : 0;
     params.push(limit, offset);
 
+    // Debug: ensure parameter count matches placeholder count to avoid mysqld_stmt_execute errors
+    try {
+      const placeholderCount = (sql.match(/\?/g) || []).length;
+      console.log('listDocs SQL placeholders:', placeholderCount, 'params.length:', params.length);
+    } catch (e) {
+      console.warn('Could not compute placeholder count for listDocs', e.message || e);
+    }
+
+    // Ensure limit/offset are numbers
+    params[params.length - 2] = Number(params[params.length - 2]);
+    params[params.length - 1] = Number(params[params.length - 1]);
+
     const docs = await query(sql, params);
     return res.json(docs);
   } catch (err) {
