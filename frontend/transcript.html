@@ -163,8 +163,7 @@
                 </div>
               </div>
               <div class="summary-card grade-key-qr-panel" id="gradeKeyQrPanel">
-                <div class="grade-key-qr-box" id="gradeKeyQrCode"></div>
-                <span>Scan to open this transcript in print-ready view</span>
+                <div class="grade-key-qr-box" id="gradeKeyQrCode" aria-hidden="true"></div>
               </div>
             </div>
 
@@ -324,18 +323,29 @@
     async function renderGradeKeyQrCode() {
       const qrTarget = document.getElementById('gradeKeyQrCode');
       if (!qrTarget) return;
-
+      // Include current filter parameters so the print view shows the same grades
       const shareUrl = new URL(window.location.href);
       shareUrl.searchParams.set('print', '1');
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=${encodeURIComponent(shareUrl.toString())}`;
+      const year = document.getElementById('transcriptYearFilter')?.value;
+      const term = document.getElementById('transcriptTermFilter')?.value;
+      const admission = document.getElementById('detailAdmission')?.textContent;
+      if (year) shareUrl.searchParams.set('year', year);
+      if (term) shareUrl.searchParams.set('term', term);
+      if (admission) shareUrl.searchParams.set('admission', admission.trim());
+
+      // Use a larger QR for easier scanning
+      const qrSize = 220;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(shareUrl.toString())}`;
 
       qrTarget.innerHTML = '';
       const image = document.createElement('img');
       image.alt = 'QR code for this transcript';
       image.src = qrUrl;
-      image.style.width = '100%';
-      image.style.height = '100%';
+      image.style.width = '160px';
+      image.style.height = '160px';
       image.style.objectFit = 'contain';
+      image.style.display = 'block';
+      image.style.margin = '0 auto';
       image.onerror = () => {
         qrTarget.innerHTML = '<div style="font-size:0.7rem;color:#64748b;text-align:center;">QR unavailable</div>';
       };
@@ -453,13 +463,35 @@
         });
       }
 
-      const shouldAutoPrint = new URLSearchParams(window.location.search).get('print') === '1';
+      const searchParams = new URLSearchParams(window.location.search);
+      const shouldAutoPrint = searchParams.get('print') === '1';
       if (shouldAutoPrint) {
-        window.setTimeout(() => {
-          document.body.classList.add('transcript-printing');
-          window.print();
-          window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
-        }, 400);
+        // If the print URL includes filters, set them and run the search so the print view matches
+        const yearParam = searchParams.get('year');
+        const termParam = searchParams.get('term');
+        const admissionParam = searchParams.get('admission');
+        if (yearParam) document.getElementById('transcriptYearFilter').value = yearParam;
+        if (termParam) document.getElementById('transcriptTermFilter').value = termParam;
+
+        // Run a filtered fetch and render before printing
+        (async () => {
+          try {
+            await searchTranscriptRecords();
+            // Small delay to ensure DOM is updated
+            document.body.classList.add('transcript-printing');
+            window.setTimeout(() => {
+              window.print();
+              window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+            }, 300);
+          } catch (e) {
+            // fallback to immediate print
+            document.body.classList.add('transcript-printing');
+            window.setTimeout(() => {
+              window.print();
+              window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+            }, 400);
+          }
+        })();
       }
 
       try {
@@ -486,6 +518,23 @@
       return s;
     }
   </script>
+  <style>
+    /* Larger centered QR box for transcript print panel */
+    .grade-key-qr-box {
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px auto;
+    }
+    .grade-key-qr-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
   <script src="site-common.js"></script>
   <script src="shared-bindings.js"></script>
 </body>
