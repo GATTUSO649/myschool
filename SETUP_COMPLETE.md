@@ -59,7 +59,7 @@ POST /api/classes/courses      - Add new course
 - **admin-dashboard.html** - Comprehensive admin panel
 - **academic.html** - Course materials & documents
 - **assignment.html** - Assignment submission
-- **exams.html** - Exam schedule & results
+-- **exams.html** - Exam schedule & results (deprecated — replaced by transcript.html)
 - **finance.html** - Fee statements & payments
 - **transcript.html** - Academic transcripts
 - **calendar.html** - School events

@@ -319,30 +319,60 @@ function renderFinanceOverviewChart() {
   const total = billed || paid || balance || 1;
   const paidPercent = Math.round((paid / total) * 100);
   const balancePercent = Math.round((balance / total) * 100);
-  chart.innerHTML = `
-    <div class="finance-overview-card">
-      <div class="finance-pie-chart" style="--paid-percent:${paidPercent}%; --balance-percent:${balancePercent}%;">
-        <div class="finance-pie-center">
-          <strong>${paidPercent}%</strong>
-          <span>Paid</span>
+  // Render a small shaded area chart representing paid vs balance using Chart.js
+  chart.innerHTML = `<div class="finance-overview-card"><canvas id="financeOverviewCanvas" style="width:100%;height:160px"></canvas></div>`;
+  try {
+    const canvas = chart.querySelector('#financeOverviewCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (chart._chartInstance) chart._chartInstance.destroy();
+      chart._chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['',''],
+          datasets: [{
+            label: 'Paid %',
+            data: [0, paidPercent],
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.18)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 6,
+            pointBackgroundColor: '#2563eb',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { display: false },
+            y: { display: false, min: 0, max: 100 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y}%`
+              }
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    // Fallback to previous legend view if Chart.js isn't available
+    chart.innerHTML = `
+      <div class="finance-overview-card">
+        <div class="finance-overview-legend">
+          <div class="finance-legend-row"><span><i class="legend-dot paid"></i> Paid</span><strong>${money(paid)}</strong></div>
+          <div class="finance-legend-row"><span><i class="legend-dot balance"></i> Balance</span><strong>${money(balance)}</strong></div>
+          <div class="finance-legend-row"><span><i class="legend-dot pending"></i> Total billed</span><strong>${money(billed)}</strong></div>
         </div>
       </div>
-      <div class="finance-overview-legend">
-        <div class="finance-legend-row">
-          <span><i class="legend-dot paid"></i> Paid</span>
-          <strong>${money(paid)}</strong>
-        </div>
-        <div class="finance-legend-row">
-          <span><i class="legend-dot balance"></i> Balance</span>
-          <strong>${money(balance)}</strong>
-        </div>
-        <div class="finance-legend-row">
-          <span><i class="legend-dot pending"></i> Total billed</span>
-          <strong>${money(billed)}</strong>
-        </div>
-      </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 function renderAcademicPerformanceChart() {

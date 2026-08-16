@@ -218,7 +218,7 @@ function checkAuth() {
     'calendar.html': ['student', 'teacher', 'admin', 'parent'],
     'clearance-request.html': ['student', 'admin'],
     'revision.html': ['student', 'teacher', 'admin'],
-    'exams.html': ['student', 'teacher', 'admin']
+    'transcript.html': ['student', 'teacher', 'admin']
   };
 
   if (protectedPages[page] && !protectedPages[page].includes(normalizedRole)) {

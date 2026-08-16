@@ -35,7 +35,7 @@
         <h3>Academics</h3>
         <a class="sidebar-link active" href="transcript.html">Transcript</a>
         <a class="sidebar-link" href="notes.html">Notes</a>
-        <a class="sidebar-link" href="exams.html">Exams</a>
+        <a class="sidebar-link" href="transcript.html">Exams</a>
       </div>
       <div class="sidebar-section">
         <h3>Finance</h3>
@@ -171,6 +171,9 @@
               <div class="signatory-line"><span>Class Teacher</span><span>Date</span></div>
               <div class="signatory-line"><span>Director of Studies</span><span>Date</span></div>
               <div class="signatory-line"><span>Principal</span><span>Date</span></div>
+            </div>
+            <div class="transcript-print-actions" aria-hidden="false">
+              <button type="button" class="download-cta" id="downloadTranscriptCta">Download / Save Transcript</button>
             </div>
           </div>
         </div>
@@ -455,6 +458,17 @@
       const downloadButton = document.getElementById('downloadTranscriptButton');
       if (downloadButton) {
         downloadButton.addEventListener('click', () => {
+          document.body.classList.add('transcript-printing');
+          window.setTimeout(() => {
+            window.print();
+            window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+          }, 120);
+        });
+      }
+
+      const downloadCta = document.getElementById('downloadTranscriptCta');
+      if (downloadCta) {
+        downloadCta.addEventListener('click', () => {
           document.body.classList.add('transcript-printing');
           window.setTimeout(() => {
             window.print();

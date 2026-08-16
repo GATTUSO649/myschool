@@ -52,7 +52,7 @@
     {
       title: 'Exams',
       text: 'Access exam results, transcripts, marks, grades, and performance records.',
-      href: 'exams.html',
+      href: 'transcript.html',
       action: 'View Exams'
     },
     // Clearance removed from portal services
@@ -94,7 +94,7 @@
     {
       title: 'Results',
       text: 'Check results and academic performance records.',
-      href: 'exams.html',
+      href: 'transcript.html',
       action: 'View Results'
     },
     {

@@ -20,7 +20,7 @@ const CONFIG = {
     'dashboard.html',
     'academic.html',
     'finance.html',
-    'exams.html',
+    'transcript.html',
     'admin-dashboard.html',
     'lecturer-dashboard.html'
   ]

@@ -207,7 +207,7 @@ const protectedPagePatterns = [
   '/calendar.html',
   '/clearance-request.html',
   '/revision.html',
-  '/exams.html'
+  
 ];
 
 const protectedPageRoleMap = {
@@ -237,7 +237,7 @@ const protectedPageRoleMap = {
   '/calendar.html': ['student', 'teacher', 'admin', 'parent'],
   '/clearance-request.html': ['student', 'admin'],
   '/revision.html': ['student', 'teacher', 'admin'],
-  '/exams.html': ['student', 'teacher', 'admin']
+  
 };
 
 app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
