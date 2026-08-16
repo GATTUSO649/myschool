@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Exams - CRESENT</title>
+  <link rel="stylesheet" href="site-common.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="student-portal page-exams">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Exams and schedules</div>
+      </div>
+      <div class="header-actions">
+        <button class="logout-button" data-logout>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Student Portal</div>
+      <div class="sidebar-section">
+        <h3>Sections</h3>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="transcript.html">Transcripts</a>
+        <a class="sidebar-link" href="exams.html">Exams</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="admin-section">
+        <div class="dashboard-panel">
+          <div class="panel-header"><h2>Exams overview</h2></div>
+          <div class="panel-body">
+            <p class="lead">This page lists upcoming exam windows, published timetables, and allows teachers to publish exam results.</p>
+            <div id="examsList">Loading exams…</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL</footer>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="shared-bindings.js"></script>
+  <script>
+    async function loadExams() {
+      const container = document.getElementById('examsList');
+      try {
+        const res = await fetch('/exams');
+        if (!res.ok) throw new Error('Unable to load exams');
+        const data = await res.json();
+        if (!data || !data.length) {
+          container.innerHTML = '<div class="empty-card">No exams scheduled.</div>';
+          return;
+        }
+        container.innerHTML = '<ul>' + data.map(e => `<li><strong>${e.title}</strong> — ${e.date}</li>`).join('') + '</ul>';
+      } catch (err) {
+        container.innerHTML = '<div class="empty-card">Could not load exams.</div>';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', loadExams);
+  </script>
+</body>
+</html>

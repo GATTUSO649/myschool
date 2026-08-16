@@ -1111,24 +1111,39 @@ function renderSavedSheets() {
   if (!list) return;
   const saved = getSavedSheets();
   if (!saved.length) {
-    list.innerHTML = '<div class="saved-sheet-item"><span>No saved sheets yet.</span></div>';
+    const table = list.querySelector('table');
+    if (table) table.querySelector('tbody').innerHTML = '<tr><td colspan="5">No saved sheets yet.</td></tr>';
     return;
   }
   const filter = document.getElementById('savedSheetFilter')?.value.trim().toLowerCase() || '';
   const items = saved.filter((sheet) => !filter || sheet.title.toLowerCase().includes(filter) || sheet.stream.toLowerCase().includes(filter));
   if (!items.length) {
-    list.innerHTML = '<div class="saved-sheet-item"><span>No matching sheets.</span></div>';
+    const table = list.querySelector('table');
+    if (table) table.querySelector('tbody').innerHTML = '<tr><td colspan="5">No matching sheets.</td></tr>';
     return;
   }
-  list.innerHTML = items.map((sheet) => `
-    <div class="saved-sheet-item">
-      <div>
-        <strong>${escapeHtml(sheet.title)}</strong>
-        <div>${escapeHtml(sheet.stream)} • ${escapeHtml(sheet.term)} • ${escapeHtml(sheet.year)}</div>
-      </div>
-      <button type="button" class="secondary-button" data-load-sheet="${escapeHtml(sheet.id)}">Load</button>
-    </div>
+  const rows = items.map((sheet) => `
+    <tr>
+      <td>${escapeHtml(sheet.title)}</td>
+      <td>${escapeHtml(sheet.stream)}</td>
+      <td>${escapeHtml(sheet.term)}</td>
+      <td>${escapeHtml(sheet.year)}</td>
+      <td>
+        <button type="button" class="small-button" data-load-sheet="${escapeHtml(sheet.id)}">Load</button>
+        <button type="button" class="small-button danger" data-delete-sheet="${escapeHtml(sheet.id)}">Delete</button>
+      </td>
+    </tr>
   `).join('');
+  const table = list.querySelector('table');
+  if (table) table.querySelector('tbody').innerHTML = rows;
+}
+
+function deleteSavedSheet(id) {
+  const saved = getSavedSheets();
+  const remaining = saved.filter((s) => String(s.id) !== String(id));
+  localStorage.setItem('academicsSavedSheets', JSON.stringify(remaining));
+  renderSavedSheets();
+  showAlert('Saved sheet deleted', 'success');
 }
 
 function saveCurrentSheet() {
@@ -1232,9 +1247,18 @@ function setupAcademicsSavedSheets() {
   if (filterInput) filterInput.addEventListener('input', renderSavedSheets);
   document.addEventListener('click', (event) => {
     const loadButton = event.target.closest('[data-load-sheet]');
-    if (!loadButton) return;
-    event.preventDefault();
-    loadSavedSheet(loadButton.dataset.loadSheet);
+    if (loadButton) {
+      event.preventDefault();
+      loadSavedSheet(loadButton.dataset.loadSheet);
+      return;
+    }
+    const deleteButton = event.target.closest('[data-delete-sheet]');
+    if (deleteButton) {
+      event.preventDefault();
+      if (!confirm('Delete this saved sheet? This action cannot be undone.')) return;
+      deleteSavedSheet(deleteButton.dataset.deleteSheet);
+      return;
+    }
   });
   renderSavedSheets();
 }
