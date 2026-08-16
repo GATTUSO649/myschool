@@ -1537,7 +1537,8 @@ async function loadDatabasePage() {
     setText('databaseName', data.database || 'Database');
     tableList.innerHTML = (data.tables || []).map((table) => `
       <button class="database-table-button" type="button" data-table-name="${escapeHtml(table.tableName)}">
-        <strong>${escapeHtml(table.tableName)}</strong>
+        <span class="db-icon" aria-hidden="true">▦</span>
+        <strong title="${escapeHtml(table.tableName)}">${escapeHtml(table.tableName)}</strong>
         <span>${Number(table.approxRows || 0).toLocaleString()} rows</span>
       </button>
     `).join('');
