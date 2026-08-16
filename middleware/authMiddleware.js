@@ -52,7 +52,22 @@ async function authMiddleware(req, res, next) {
       return res.status(401).json({ success: false, message: 'Authentication token required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'change-this-development-secret');
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'change-this-development-secret');
+    } catch (err) {
+      // Log token snippet and error to help diagnose invalid/expired tokens during development
+      try {
+        const snippet = typeof token === 'string' ? `${token.slice(0, 12)}...${token.slice(-8)}` : String(token);
+        console.warn('authMiddleware: token verification failed for token:', snippet, 'error:', err.message || err);
+      } catch (e) {
+        console.warn('authMiddleware: token verification failed (could not print token snippet)', err.message || err);
+      }
+      if (isHtmlRequest(req)) {
+        return res.redirect('/login.html');
+      }
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
 
     const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
     if (decoded.bootstrapAdmin && decoded.username && decoded.username.toLowerCase() === adminUsername) {

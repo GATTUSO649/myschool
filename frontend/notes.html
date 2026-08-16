@@ -88,64 +88,73 @@
       color: #64748b;
     }
     .subject-tiles {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 18px;
-      justify-content: flex-start;
       align-items: stretch;
       width: 100%;
     }
     .subject-tile {
-      flex: 1 1 320px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      min-height: 220px;
-      padding: 22px;
+      min-height: 180px;
+      padding: 18px;
       background: #ffffff;
-      border: 1px solid #e5ebf5;
-      border-radius: 20px;
-      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
-      min-width: 260px;
-      max-width: 420px;
+      border: 1px solid #e9eef7;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+      min-width: 220px;
+      max-width: 100%;
+    }
+    .subject-tile .tile-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
     }
     .subject-pill {
       display: inline-flex;
-      align-self: flex-start;
       padding: 6px 10px;
       border-radius: 999px;
       background: rgba(24, 182, 168, 0.12);
       color: #0e7267;
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
     }
     .subject-tile h3 {
       margin: 0;
       font-size: 1.05rem;
       color: #0f172a;
+      line-height: 1.2;
+      flex: 1 1 auto;
     }
     .subject-tile p {
       margin: 0;
       color: #64748b;
-      line-height: 1.5;
-      font-size: 0.92rem;
+      line-height: 1.4;
+      font-size: 0.95rem;
+      flex: 1 1 auto;
+      min-height: 48px;
     }
     .subject-actions {
-      margin-top: auto;
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
     }
     .subject-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
       text-decoration: none;
       background: linear-gradient(135deg, #123a72 0%, #18b6a8 100%);
       color: #fff;
       font-weight: 700;
+      min-width: 96px;
     }
     @media (max-width: 1100px) {
       .subject-tiles {
@@ -316,8 +325,10 @@
       if (!container) return;
       container.innerHTML = subjects.map((subject) => `
         <article class="subject-tile">
-          <span class="subject-pill">${subject.tag}</span>
-          <h3>${subject.name}</h3>
+          <div class="tile-head">
+            <h3>${subject.name}</h3>
+            <span class="subject-pill">${subject.tag}</span>
+          </div>
           <p>${subject.description}</p>
           <div class="subject-actions">
             <a class="subject-button" href="subject.html?subject=${encodeURIComponent(subject.name)}">Open</a>

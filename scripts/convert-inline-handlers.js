@@ -19,17 +19,40 @@ function processFile(filePath) {
   // Replace common inline onclick handlers with data- attributes
   content = content.replace(/onclick\s*=\s*"([^"]*)"/g, (m, code) => {
     const c = code.trim();
-    // exact matches
+    // common single-call patterns
     if (c === 'logout()') return 'data-admin-logout';
-    const cm = c.match(/^closeModal\('([^']+)'\)$/);
-    if (cm) return `data-close-modal="${cm[1]}"`;
-    if (c.includes("student-sidebar") && c.includes('toggle')) return 'data-toggle-sidebar';
-    const sd = c.match(/^selectDate\('([^']+)'\)$/);
-    if (sd) return `data-select-date="${sd[1]}"`;
-    const ve = c.match(/viewEvent\((\d+)\)/);
-    if (ve) return `data-view-event="${ve[1]}"`;
-    const ot = c.match(/^openTopic\('([^']+)'\)$/);
-    if (ot) return `data-open-topic="${ot[1]}"`;
+    if (c === "openRequestForm()") return 'data-open-request';
+    if (c === "closeRequestForm()") return 'data-close-request';
+    if (c === 'goApply()') return 'data-go-apply';
+    if (c === 'markAllRead()') return 'data-mark-all-read';
+    if (c === 'clearAllNotifications()') return 'data-clear-notifications';
+    if (c === 'openSettings()') return 'data-open-settings';
+    if (c === 'loadNotifications()') return 'data-load-notifications';
+    if (c === 'uploadProfilePicture()') return 'data-upload-profile-pic';
+    if (c === 'removeProfilePicture()') return 'data-remove-profile-pic';
+    if (c === 'enable2FA()') return 'data-enable-2fa';
+    if (c === 'downloadTranscript()') return 'data-download-transcript';
+    if (c === 'testHealth()') return 'data-test-health';
+    if (c === 'testSignup()') return 'data-test-signup';
+    if (c === 'clearResults()') return 'data-clear-results';
+
+    // patterns with a single function call that may be prefixed by event.preventDefault();
+    const prefVe = c.match(/(?:event\.preventDefault\(\);\s*)?viewEvent\((\d+)\)/);
+    if (prefVe) return `data-view-event="${prefVe[1]}"`;
+    const prefSd = c.match(/(?:event\.preventDefault\(\);\s*)?selectDate\('([^']+)'\)/);
+    if (prefSd) return `data-select-date="${prefSd[1]}"`;
+    const prefVr = c.match(/(?:event\.preventDefault\(\);\s*)?viewNotification\((\d+)\)/);
+    if (prefVr) return `data-view-notification="${prefVr[1]}"`;
+    const prefTr = c.match(/(?:event\.preventDefault\(\);\s*)?toggleRead\((\d+)\)/);
+    if (prefTr) return `data-toggle-read="${prefTr[1]}"`;
+    const prefDel = c.match(/(?:event\.preventDefault\(\);\s*)?deleteNotification\((\d+)\)/);
+    if (prefDel) return `data-delete-notification="${prefDel[1]}"`;
+    const switchTab = c.match(/^switchTab\('([^']+)',\s*event\)$/);
+    if (switchTab) return `data-switch-tab="${switchTab[1]}"`;
+    const navMatch = c.match(/^window\.location\.href\s*=\s*'([^']+)'$/);
+    if (navMatch) return `data-navigate="${navMatch[1]}"`;
+
+    // simple remove-parent
     if (c.includes('this.parentElement.remove()')) return 'data-remove-parent';
 
     // No mapping — keep original to avoid breaking unknown handlers
