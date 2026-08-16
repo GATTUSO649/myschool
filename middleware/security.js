@@ -63,8 +63,12 @@ const extraImgSrcs = (process.env.CSP_IMG_SRC || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
-// Allow the QR code generator host by default so externally-generated QR images render
-const defaultImgHosts = ['https://api.qrserver.com'];
+// Allow the QR code generator host and the external image host used on the login page
+// by default so externally-hosted images (QR and background) render correctly.
+const defaultImgHosts = [
+  'https://api.qrserver.com',
+  'https://c8.alamy.com'
+];
 
 const securityHeaders = helmet({
   contentSecurityPolicy: {
