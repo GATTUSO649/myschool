@@ -284,7 +284,7 @@ async function fetchWithAuth(endpoint, options = {}) {
   const token = getAuthToken();
   const apiUrl = getApiUrl();
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const base = apiUrl.replace(/\/api$/, '');
+  const base = apiUrl.replace(/\/api$/i, '');
   const url = normalizedEndpoint.startsWith('/api')
     ? `${base}${normalizedEndpoint}`
     : `${apiUrl}${normalizedEndpoint}`;
@@ -299,7 +299,34 @@ async function fetchWithAuth(endpoint, options = {}) {
     body = JSON.stringify(body);
   }
 
-  return fetch(url, { ...options, headers, body });
+  try {
+    const response = await fetch(url, { ...options, headers, body });
+    if (response.status === 401) {
+      console.warn('fetchWithAuth: received 401 Unauthorized — clearing auth and redirecting to login');
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('student');
+        localStorage.removeItem('rememberMe');
+        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      } catch (err) {
+        console.warn('Error clearing auth storage', err);
+      }
+      // Redirect to login (delay slightly so other handlers can process)
+      setTimeout(() => {
+        try {
+          if (!window.location.pathname.toLowerCase().includes('login.html')) {
+            window.location.replace('login.html');
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      }, 200);
+    }
+    return response;
+  } catch (err) {
+    console.error('fetchWithAuth network error:', err);
+    throw err;
+  }
 }
 
 window.SCHOOL_FORMS = window.SCHOOL_FORMS || ['Form 1', 'Form 2', 'Form 3', 'Form 4'];

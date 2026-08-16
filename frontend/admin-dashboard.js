@@ -140,6 +140,24 @@ function applyManagementContext() {
   });
 }
 
+// Bind logout controls (CSP-safe) to call the central `logout()` function
+function setupLogoutBindings() {
+  try {
+    document.querySelectorAll('[data-admin-logout]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+      });
+    });
+    const headerLogout = document.querySelector('.logout-button');
+    if (headerLogout && !headerLogout.hasAttribute('data-admin-logout')) {
+      headerLogout.addEventListener('click', (e) => { e.preventDefault(); logout(); });
+    }
+  } catch (err) {
+    console.warn('setupLogoutBindings failed', err);
+  }
+}
+
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
@@ -1681,6 +1699,7 @@ function exportTranscriptSheet() {
 
 document.addEventListener('DOMContentLoaded', () => {
   normalizeAdminSidebar();
+  setupLogoutBindings();
   applyManagementContext();
   setupTranscriptSheetPage();
   loadAdminData();

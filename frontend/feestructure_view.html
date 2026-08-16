@@ -187,7 +187,8 @@ function openDoc(doc, pdfMode){
           <td class="doc-table-cell doc-table-cell-right">KSh ${Number(item.amount || 0).toLocaleString()}</td>
         </tr>
       `).join('');
-      return `<!doctype html><html><head><meta charset="utf-8"><title>${doc.title || 'Fee Structure'}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#111827}h1{margin-bottom:8px}p{margin:4px 0 12px;color:#4b5563}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #dde3ea;padding:12px;text-align:left}th{background:#f8fafc}.doc-footer-text{margin-top:24px;color:#6b7280;font-size:0.95rem;}</style></head><body><h1>${doc.title || 'Fee Structure'}</h1><p>${doc.description || ''}</p><table><thead><tr><th>Category</th><th>POS</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table><p class="doc-footer-text">Generated for ${doc.target_class || form} ${doc.target_term ? '• ' + doc.target_term : ''}</p></body></html>`;
+      return `<!doctype html><html><head><meta charset="utf-8"><title>${doc.title || 'Fee Structure'}</title><style>body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#111827}h1{margin-bottom:8px}p{margin:4px 0 12px;color:#4b5563}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #dde3ea;padding:12px;text-align:left}th{background:#f8fafc}.doc-footer-text{margin-top:24px;color:#6b7280;font-size:0.95rem;}</style></head><body><h1>${doc.title || 'Fee Structure'}</h1><p>${doc.description || ''}</p><table><thead><tr><th>Category</th><th>POS</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table><p class="doc-footer-text">Generated for ${doc.target_class || form} ${doc.target_term ? '• ' + doc.target_term : ''}</p>  <script src="shared-bindings.js"></script>
+</body></html>`;
     }
 
     async function loadStructures(){

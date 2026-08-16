@@ -65,10 +65,10 @@
 
         <h3 style="margin-top:18px">Top support topics</h3>
         <div class="support-list" id="supportList">
-          <div class="support-item"><div>Reset password</div><div><a href="#" onclick="openTopic('reset-password')">Open</a></div></div>
-          <div class="support-item"><div>Make a payment</div><div><a href="#" onclick="openTopic('payments')">Open</a></div></div>
-          <div class="support-item"><div>Download transcript</div><div><a href="#" onclick="openTopic('transcript')">Open</a></div></div>
-          <div class="support-item"><div>Contact Us</div><div><a href="#" onclick="openTopic('contact-us')">Open</a></div></div>
+          <div class="support-item"><div>Reset password</div><div><a href="#" data-open-topic="reset-password">Open</a></div></div>
+          <div class="support-item"><div>Make a payment</div><div><a href="#" data-open-topic="payments">Open</a></div></div>
+          <div class="support-item"><div>Download transcript</div><div><a href="#" data-open-topic="transcript">Open</a></div></div>
+          <div class="support-item"><div>Contact Us</div><div><a href="#" data-open-topic="contact-us">Open</a></div></div>
         </div>
 
         <div id="topicContent" style="margin-top:18px">
@@ -136,5 +136,6 @@
   </script>
 
   <script src="site-common.js"></script>
+  <script src="shared-bindings.js"></script>
 </body>
 </html>

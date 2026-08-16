@@ -492,7 +492,7 @@
       </div>
       <div class="header-actions">
         <span class="header-pill" id="pageNamePill">Transcript</span>
-        <button class="logout-button" onclick="logout()">Logout</button>
+        <button class="logout-button" data-admin-logout>Logout</button>
       </div>
     </div>
   </header>
@@ -790,7 +790,8 @@
       if (!newWin) { window.print(); return; }
       const content = container.outerHTML;
       newWin.document.open();
-      newWin.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body>${content}</body></html>`);
+      newWin.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body>${content}  <script src="shared-bindings.js"></script>
+</body></html>`);
       newWin.document.close();
       // remove download button in print window if present
       newWin.onload = () => {

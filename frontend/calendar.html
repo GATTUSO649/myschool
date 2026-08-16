@@ -108,7 +108,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 id="eventModalTitle">Event Details</h2>
-                    <button class="modal-close" onclick="closeModal('eventModal')">&times;</button>
+                    <button class="modal-close" data-close-modal="eventModal">&times;</button>
                 </div>
                 <div class="modal-body" id="eventDetails">
                     <!-- Event details will be populated here -->
@@ -121,7 +121,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>Add New Event</h2>
-                    <button class="modal-close" onclick="closeModal('addEventModal')">&times;</button>
+                    <button class="modal-close" data-close-modal="addEventModal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="addEventForm">
@@ -181,7 +181,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="closeModal('addEventModal')">Cancel</button>
+                            <button type="button" class="btn btn-secondary" data-close-modal="addEventModal">Cancel</button>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Add Event
                             </button>
@@ -1300,5 +1300,6 @@
         }
     </style>
   <script src="site-common.js"></script>
+  <script src="shared-bindings.js"></script>
 </body>
 </html>

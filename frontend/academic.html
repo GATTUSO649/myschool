@@ -11,13 +11,13 @@
 <body class="student-portal page-academics">
   <header class="dashboard-header">
     <div class="header-content">
-      <button class="mobile-sidebar-toggle" type="button" onclick="document.querySelector('.student-sidebar')?.classList.toggle('is-open')" aria-label="Toggle menu">
+      <button class="mobile-sidebar-toggle" type="button" data-toggle-sidebar aria-label="Toggle menu">
         <i class="fas fa-bars"></i>
       </button>
       <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
       <div class="header-actions">
         <span class="header-pill" id="formBadge">Form</span>
-        <button class="logout-button" onclick="logout()">Logout</button>
+        <button class="logout-button" data-admin-logout>Logout</button>
       </div>
     </div>
   </header>
@@ -256,5 +256,6 @@
   <script src="auth.js"></script>
   <script src="academic.js"></script>
   <script src="site-common.js"></script>
+  <script src="shared-bindings.js"></script>
 </body>
 </html>

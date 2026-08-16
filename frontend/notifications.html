@@ -111,7 +111,7 @@
         <div class="modal-content large-modal">
             <div class="modal-header">
                 <h2 id="notificationTitle">Notification Details</h2>
-                <button class="modal-close" onclick="closeModal('notificationModal')">&times;</button>
+                <button class="modal-close" data-close-modal="notificationModal">&times;</button>
             </div>
             <div class="modal-body" id="notificationDetails">
                 <!-- Notification details will be populated here -->
@@ -124,7 +124,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Notification Settings</h2>
-                <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+                <button class="modal-close" data-close-modal="settingsModal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="settingsForm">
@@ -212,7 +212,7 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-close-modal="settingsModal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Save Settings
                         </button>
@@ -700,7 +700,7 @@
                     <h4>${notification.title}</h4>
                     <p>${notification.message}</p>
                 </div>
-                <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                <button class="close-btn" data-remove-parent>&times;</button>
             `;
 
             // Add to page
@@ -1379,5 +1379,6 @@
         }
     </style>
   <script src="site-common.js"></script>
+  <script src="shared-bindings.js"></script>
 </body>
 </html>
