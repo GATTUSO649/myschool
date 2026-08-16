@@ -29,14 +29,28 @@ const classRoutes = require('./routes/classes');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
-// Configure trust proxy based on environment (set TRUST_PROXY=true when behind a reverse proxy)
-const trustProxy = (typeof process.env.TRUST_PROXY !== 'undefined')
-  ? (String(process.env.TRUST_PROXY).toLowerCase() === 'true')
-  : (!!process.env.RENDER || isProduction);
-app.set('trust proxy', trustProxy);
-console.log('Express trust proxy set to', trustProxy);
-const server = http.createServer(app);
+// Determine production early
 const isProduction = process.env.NODE_ENV === 'production';
+// Configure trust proxy safely. Avoid using the permissive boolean `true` value
+// which express-rate-limit treats as insecure. Accept explicit values via
+// TRUST_PROXY env var (e.g. 'loopback', '127.0.0.1', '1' for hops), otherwise
+// default to 'loopback' when running on known platforms or in production.
+let trustProxyValue = false;
+if (typeof process.env.TRUST_PROXY !== 'undefined' && process.env.TRUST_PROXY !== '') {
+  const raw = String(process.env.TRUST_PROXY).trim();
+  if (raw.toLowerCase() === 'true') {
+    trustProxyValue = 'loopback';
+  } else if (/^\d+$/.test(raw)) {
+    trustProxyValue = Number(raw);
+  } else {
+    trustProxyValue = raw; // allow 'loopback', 'uniquelocal', IP, cidr, etc.
+  }
+} else if (process.env.RENDER || isProduction) {
+  trustProxyValue = 'loopback';
+}
+app.set('trust proxy', trustProxyValue);
+console.log('Express trust proxy set to', trustProxyValue);
+const server = http.createServer(app);
 const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
