@@ -158,34 +158,6 @@ function setupLogoutBindings() {
   }
 }
 
-function setupSidebarToggle() {
-  try {
-    const headerActions = document.querySelector('.header-actions');
-    if (!headerActions) return;
-    if (document.getElementById('sidebarToggleBtn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'logout-button';
-    btn.id = 'sidebarToggleBtn';
-    btn.type = 'button';
-    btn.title = 'Toggle sidebar';
-    btn.style.fontSize = '18px';
-    btn.textContent = '☰';
-    btn.addEventListener('click', () => {
-      const collapsed = document.body.classList.toggle('sidebar-collapsed');
-      try { localStorage.setItem('adminSidebarCollapsed', collapsed ? '1' : '0'); } catch (e) { /* ignore */ }
-    });
-    headerActions.insertBefore(btn, headerActions.firstChild || null);
-
-    // Apply initial state from localStorage
-    try {
-      const saved = localStorage.getItem('adminSidebarCollapsed');
-      if (saved === '1') document.body.classList.add('sidebar-collapsed');
-    } catch (e) { /* ignore */ }
-  } catch (err) {
-    console.warn('setupSidebarToggle failed', err);
-  }
-}
-
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
@@ -1783,7 +1755,6 @@ function exportTranscriptSheet() {
 document.addEventListener('DOMContentLoaded', () => {
   normalizeAdminSidebar();
   setupLogoutBindings();
-  setupSidebarToggle();
   applyManagementContext();
   setupTranscriptSheetPage();
   loadAdminData();

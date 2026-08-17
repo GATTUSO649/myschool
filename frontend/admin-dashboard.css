@@ -126,7 +126,7 @@ body.admin-dashboard-page .student-sidebar {
   width: var(--sidebar-width);
   padding: 24px 18px;
   overflow-y: auto;
-  background: linear-gradient(180deg, #031127 0%, #08305a 100%);
+  background: linear-gradient(180deg, #031127 0%, #0a2a4f 100%);
   color: #ffffff;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -179,7 +179,7 @@ body.admin-dashboard-page .sidebar-link {
 
 body.admin-dashboard-page .sidebar-link:hover,
 body.admin-dashboard-page .sidebar-link.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.16);
   transform: translateX(2px);
@@ -195,39 +195,6 @@ body.admin-dashboard-page .dashboard-main {
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-/* Collapsed sidebar state */
-body.admin-dashboard-page.sidebar-collapsed .student-sidebar {
-  width: 72px;
-  padding: 18px 8px;
-}
-
-body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-brand {
-  display: none;
-}
-
-body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-section h3 {
-  display: none;
-}
-
-body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-link {
-  padding: 10px 6px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-body.admin-dashboard-page.sidebar-collapsed .dashboard-main {
-  margin-left: 72px;
-  width: calc(100% - 72px);
-}
-
-/* Smooth transitions */
-body.admin-dashboard-page .student-sidebar,
-body.admin-dashboard-page .dashboard-main {
-  transition: width 200ms ease, margin-left 200ms ease, padding 200ms ease;
 }
 
 body.admin-dashboard-page .admin-section {
@@ -247,9 +214,9 @@ body.admin-dashboard-page .admin-section {
 .database-output,
 .database-record-form {
   background: var(--admin-surface);
-  border: 1px solid rgba(15, 23, 42, 0.05);
-  border-radius: 14px;
-  box-shadow: var(--admin-shadow-soft);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-shadow);
 }
 
 .dashboard-panel {
@@ -261,10 +228,10 @@ body.admin-dashboard-page .admin-section {
   position: relative;
   overflow: hidden;
   border: none;
-  background: linear-gradient(135deg, #0d3b5b 0%, #0d5a7a 48%, #14b8a6 100%);
+  background: linear-gradient(135deg, #123a56 0%, #0d6b70 48%, #14b8a6 100%);
   color: #ffffff;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
-  border-radius: 18px;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.18);
+  border-radius: 24px;
 }
 
 .page-intro::after {
@@ -325,8 +292,8 @@ body.admin-dashboard-page .admin-section {
 
 .sheet-table-wrapper th,
 .sheet-table-wrapper td {
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .sheet-table-wrapper th {
@@ -341,9 +308,9 @@ body.admin-dashboard-page .admin-section {
 
 .saved-sheet-list {
   min-height: 120px;
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  border-radius: 12px;
-  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  padding: 18px;
   background: #ffffff;
   color: #475569;
 }
@@ -375,11 +342,11 @@ body.admin-dashboard-page .admin-section {
 }
 
 .dashboard-footer {
-  padding: 14px 28px;
+  padding: 18px 32px;
   text-align: center;
   color: var(--admin-muted);
-  background: linear-gradient(180deg, #f8fbff 0%, #f1f7ff 100%);
-  border-top: 1px solid rgba(15, 23, 42, 0.04);
+  background: #f8fbff;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .section-heading {

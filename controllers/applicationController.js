@@ -39,68 +39,36 @@ async function createApplication(req, res) {
     const kcpeCertificateValue = getDocumentValue(req, 'kcpeCertificate', body.kcpeCertificateUrl || body.kcpe_certificate_url || body.kcpeCertificate || body.kcpe_certificate || null);
     const medicalFormValue = getDocumentValue(req, 'medicalForm', body.medicalFormUrl || body.medical_form_url || body.medicalForm || body.medical_form || null);
 
-    let result;
-    try {
-      result = await query(
-        `INSERT INTO applications
-         (full_name, email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, parent_email, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          fullName,
-          body.email || null,
-          body.phone || body.phoneNumber || null,
-          body.dateOfBirth || body.date_of_birth || body.dob || null,
-          body.gender || null,
-          body.className || body.class_name || body.class || null,
-          body.previousSchool || body.previous_school || null,
-          body.parentName || body.parent_name || body.guardianName || null,
-          body.parentPhone || body.parent_phone || body.guardianPhone || null,
-          body.parentEmail || body.parent_email || null,
-          body.address || null,
-          body.requirements || null,
-          body.medicalNotes || body.medical_notes || null,
-          birthCertificateValue,
-          kcpeCertificateValue,
-          medicalFormValue
-        ]
-      );
-    } catch (insertErr) {
-      // Fallback for older schemas without parent_email column
-      console.warn('Primary applications insert failed, retrying without parent_email:', insertErr.message || insertErr);
-      result = await query(
-        `INSERT INTO applications
-         (full_name, email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          fullName,
-          body.email || null,
-          body.phone || body.phoneNumber || null,
-          body.dateOfBirth || body.date_of_birth || body.dob || null,
-          body.gender || null,
-          body.className || body.class_name || body.class || null,
-          body.previousSchool || body.previous_school || null,
-          body.parentName || body.parent_name || body.guardianName || null,
-          body.parentPhone || body.parent_phone || body.guardianPhone || null,
-          body.address || null,
-          body.requirements || null,
-          body.medicalNotes || body.medical_notes || null,
-          birthCertificateValue,
-          kcpeCertificateValue,
-          medicalFormValue
-        ]
-      );
-    }
+    const result = await query(
+      `INSERT INTO applications
+       (full_name, email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        fullName,
+        body.email || null,
+        body.phone || body.phoneNumber || null,
+        body.dateOfBirth || body.date_of_birth || body.dob || null,
+        body.gender || null,
+        body.className || body.class_name || body.class || null,
+        body.previousSchool || body.previous_school || null,
+        body.parentName || body.parent_name || body.guardianName || null,
+        body.parentPhone || body.parent_phone || body.guardianPhone || null,
+        body.address || null,
+        body.requirements || null,
+        body.medicalNotes || body.medical_notes || null,
+        birthCertificateValue,
+        kcpeCertificateValue,
+        medicalFormValue
+      ]
+    );
 
     await logActivity(null, 'application_created', `Application #${result.insertId} submitted`, req.ip);
 
-    const parentEmail = String(body.parentEmail || body.parent_email || '').trim();
-    const applicantEmail = String(body.email || '').trim();
-    const confirmationRecipient = parentEmail || applicantEmail;
-    if (confirmationRecipient) {
-      const recipientName = (parentEmail ? (body.parentName || body.parent_name) : fullName) || 'Applicant';
+    const recipientEmail = String(body.email || '').trim();
+    if (recipientEmail) {
       await sendApplicationConfirmationEmail({
-        to: confirmationRecipient,
-        fullName: recipientName
+        to: recipientEmail,
+        fullName: fullName || body.full_name || body.name || 'Applicant'
       });
     }
 
@@ -159,59 +127,35 @@ async function approveApplication(req, res) {
         const username = `${baseUsername}${String(admissionNumber || '').replace(/[^0-9]/g, '').slice(-4) || Math.floor(1000 + Math.random() * 9000)}`;
         const loginPassword = String(app.email || emailValue || admissionNumber || '').trim();
         const passwordHash = await bcrypt.hash(loginPassword, 10);
-        let insertRes;
-        try {
-          insertRes = await query(
-            `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, guardian_email, active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [
-              app.full_name || app.fullName || null,
-              username,
-              emailValue || null,
-              admissionNumber,
-              passwordHash,
-              'student',
-              app.class_name || app.className || null,
-              stream,
-              app.phone || null,
-              app.parent_name || app.parentName || null,
-              app.parent_phone || app.parentPhone || null,
-              app.parent_email || app.parentEmail || null
-            ]
-          );
-        } catch (insErr) {
-          console.warn('Student insert with guardian_email failed, retrying without guardian_email:', insErr.message || insErr);
-          insertRes = await query(
-            `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [
-              app.full_name || app.fullName || null,
-              username,
-              emailValue || null,
-              admissionNumber,
-              passwordHash,
-              'student',
-              app.class_name || app.className || null,
-              stream,
-              app.phone || null,
-              app.parent_name || app.parentName || null,
-              app.parent_phone || app.parentPhone || null
-            ]
-          );
-        }
+        const insertRes = await query(
+          `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            app.full_name || app.fullName || null,
+            username,
+            emailValue || null,
+            admissionNumber,
+            passwordHash,
+            'student',
+            app.class_name || app.className || null,
+            stream,
+            app.phone || null,
+            app.parent_name || app.parentName || null,
+            app.parent_phone || app.parentPhone || null
+          ]
+        );
         studentAccount = { id: insertRes.insertId, username, email: emailValue };
         await logActivity(req.user.id, 'student_created_from_application', `Created student record ${admissionNumber}`, req.ip);
       }
 
-      const guardianEmail = String(app.parent_email || app.parentEmail || studentAccount?.guardian_email || '').trim();
-      const recipientForApproval = guardianEmail || String(app.email || studentAccount?.email || '').trim();
-      if (recipientForApproval) {
+      const recipientEmail = String(app.email || studentAccount?.email || '').trim();
+      if (recipientEmail) {
         await sendAdmissionApprovalEmail({
-          to: recipientForApproval,
-          fullName: app.parent_name || app.parentName || app.full_name || app.fullName || 'Student',
+          to: recipientEmail,
+          fullName: app.full_name || app.fullName || 'Student',
           admissionNumber,
           username: studentAccount?.username || app.full_name || 'student',
-          password: String(app.email || recipientForApproval || admissionNumber || '').trim(),
+          password: String(app.email || recipientEmail || admissionNumber || '').trim(),
           stream
         });
       }

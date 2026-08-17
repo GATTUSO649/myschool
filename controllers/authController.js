@@ -344,35 +344,6 @@ async function confirmPasswordReset(req, res) {
     return res.status(500).json({ success: false, message: 'Password reset confirmation failed' });
   }
 }
-async function me(req, res) {
-  res.json({ success: true, student: publicStudent(req.user) });
-}
-
-async function changePassword(req, res) {
-  try {
-    const userId = req.user && req.user.id;
-    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
-
-    const { currentPassword, newPassword } = req.body || {};
-    if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Missing fields' });
-
-    if (!isStrongPassword(newPassword)) return res.status(400).json({ success: false, message: 'New password does not meet strength requirements' });
-
-    const [rows] = await query('SELECT password_hash FROM students WHERE id = ?', [userId]);
-    if (!rows || rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const match = await bcrypt.compare(currentPassword, rows[0].password_hash);
-    if (!match) return res.status(403).json({ success: false, message: 'Current password incorrect' });
-
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE students SET password_hash = ? WHERE id = ?', [newHash, userId]);
-    await logActivity(userId, 'password_changed', 'User changed password', req.ip);
-    return res.json({ success: true, message: 'Password changed' });
-  } catch (error) {
-    console.error('changePassword error', error);
-    return res.status(500).json({ success: false, message: 'Could not change password' });
-  }
-}
 
 async function me(req, res) {
   res.json({ success: true, student: publicStudent(req.user) });
@@ -384,7 +355,6 @@ module.exports = {
   me,
   requestPasswordReset,
   confirmPasswordReset,
-  changePassword,
   publicStudent,
   signToken,
   generateOtpCode,

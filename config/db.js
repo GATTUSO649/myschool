@@ -98,9 +98,6 @@ async function runMigrations() {
   await addColumnIfMissing('applications', 'birth_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'kcpe_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'medical_form_path', 'VARCHAR(255) NULL');
-  // Ensure parent/guardian contact columns exist for application confirmations and admin emails
-  await addColumnIfMissing('applications', 'parent_email', 'VARCHAR(150) NULL');
-  await addColumnIfMissing('students', 'guardian_email', 'VARCHAR(150) NULL');
   await addColumnIfMissing('notes', 'topic', 'VARCHAR(150) NULL');
   await addColumnIfMissing('notes', 'file_size', 'BIGINT DEFAULT 0');
   await addColumnIfMissing('notes', 'downloads', 'INT DEFAULT 0');

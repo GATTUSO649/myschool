@@ -55,93 +55,13 @@
             <div class="mini-card"><strong>Specific class</strong><span>Send alerts to a selected form or stream</span></div>
             <div class="mini-card"><strong>Emergency</strong><span>Escalate urgent school-wide information</span></div>
           </div>
-          <div style="padding:18px;border-top:1px solid #eef2f6;background:#fcfcff">
-            <h4>Compose email to approved students' parents</h4>
-            <form id="parentEmailComposer" style="display:grid;gap:8px;max-width:720px;margin-top:12px">
-              <input type="text" id="bulkSubject" placeholder="Subject" required style="padding:10px;border:1px solid #d6e0ea;border-radius:6px">
-              <textarea id="bulkMessage" placeholder="Message body" rows="6" required style="padding:10px;border:1px solid #d6e0ea;border-radius:6px"></textarea>
-              <div style="display:flex;gap:8px;align-items:center">
-                <button class="primary-button" id="sendToParentsButton">Send to parents of approved students</button>
-                <div id="parentEmailStatus" style="font-weight:700;color:#0b2440"></div>
-              </div>
-              <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-                <div style="flex:1;background:#e6eef9;border-radius:8px;height:12px;overflow:hidden">
-                  <div id="sendProgress" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#0f4c81);transition:width 300ms ease"></div>
-                </div>
-                <small id="sendProgressText" style="min-width:140px;color:var(--admin-muted)"></small>
-              </div>
-              <div style="margin-top:10px">
-                <button type="button" class="secondary-button" id="showMigrationSql">Show migration SQL</button>
-                <div id="migrationSqlHolder" style="display:none;margin-top:8px">
-                  <p style="margin:0 0 6px">Copy and run these statements on your database if you want to add parent/guardian columns:</p>
-                  <textarea id="migrationSql" readonly style="width:100%;height:120px;padding:8px;border:1px solid #d6e0ea;border-radius:6px">ALTER TABLE applications ADD COLUMN parent_email VARCHAR(150) NULL;\nALTER TABLE students ADD COLUMN guardian_email VARCHAR(150) NULL;</textarea>
-                </div>
-              </div>
-            </form>
-          </div>
         </div>
       </section>
     </main>
   </div>
 
   <script src="auth.js"></script>
-  <script src="admin-modern.js"></script>
   <script src="admin-dashboard.js"></script>
-  <script>
-    (function(){
-      const form = document.getElementById('parentEmailComposer');
-      const status = document.getElementById('parentEmailStatus');
-      const progress = document.getElementById('sendProgress');
-      const progressText = document.getElementById('sendProgressText');
-      const showMigrationBtn = document.getElementById('showMigrationSql');
-      const migrationHolder = document.getElementById('migrationSqlHolder');
-      if (!form) return;
-
-      showMigrationBtn.addEventListener('click', () => {
-        migrationHolder.style.display = migrationHolder.style.display === 'none' ? 'block' : 'none';
-      });
-
-      async function setProgress(pct, text) {
-        progress.style.width = pct + '%';
-        progressText.textContent = text || '';
-      }
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const subject = document.getElementById('bulkSubject').value.trim();
-        const message = document.getElementById('bulkMessage').value.trim();
-        if (!subject || !message) {
-          status.textContent = 'Please provide subject and message';
-          return;
-        }
-
-        // show progress animation while request runs
-        status.textContent = 'Sending...';
-        setProgress(10, 'Starting');
-        try {
-          // slowly increase to indicate activity
-          setTimeout(() => setProgress(35, 'Contacting server...'), 400);
-          const resp = await fetchWithAuth('/admin/emails/send-to-approved-parents', { method: 'POST', body: JSON.stringify({ subject, message }) });
-          setProgress(65, 'Server processing');
-          const data = await resp.json().catch(() => ({}));
-          if (resp.ok && data.success) {
-            setProgress(100, 'Done');
-            status.textContent = `Sent ${data.sent || 0} emails`;
-            form.reset();
-          } else {
-            setProgress(0, 'Failed');
-            status.textContent = data?.message || 'Failed to send emails';
-          }
-        } catch (err) {
-          console.error('Send bulk parents email error', err);
-          setProgress(0, 'Network error');
-          status.textContent = 'Network error while sending emails';
-        }
-
-        setTimeout(() => { status.textContent = ''; setProgress(0,''); }, 8000);
-      });
-    })();
-  </script>
   <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n  <script src="shared-bindings.js"></script>
 </body>
 </html>

@@ -1,97 +1,140 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CRESENT HIGH SCHOOL — Admin</title>
-    <link rel="stylesheet" href="site-common.css">
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="stylesheet" href="admin-dashboard.css">
-  </head>
-  <body class="admin-dashboard-page has-site-footer">
-    <header class="dashboard-header">
-      <div class="header-content">
-        <div style="display:flex;align-items:center;gap:14px">
-          <button id="sidebarToggle" class="header-pill" title="Toggle sidebar">☰</button>
-          <div class="brand-bar">
-            <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
-            <div class="header-note">Administrator portal</div>
-          </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRESENT HIGH SCHOOL - Admin Portal</title>
+  <link rel="stylesheet" href="site-common.css">`n<link rel="stylesheet" href="dashboard.css">`n<link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name">
+          <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
         </div>
-
-        <div class="header-actions">
-          <input id="adminSearch" placeholder="Search students, apps, logs" style="min-width:260px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#fff">
-          <span class="header-pill" id="adminNamePill">Administrator</span>
-          <button class="logout-button" data-admin-logout>Logout</button>
-        </div>
+        <div class="header-note">Administrator portal</div>
       </div>
-    </header>
-
-    <div class="student-shell">
-      <aside class="student-sidebar">
-        <div class="sidebar-brand">Admin Control</div>
-        <nav class="sidebar-section">
-          <a class="sidebar-link active" href="admin-dashboard.html">Overview</a>
-          <a class="sidebar-link" href="admin-applications.html">Applications</a>
-          <a class="sidebar-link" href="admin-students.html">Students</a>
-          <a class="sidebar-link" href="admin-academics.html">Academics</a>
-          <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
-          <a class="sidebar-link" href="admin-finance.html">Finance</a>
-          <a class="sidebar-link" href="admin-logs.html">Audit Logs</a>
-          <a class="sidebar-link" href="admin-settings.html">Settings</a>
-        </nav>
-      </aside>
-
-      <main class="dashboard-main">
-        <section class="admin-section">
-          <div class="page-intro">
-            <div class="panel-header">
-              <div>
-                <h2>Admin Overview</h2>
-                <p class="footer-note">Quick access to key admin tools, messages, and system health.</p>
-              </div>
-              <div style="display:flex;gap:12px;align-items:center">
-                <button class="primary-button" id="openChat">Open chat</button>
-                <button class="secondary-button" id="openMigration">Migration SQL</button>
-              </div>
-            </div>
-          </div>
-
-          <section class="analytics-grid">
-            <div class="dashboard-panel">
-              <div class="panel-header"><h3>Summary</h3><span class="panel-pill">Live</span></div>
-              <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px">
-                <div class="mini-card"><strong id="totalApplications">0</strong><div>Pending applications</div></div>
-                <div class="mini-card"><strong id="approvedApplications">0</strong><div>Approved</div></div>
-                <div class="mini-card"><strong id="totalStudents">0</strong><div>Active students</div></div>
-                <div class="mini-card"><strong id="totalPaid">KSh 0</strong><div>Collected</div></div>
-              </div>
-            </div>
-
-            <div class="dashboard-panel">
-              <div class="panel-header"><h3>Recent activity</h3><span class="panel-pill">Logs</span></div>
-              <div id="recentActivity" style="padding:12px;color:var(--admin-muted)">No activity loaded</div>
-            </div>
-
-            <div class="dashboard-panel">
-              <div class="panel-header"><h3>Messages</h3><span class="panel-pill">Chat</span></div>
-              <div id="chatPreview" style="min-height:140px;padding:12px">No messages yet — open chat to interact.</div>
-            </div>
-          </section>
-        </section>
-      </main>
-
-      
-
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" data-admin-logout>Logout</button>
+      </div>
     </div>
+  </header>
 
-    <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link active" href="admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="admin-applications.html">Applications</a>
+        <a class="sidebar-link" href="admin-students.html">Students</a>
+        <a class="sidebar-link" href="admin-academics.html">Academics</a>
+        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link" href="admin-finance.html">Finance</a>
+        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+        <a class="sidebar-link" href="admin-security.html">Security</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Quick access</h3>
+        <a class="sidebar-link" href="dashboard.html">Student portal</a>
+        <a class="sidebar-link" href="#" data-admin-logout>Logout</a>
+      </div>
+    </aside>
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script src="admin-modern.js"></script>
-    <script src="admin-dashboard.js"></script>
-    <script src="shared-bindings.js"></script>
-  </body>
+    <main class="dashboard-main">
+      <section id="dashboard" class="admin-section">
+        <section class="stats-grid">
+          <article class="stat-card accent-teal">
+            <span class="stat-label">Pending applications</span>
+            <strong id="totalApplications">0</strong>
+            <small>Admissions awaiting review</small>
+          </article>
+          <article class="stat-card accent-blue">
+            <span class="stat-label">Approved applications</span>
+            <strong id="approvedApplications">0</strong>
+            <small>Admissions accepted</small>
+          </article>
+          <article class="stat-card accent-green">
+            <span class="stat-label">Rejected applications</span>
+            <strong id="rejectedApplications">0</strong>
+            <small>Admissions declined</small>
+          </article>
+          <article class="stat-card accent-rose">
+            <span class="stat-label">Active students</span>
+            <strong id="totalStudents">0</strong>
+            <small>Registered learners</small>
+          </article>
+          <article class="stat-card accent-indigo">
+            <span class="stat-label">Total billed</span>
+            <strong id="totalCharged">KSh 0</strong>
+            <small>Fees issued this term</small>
+          </article>
+          <article class="stat-card accent-lime">
+            <span class="stat-label">Collected</span>
+            <strong id="totalPaid">KSh 0</strong>
+            <small>Payments received</small>
+          </article>
+        </section>
+
+        <section class="module-grid">
+          <article class="module-card accent-teal">
+            <h3>Applications</h3>
+            <p>Review admissions, approve or reject requests, and manage documents.</p>
+            <a href="admin-applications.html">Open applications</a>
+          </article>
+          <article class="module-card accent-blue">
+            <h3>Students</h3>
+            <p>Register learners, manage access, and monitor student records.</p>
+            <a href="admin-students.html">Open students</a>
+          </article>
+          <article class="module-card accent-gold">
+            <h3>Academics</h3>
+            <p>Track notes, revision papers, results, and transcripts.</p>
+            <a href="admin-academics.html">Open academics</a>
+          </article>
+          <article class="module-card accent-rose">
+            <h3>Uploads</h3>
+            <p>Manage documents, notices, and academic files for the school.</p>
+            <a href="admin-uploads.html">Open uploads</a>
+          </article>
+        </section>
+
+        <section class="section-grid analytics-grid">
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Finance overview</h3>
+              <span class="panel-pill">Paid vs balance</span>
+            </div>
+            <div id="financeOverviewChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Academic performance</h3>
+              <span class="panel-pill">Average by class</span>
+            </div>
+            <div id="academicPerformanceChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Payment trend</h3>
+              <span class="panel-pill">Fee collections by form</span>
+            </div>
+            <div id="paymentTrendChart" class="analytics-chart-shell"></div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin-dashboard.js"></script>
+  <script src="shared-bindings.js"></script>
+</body>
 </html>
 

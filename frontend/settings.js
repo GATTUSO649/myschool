@@ -157,26 +157,11 @@ if (passwordForm) {
             return;
         }
 
-        // Call backend change-password API
-        (async () => {
-            try {
-                const resp = await fetchWithAuth('/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } });
-                const data = await resp.json();
-                if (!resp.ok) {
-                    showNotification(data.message || 'Could not change password', 'error');
-                    return;
-                }
-                showNotification('Password changed successfully!', 'success');
-                passwordForm.reset();
-                const strengthIndicatorEl = document.getElementById('strengthIndicator');
-                if (strengthIndicatorEl) strengthIndicatorEl.className = 'strength-fill';
-                const strengthTextEl = document.getElementById('strengthText');
-                if (strengthTextEl) strengthTextEl.textContent = 'Password strength: Weak';
-            } catch (err) {
-                console.error('Change password error', err);
-                showNotification('Network error changing password', 'error');
-            }
-        })();
+        // Simulate API call
+        showNotification('Password changed successfully!', 'success');
+        passwordForm.reset();
+        document.getElementById('strengthIndicator').className = 'strength-fill';
+        document.getElementById('strengthText').textContent = 'Password strength: Weak';
     });
 }
 
