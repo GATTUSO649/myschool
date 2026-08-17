@@ -9,11 +9,15 @@
 <body class="admin-dashboard-page has-site-footer">
   <header class="dashboard-header">
     <div class="header-content">
-      <div class="brand-bar">
-        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
-        <div class="header-note">Applications management</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button id="sidebarToggle" class="header-pill" title="Toggle sidebar">☰</button>
+        <div class="brand-bar">
+          <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+          <div class="header-note">Applications management</div>
+        </div>
       </div>
       <div class="header-actions">
+        <input id="adminSearch" placeholder="Search applicants" style="min-width:260px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#fff">
         <span class="header-pill" id="adminNamePill">Administrator</span>
         <button class="logout-button" data-admin-logout>Logout</button>
       </div>
@@ -23,16 +27,15 @@
   <div class="student-shell">
     <aside class="student-sidebar">
       <div class="sidebar-brand">Admin Control</div>
-      <div class="sidebar-section">
-        <h3>Core</h3>
-        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
+      <nav class="sidebar-section">
+        <a class="sidebar-link" href="admin-dashboard.html">Overview</a>
         <a class="sidebar-link active" href="admin-applications.html">Applications</a>
         <a class="sidebar-link" href="admin-students.html">Students</a>
         <a class="sidebar-link" href="admin-academics.html">Academics</a>
-        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
+        <a class="sidebar-link" href="admin-notifications.html">Notifications</a>
         <a class="sidebar-link" href="admin-finance.html">Finance</a>
         <a class="sidebar-link" href="admin-settings.html">Settings</a>
-      </div>
+      </nav>
     </aside>
 
     <main class="dashboard-main">
@@ -95,6 +98,7 @@
   </div>
 
   <script src="auth.js"></script>
+  <script src="admin-modern.js"></script>
   <script>
     let applicationFilter = 'all';
     let applicationRows = [];
