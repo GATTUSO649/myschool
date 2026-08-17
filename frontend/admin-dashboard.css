@@ -197,6 +197,39 @@ body.admin-dashboard-page .dashboard-main {
   gap: 24px;
 }
 
+/* Collapsed sidebar state */
+body.admin-dashboard-page.sidebar-collapsed .student-sidebar {
+  width: 72px;
+  padding: 18px 8px;
+}
+
+body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-brand {
+  display: none;
+}
+
+body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-section h3 {
+  display: none;
+}
+
+body.admin-dashboard-page.sidebar-collapsed .student-sidebar .sidebar-link {
+  padding: 10px 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.admin-dashboard-page.sidebar-collapsed .dashboard-main {
+  margin-left: 72px;
+  width: calc(100% - 72px);
+}
+
+/* Smooth transitions */
+body.admin-dashboard-page .student-sidebar,
+body.admin-dashboard-page .dashboard-main {
+  transition: width 200ms ease, margin-left 200ms ease, padding 200ms ease;
+}
+
 body.admin-dashboard-page .admin-section {
   display: flex;
   flex-direction: column;

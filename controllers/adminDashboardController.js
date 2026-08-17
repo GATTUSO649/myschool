@@ -2,6 +2,7 @@ const { query, database } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { getNextAdmissionAssignment, getNextStaffAssignment } = require('./admissionAllocator');
 const { logActivity } = require('./logController');
+const { deliverMail } = require('./emailUtils');
 
 const EDITABLE_TABLES = new Set([
   'students',
@@ -330,6 +331,35 @@ async function getDatabaseTable(req, res) {
   res.json({ success: true, tableName, columns, rows, editable: EDITABLE_TABLES.has(tableName) });
 }
 
+async function sendEmailToApprovedParents(req, res) {
+  try {
+    const body = req.body || {};
+    const subject = String(body.subject || '').trim();
+    const message = String(body.message || '').trim();
+    if (!subject || !message) return res.status(400).json({ success: false, message: 'Subject and message are required' });
+
+    // Fetch guardian emails from students table where guardian_email is set and student is active
+    const rows = await query('SELECT guardian_email AS email, guardian_name AS name FROM students WHERE guardian_email IS NOT NULL AND guardian_email <> "" AND active = 1');
+    if (!rows.length) return res.json({ success: true, sent: 0, message: 'No guardian emails found' });
+
+    let sent = 0;
+    for (const r of rows) {
+      try {
+        await deliverMail({ to: r.email, subject, text: `Dear ${r.name || 'Parent/Guardian'},\n\n${message}\n\nKind regards,\nCrescent High School` });
+        sent += 1;
+      } catch (err) {
+        console.warn('Failed sending admin bulk email to', r.email, err?.message || err);
+      }
+    }
+
+    await logActivity(req.user?.id || null, 'admin_sent_bulk_parent_emails', `Sent ${sent} emails to approved students' parents`, req.ip);
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Send email to approved parents error:', error);
+    res.status(500).json({ success: false, message: 'Could not send emails' });
+  }
+}
+
 function assertSafeTable(tableName) {
   const clean = String(tableName || '').trim();
   if (!EDITABLE_TABLES.has(clean)) {
@@ -441,4 +471,5 @@ module.exports = {
   createDatabaseRecord,
   updateDatabaseRecord,
   deleteDatabaseRecord
+  ,sendEmailToApprovedParents
 };

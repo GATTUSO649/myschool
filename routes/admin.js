@@ -12,6 +12,7 @@ router.get('/stats', authMiddleware, authorizeRole(['admin', 'rba']), controller
 router.get('/security-dashboard', authMiddleware, authorizeRole(['admin', 'rba']), controller.getSecurityDashboard);
 router.post('/password-reset/request', authMiddleware, authorizeRole(['admin', 'rba']), authController.requestPasswordReset);
 router.post('/password-reset/direct', authMiddleware, authorizeRole(['admin', 'rba']), controller.resetStudentPassword);
+router.post('/emails/send-to-approved-parents', authMiddleware, authorizeRole(['admin', 'rba']), controller.sendEmailToApprovedParents);
 router.get('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.getStudents);
 router.post('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.createStudent);
 router.put('/students/:studentId/deactivate', authMiddleware, authorizeRole(['admin', 'rba']), controller.deactivateStudent);

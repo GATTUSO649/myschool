@@ -55,6 +55,17 @@
             <div class="mini-card"><strong>Specific class</strong><span>Send alerts to a selected form or stream</span></div>
             <div class="mini-card"><strong>Emergency</strong><span>Escalate urgent school-wide information</span></div>
           </div>
+          <div style="padding:18px;border-top:1px solid #eef2f6;background:#fcfcff">
+            <h4>Compose email to approved students' parents</h4>
+            <form id="parentEmailComposer" style="display:grid;gap:8px;max-width:720px;margin-top:12px">
+              <input type="text" id="bulkSubject" placeholder="Subject" required style="padding:10px;border:1px solid #d6e0ea;border-radius:6px">
+              <textarea id="bulkMessage" placeholder="Message body" rows="6" required style="padding:10px;border:1px solid #d6e0ea;border-radius:6px"></textarea>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="primary-button" id="sendToParentsButton">Send to parents of approved students</button>
+                <div id="parentEmailStatus" style="font-weight:700;color:#0b2440"></div>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
     </main>
@@ -62,6 +73,33 @@
 
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
+  <script>
+    (function(){
+      const form = document.getElementById('parentEmailComposer');
+      const status = document.getElementById('parentEmailStatus');
+      if (!form) return;
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        status.textContent = 'Sending...';
+        const subject = document.getElementById('bulkSubject').value.trim();
+        const message = document.getElementById('bulkMessage').value.trim();
+        try {
+          const resp = await fetchWithAuth('/admin/emails/send-to-approved-parents', { method: 'POST', body: JSON.stringify({ subject, message }) });
+          const data = await resp.json();
+          if (resp.ok && data.success) {
+            status.textContent = `Sent ${data.sent || 0} emails`;
+            form.reset();
+          } else {
+            status.textContent = data?.message || 'Failed to send emails';
+          }
+        } catch (err) {
+          console.error('Send bulk parents email error', err);
+          status.textContent = 'Network error while sending emails';
+        }
+        setTimeout(() => { status.textContent = ''; }, 6000);
+      });
+    })();
+  </script>
   <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n  <script src="shared-bindings.js"></script>
 </body>
 </html>
