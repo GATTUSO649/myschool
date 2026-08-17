@@ -1633,7 +1633,8 @@ body.admin-dashboard-page .admin-section {
   }
 
   body.admin-dashboard-page .student-sidebar {
-    position: static;
+    position: sticky;
+    top: var(--header-height);
     width: 100%;
     height: auto;
     max-height: none;
@@ -1662,6 +1663,10 @@ body.admin-dashboard-page .admin-section {
 
   body.admin-dashboard-page .dashboard-header {
     padding: 0 16px;
+  }
+
+  body.admin-dashboard-page .header-content {
+    flex-wrap: wrap;
   }
 
   .panel-header,
@@ -1698,5 +1703,29 @@ body.admin-dashboard-page .admin-section {
   .sheet-table th,
   .sheet-table td {
     padding: 14px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  body.admin-dashboard-page .dashboard-header {
+    padding: 0 12px;
+  }
+
+  body.admin-dashboard-page .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  body.admin-dashboard-page .dashboard-main {
+    padding-inline: 12px;
+  }
+
+  .dashboard-panel,
+  .stat-card,
+  .module-card,
+  .sheet-card,
+  .mini-card,
+  .info-box {
+    padding: 16px;
   }
 }

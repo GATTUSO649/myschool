@@ -700,6 +700,11 @@ body.student-portal .dashboard-main {
   .dashboard-grid.secondary {
     grid-template-columns: 1fr;
   }
+
+  .hero-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 860px) {
@@ -711,6 +716,7 @@ body.student-portal .dashboard-main {
   .header-content {
     padding: 0 18px;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .header-brand {
@@ -740,15 +746,11 @@ body.student-portal .dashboard-main {
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 1600;
+    box-shadow: 0 24px 54px rgba(15, 23, 42, 0.18);
   }
 
   .student-sidebar.is-open {
     transform: translateX(0);
-  }
-
-  .hero-panel {
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .dashboard-main,
@@ -792,6 +794,39 @@ body.student-portal .dashboard-main {
   .student-main-content,
   .profile-main {
     padding: calc(var(--header-height) + 8px) 14px 20px;
+  }
+
+  .quick-links {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .school-name {
+    font-size: 0.94rem;
+    letter-spacing: 0.02em;
+  }
+
+  .header-tagline {
+    font-size: 0.72rem;
+  }
+
+  .dashboard-header {
+    padding-inline: 10px;
+  }
+
+  .dashboard-main,
+  .student-main-content,
+  .profile-main {
+    padding-inline: 12px;
+  }
+
+  .dashboard-panel,
+  .section-card,
+  .page-card,
+  .notes-page-header,
+  .subject-tile {
+    padding: 16px;
   }
 }
 
