@@ -58,7 +58,7 @@ body.student-portal {
   overflow-x: hidden;
   overflow-y: auto;
   color: var(--ink);
-  background: #ffffff; /* ensure no gradient or decorative background */
+  background: #ffffff url('login-bg.jpg') center / cover no-repeat fixed; /* background image with fallback white */
 }
 
 body.has-site-footer {

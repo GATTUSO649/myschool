@@ -170,7 +170,7 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
+m}
 
 function money(value) {
   return `KSh ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -636,33 +636,49 @@ async function loadFinanceBalances() {
 }
 
 async function loadFinancePayments() {
-  const body = document.getElementById('financePaymentsBody');
-  if (!body) return;
-  body.innerHTML = '<tr><td colspan="8">Loading payments...</td></tr>';
+  const primaryBody = document.getElementById('financePaymentsBody');
+  const receiptBody = document.getElementById('receiptLedgerBody');
+  const targets = [primaryBody, receiptBody].filter(Boolean);
+
+  if (!targets.length) return;
+
+  targets.forEach((target) => {
+    target.innerHTML = '<tr><td colspan="8">Loading payments...</td></tr>';
+  });
+
   try {
     const response = await fetchWithAuth('/finance/payments');
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Could not load payments');
     const rows = Array.isArray(data) ? data : [];
-    if (!rows.length) {
-      body.innerHTML = '<tr><td colspan="8">No payment records found.</td></tr>';
-      return;
-    }
-    body.innerHTML = rows.map((payment) => `
-      <tr>
-        <td>${escapeHtml(payment.receipt_number || payment.id)}</td>
-        <td>${escapeHtml(payment.admission_number || '')}</td>
-        <td>${escapeHtml(payment.student_name || '')}</td>
-        <td>${escapeHtml(payment.class_name || '')}</td>
-        <td>${money(payment.amount)}</td>
-        <td>${escapeHtml(payment.payment_method || '')}</td>
-        <td>${payment.payment_date || payment.created_at ? new Date(payment.payment_date || payment.created_at).toLocaleDateString() : ''}</td>
-        <td><button class="small-button" data-open-receipt="${payment.id}">Open receipt</button></td>
-      </tr>
-    `).join('');
+
+    const renderRows = (target) => {
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="8">No payment records found.</td></tr>';
+        return;
+      }
+
+      const isReceiptLedger = target.id === 'receiptLedgerBody';
+      target.innerHTML = rows.map((payment) => `
+        <tr>
+          <td>${escapeHtml(payment.receipt_number || payment.id)}</td>
+          <td>${escapeHtml(payment.admission_number || '')}</td>
+          <td>${escapeHtml(payment.student_name || '')}</td>
+          <td>${escapeHtml(payment.class_name || '')}</td>
+          <td>${money(payment.amount)}</td>
+          <td>${escapeHtml(payment.payment_method || '')}</td>
+          <td>${payment.payment_date || payment.created_at ? new Date(payment.payment_date || payment.created_at).toLocaleDateString() : ''}</td>
+          <td>${isReceiptLedger ? `<button class="small-button" data-open-receipt="${payment.id}">Open</button>` : `<button class="small-button" data-open-receipt="${payment.id}">Open receipt</button>`}</td>
+        </tr>
+      `).join('');
+    };
+
+    targets.forEach(renderRows);
   } catch (error) {
     console.error('Finance payments load error:', error);
-    body.innerHTML = '<tr><td colspan="8">Unable to load payments.</td></tr>';
+    targets.forEach((target) => {
+      target.innerHTML = '<tr><td colspan="8">Unable to load payments.</td></tr>';
+    });
   }
 }
 
@@ -687,10 +703,25 @@ function setupFeeCategories() {
 
 function updateFeeStructureTargetFields() {
   const target = document.getElementById('feeStructureTarget')?.value;
-  const classGroup = document.getElementById('feeStructureClass')?.closest('.admin-finance-form-group');
-  const studentGroup = document.getElementById('feeStructureStudent')?.closest('.admin-finance-form-group');
-  if (classGroup) classGroup.style.display = target === 'class' || target === 'students' ? '' : 'none';
-  if (studentGroup) studentGroup.style.display = target === 'students' ? '' : 'none';
+  const classField = document.getElementById('feeStructureClass');
+  const studentField = document.getElementById('feeStructureStudent');
+  const classWrapper = classField?.closest('label');
+  const studentWrapper = studentField?.closest('label');
+
+  if (classWrapper) classWrapper.style.display = target === 'class' ? '' : 'none';
+  if (studentWrapper) studentWrapper.style.display = target === 'student' ? '' : 'none';
+}
+
+function resetFeeStructureForm() {
+  const form = document.getElementById('feeStructureForm');
+  if (!form) return;
+  form.reset();
+  const list = document.getElementById('feeCategories');
+  if (list) {
+    list.innerHTML = '';
+    DEFAULT_FEE_CATEGORIES.forEach(([category, amount]) => addFeeCategoryRow(category, amount));
+  }
+  updateFeeStructureTargetFields();
 }
 
 async function postFeeStructure(form) {
@@ -1752,7 +1783,38 @@ function exportTranscriptSheet() {
   showAlert(`Existing ${className} transcript sheet opened as an Excel-compatible CSV.`, 'success');
 }
 
+// Sidebar collapse functionality
+function setupSidebarToggle() {
+  const toggleBtn = document.getElementById('sidebarCollapseBtn');
+  const sidebar = document.querySelector('.student-sidebar');
+  const dashboardMain = document.querySelector('.dashboard-main');
+
+  if (!toggleBtn || !sidebar) return;
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    sidebar.classList.toggle('is-open');
+  });
+
+  // Close sidebar when clicking on a link or outside
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1120) {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.remove('is-open');
+      }
+    }
+  });
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 1120) {
+      sidebar.classList.remove('is-open');
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  setupSidebarToggle();
   normalizeAdminSidebar();
   setupLogoutBindings();
   applyManagementContext();
@@ -1846,6 +1908,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const addFeeCategoryButton = document.getElementById('addFeeCategoryButton');
   if (addFeeCategoryButton) {
     addFeeCategoryButton.addEventListener('click', () => addFeeCategoryRow());
+  }
+
+  const resetFeeStructureButton = document.querySelector('[data-reset-fee-structure]');
+  if (resetFeeStructureButton) {
+    resetFeeStructureButton.addEventListener('click', resetFeeStructureForm);
   }
 
   const feeStructureForm = document.getElementById('feeStructureForm');
