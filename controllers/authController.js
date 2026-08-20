@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
@@ -17,8 +18,11 @@ function publicStudent(row) {
     admissionNumber: row.admission_number,
     staffNumber: row.staff_number || null,
     role: normalizeRole(row.role),
+    rawRole: String(row.role || '').toLowerCase(),
     className: row.class_name,
     stream: row.stream,
+    workingArea: row.finance_working_area || null,
+    ictWorkingArea: row.ict_working_area || null,
     subject: row.subject || null,
     avatar: row.avatar,
     active: Boolean(row.active),
@@ -27,10 +31,12 @@ function publicStudent(row) {
 }
 
 function signToken(student) {
+  const jti = crypto.randomUUID();
   const payload = {
     id: student.id,
     role: student.role,
     username: student.username,
+    jti,
     bootstrapAdmin: Boolean(student.bootstrapAdmin)
   };
   return jwt.sign(
@@ -38,6 +44,16 @@ function signToken(student) {
     process.env.JWT_SECRET || 'change-this-development-secret',
     { expiresIn: process.env.JWT_EXPIRES_IN || '10m' }
   );
+}
+
+async function recordSession(token, user, req) {
+  try {
+    const decoded = jwt.decode(token);
+    if (!decoded?.jti) return;
+    await query('INSERT INTO ict_sessions (jti, user_id, role, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)', [decoded.jti, user.id || null, normalizeRole(user.role), req.ip, String(req.headers['user-agent'] || '').slice(0, 255)]);
+  } catch (error) {
+    console.warn('Session registry update failed:', error.message || error);
+  }
 }
 
 function generateOtpCode() {
@@ -176,6 +192,7 @@ async function login(req, res) {
   try {
     const identifier = (req.body.name || req.body.username || req.body.email || '').trim();
     const password = (req.body.password || '').trim();
+    const requestedPortal = String(req.body.portal || '').trim().toLowerCase();
     if (!identifier || !password) {
       return res.status(400).json({ success: false, message: 'Name/email and password are required' });
     }
@@ -210,6 +227,16 @@ async function login(req, res) {
       return res.status(403).json({ success: false, message: 'Administrators must use the admin portal.' });
     }
 
+    if (student && ['finance', 'accountant'].includes(String(student.role || '').toLowerCase()) && requestedPortal !== 'finance') {
+      await logActivity(student.id, 'blocked_finance_login', 'Finance account attempted the general portal login', req.ip);
+      return res.status(403).json({ success: false, message: 'Finance staff must use the finance portal.' });
+    }
+
+    if (student && String(student.role || '').toLowerCase() === 'ict' && requestedPortal !== 'ict') {
+      await logActivity(student.id, 'blocked_ict_login', 'ICT account attempted the general portal login', req.ip);
+      return res.status(403).json({ success: false, message: 'ICT staff must use the ICT portal.' });
+    }
+
     if (!student) {
       const lecturerRows = await query(
         `SELECT * FROM students
@@ -236,9 +263,14 @@ async function login(req, res) {
     await logActivity(student.id, 'login', 'Successful login', req.ip);
 
     const refreshed = (await query('SELECT * FROM students WHERE id = ?', [student.id]))[0];
+    const token = signToken(refreshed);
+    await recordSession(token, refreshed, req);
+    if (requestedPortal === 'ict' || requestedPortal === 'finance') {
+      res.cookie(requestedPortal === 'ict' ? 'ictSessionToken' : 'financeSessionToken', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 10 * 60 * 1000, path: '/' });
+    }
     return res.json({
       success: true,
-      token: signToken(refreshed),
+      token,
       student: publicStudent(refreshed)
     });
   } catch (error) {
@@ -415,6 +447,8 @@ async function adminLogin(req, res) {
       { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '30m' } // Shorter expiry for admin
     );
 
+    const token = adminToken;
+    await recordSession(token, refreshed, req);
     return res.json({
       success: true,
       token: adminToken,

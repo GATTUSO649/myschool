@@ -400,7 +400,7 @@ async function overviewCharts(req, res) {
 
 async function balances(req, res) {
   const filters = { className: req.query.className || req.query.class_name };
-  if (req.user.role !== 'rba') {
+  if (!['admin', 'finance', 'rba'].includes(req.user.role)) {
     const statement = await getStatement(req.user.id);
     if (!statement) return res.status(404).json({ success: false, message: 'Student balance not found' });
     return res.json({
@@ -415,7 +415,8 @@ async function balances(req, res) {
 }
 
 async function statement(req, res) {
-  const studentId = req.user.role === 'rba' && req.query.student_id ? req.query.student_id : req.user.id;
+  const canViewStudent = ['admin', 'finance', 'rba'].includes(req.user.role);
+  const studentId = canViewStudent && req.query.student_id ? req.query.student_id : req.user.id;
   const data = await getStatement(studentId, {
     term: req.query.term,
     academic_year: req.query.academic_year
@@ -488,7 +489,7 @@ async function recordPayment(req, res) {
 async function payments(req, res) {
   const params = [];
   let where = '';
-  if (req.user.role !== 'rba') {
+  if (!['admin', 'finance', 'rba'].includes(req.user.role)) {
     where = 'WHERE p.student_id = ?';
     params.push(req.user.id);
   } else if (req.query.className || req.query.class_name) {
@@ -546,23 +547,12 @@ async function listDocs(req, res) {
 
     let sql = 'SELECT d.* FROM finance_documents d';
     if (clauses.length) sql += ` WHERE ${clauses.join(' AND ')}`;
-    sql += ' ORDER BY d.uploaded_at DESC LIMIT ? OFFSET ?';
-
-    const limit = Number.isFinite(Number(req.query.limit)) ? Number(req.query.limit) : 100;
-    const offset = Number.isFinite(Number(req.query.offset)) ? Number(req.query.offset) : 0;
-    params.push(limit, offset);
-
-    // Debug: ensure parameter count matches placeholder count to avoid mysqld_stmt_execute errors
-    try {
-      const placeholderCount = (sql.match(/\?/g) || []).length;
-      console.log('listDocs SQL placeholders:', placeholderCount, 'params.length:', params.length);
-    } catch (e) {
-      console.warn('Could not compute placeholder count for listDocs', e.message || e);
-    }
-
-    // Ensure limit/offset are numbers
-    params[params.length - 2] = Number(params[params.length - 2]);
-    params[params.length - 1] = Number(params[params.length - 1]);
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
+    const requestedOffset = Number.parseInt(req.query.offset, 10);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 500) : 100;
+    const offset = Number.isFinite(requestedOffset) ? Math.max(requestedOffset, 0) : 0;
+    // LIMIT/OFFSET are validated integers interpolated into the statement; all user filters remain bound parameters.
+    sql += ` ORDER BY d.uploaded_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const docs = await query(sql, params);
     return res.json(docs);

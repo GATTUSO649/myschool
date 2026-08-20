@@ -413,9 +413,10 @@ async function teacherDashboard(req, res) {
     const classPlaceholders = classes.map(() => '?').join(',');
     const subjectPlaceholders = subjects.map(() => '?').join(',');
     const performance = await query(`SELECT r.subject, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY r.subject ORDER BY r.subject`, [...classes, ...subjects, year]);
+    const termPerformance = await query(`SELECT r.term, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY r.term ORDER BY CASE r.term WHEN 'Term 1' THEN 1 WHEN 'Term 2' THEN 2 WHEN 'Term 3' THEN 3 ELSE 4 END`, [...classes, ...subjects, year]);
     const topStudents = await query(`SELECT s.name, s.admission_number AS admissionNumber, s.class_name AS className, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY s.id ORDER BY average DESC LIMIT 10`, [...classes, ...subjects, year]);
     const students = await query(`SELECT id, name, admission_number AS admissionNumber, class_name AS className, stream FROM students WHERE role = 'student' AND active = 1 AND class_name IN (${classPlaceholders}) ORDER BY class_name, name`, classes);
-    res.json({ success: true, assignments, performance, topStudents, students });
+    res.json({ success: true, assignments, performance, termPerformance, topStudents, students });
   } catch (error) {
     console.error('Teacher dashboard error:', error);
     res.status(500).json({ success: false, message: 'Could not load teacher dashboard' });

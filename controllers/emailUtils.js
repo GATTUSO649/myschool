@@ -123,5 +123,6 @@ module.exports = {
   sendAdmissionApprovalEmail,
   sendPasswordResetEmail,
   sendApplicationConfirmationEmail,
+  deliverMail,
   recordAuditEvent
 };

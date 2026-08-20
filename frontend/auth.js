@@ -91,12 +91,14 @@ if (loginForm) {
           try {
             const role = (data.student && data.student.role ? data.student.role : '').toLowerCase();
             const username = data.student && data.student.username;
+            const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
+            const allowedRedirects = new Set(['academic.html', 'teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html']);
             if (role === 'admin' || role === 'rba' || role === 'school_admin' || role === 'super_admin' || username === 'admin') {
               showAlert('Administrators must use the admin portal.', 'error');
               return;
-            } else if (role === 'teacher' || role === 'lecturer') {
-              console.log('Redirecting teacher to teacher-portal.html');
-              window.location.href = 'teacher-portal.html';
+            } else if (role === 'teacher' || role === 'lecturer' || role === 'ict') {
+              console.log('Redirecting staff to staff-portals.html');
+              window.location.href = role !== 'ict' && allowedRedirects.has(requestedRedirect) ? requestedRedirect : 'staff-portals.html';
             } else {
               console.log('Redirecting student to dashboard.html');
               window.location.href = 'dashboard.html';
@@ -182,6 +184,7 @@ if (registerForm) {
 function checkAuth() {
   const path = window.location.pathname.toLowerCase();
   const adminPage = path.includes('admin-');
+  const financePage = path.includes('admin-finance');
   const token = adminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
   const student = adminPage
     ? JSON.parse(sessionStorage.getItem('adminUser') || 'null')
@@ -201,14 +204,16 @@ function checkAuth() {
       sessionStorage.removeItem('authSessionExpiresAt');
     }
     document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-    window.location.replace(adminPage ? 'admin-login.html' : 'login.html');
+    window.location.replace(financePage ? 'finance-login.html' : adminPage ? 'admin-login.html' : 'login.html');
     return false;
   }
 
   if (!token) {
     if (!page.includes('login.html') && !page.includes('signup.html')) {
-      const teacherPage = page === 'teacher-portal.html' || page === 'lecturer-dashboard.html' || page === 'teacher.html';
-      window.location.replace(adminPage ? 'admin-login.html' : teacherPage ? 'teacher-login.html' : 'login.html');
+      const teacherPage = page === 'teacher-portal.html' || page === 'lecturer-dashboard.html' || page === 'teacher.html' || page === 'ict-portal.html';
+      const loginPage = financePage ? 'finance-login.html' : adminPage ? 'admin-login.html' : page === 'ict-portal.html' ? 'ict-login.html' : teacherPage ? 'teacher-login.html' : 'login.html';
+      const redirectTarget = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.replace(`${loginPage}?redirect=${encodeURIComponent(redirectTarget)}`);
     }
     return false;
   }
@@ -223,6 +228,15 @@ function checkAuth() {
     'admissions.html': ['admin'],
     'admin-dashboard.html': ['admin'],
     'admin-roles.html': ['admin'],
+    'admin-finance.html': ['finance', 'admin'],
+    'admin-finance-balances.html': ['finance', 'admin'],
+    'admin-finance-payments.html': ['finance', 'admin'],
+    'admin-finance-receipts.html': ['finance', 'admin'],
+    'admin-finance-statements.html': ['finance', 'admin'],
+    'admin-finance-structure.html': ['finance', 'admin'],
+    'admin-finance-upload.html': ['finance', 'admin'],
+    'ict-portal.html': ['ict', 'admin'],
+    'ict-dashboard.html': ['ict', 'admin'], 'ict-health.html': ['ict', 'admin'], 'ict-activity.html': ['ict', 'admin'], 'ict-users.html': ['ict', 'admin'], 'ict-permissions.html': ['ict', 'admin'], 'ict-sessions.html': ['ict', 'admin'], 'ict-security.html': ['ict', 'admin'], 'ict-audit.html': ['ict', 'admin'], 'ict-configuration.html': ['ict', 'admin'], 'ict-logs.html': ['ict', 'admin'], 'ict-integrations.html': ['ict', 'admin'], 'ict-updates.html': ['ict', 'admin'], 'ict-database.html': ['ict', 'admin'], 'ict-backups.html': ['ict', 'admin'], 'ict-storage.html': ['ict', 'admin'], 'ict-email.html': ['ict', 'admin'], 'ict-messages.html': ['ict', 'admin'], 'ict-maintenance.html': ['ict', 'admin'], 'ict-tickets.html': ['ict', 'admin'], 'ict-history.html': ['ict', 'admin'], 'ict-profile.html': ['ict', 'admin'],
     'admin.html': ['admin'],
     'teacher.html': ['teacher', 'admin'],
     'student.html': ['admin', 'teacher'],
@@ -246,7 +260,9 @@ function checkAuth() {
     'transcript.html': ['student', 'teacher', 'admin']
   };
 
-  if (protectedPages[page] && !protectedPages[page].includes(normalizedRole)) {
+  const rawRole = String(student?.rawRole || '').toLowerCase();
+  const isICTAdministrator = page === 'ict-portal.html' && (normalizedRole === 'ict' || rawRole === 'super_admin');
+  if (protectedPages[page] && (!protectedPages[page].includes(normalizedRole) || (page === 'ict-portal.html' && !isICTAdministrator))) {
     if (page === 'teacher-portal.html' || page === 'teacher-login.html') {
       sessionStorage.removeItem('authToken');
       sessionStorage.removeItem('student');
@@ -269,7 +285,7 @@ function checkAuth() {
 
 function isAdminPath() {
   const path = window.location.pathname.toLowerCase();
-  return path.includes('admin') || path.includes('login.html') || path.includes('teacher-login.html') || path.includes('signup.html') || path.endsWith('/') || path.includes('index.html');
+  return path.includes('admin') || path.includes('ict-portal.html') || path.includes('login.html') || path.includes('teacher-login.html') || path.includes('signup.html') || path.endsWith('/') || path.includes('index.html');
 }
 
 async function enforceMaintenanceMode() {
@@ -310,6 +326,7 @@ function startInactivityLogout() {
   const page = window.location.pathname.toLowerCase().split('/').pop();
   const isAdminPage = page.startsWith('admin-');
   const isTeacherPage = ['teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html'].includes(page);
+  const isICTPage = page === 'ict-portal.html';
   const token = isAdminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
   if (!token || window.__inactivityLogoutStarted) return;
 
@@ -318,7 +335,8 @@ function startInactivityLogout() {
   let idleTimer;
   let lastActivity = 0;
 
-  const redirectTarget = isAdminPage ? 'admin-login.html' : isTeacherPage ? 'teacher-login.html' : 'login.html';
+  const isFinancePage = page.startsWith('admin-finance');
+  const redirectTarget = isFinancePage ? 'finance-login.html' : isAdminPage ? 'admin-login.html' : isICTPage ? 'ict-login.html' : isTeacherPage ? 'teacher-login.html' : 'login.html';
   const expireSession = () => {
     if (isAdminPage) {
       sessionStorage.removeItem('adminAuthToken');
@@ -384,7 +402,7 @@ async function fetchWithAuth(endpoint, options = {}) {
     if (response.status === 401) {
       console.warn('fetchWithAuth: received 401 Unauthorized — clearing auth and redirecting to login');
       try {
-        if (window.location.pathname.toLowerCase().includes('admin-')) {
+          if (window.location.pathname.toLowerCase().includes('admin-')) {
           sessionStorage.clear();
         } else {
           sessionStorage.removeItem('authToken');
@@ -402,7 +420,9 @@ async function fetchWithAuth(endpoint, options = {}) {
           if (!window.location.pathname.toLowerCase().includes('login.html')) {
             const currentPage = window.location.pathname.toLowerCase().split('/').pop();
             const teacherPage = currentPage === 'teacher-portal.html' || currentPage === 'lecturer-dashboard.html' || currentPage === 'teacher.html';
-            window.location.replace(window.location.pathname.toLowerCase().includes('admin-') ? 'admin-login.html' : teacherPage ? 'teacher-login.html' : 'login.html');
+            const ictPage = currentPage === 'ict-portal.html';
+            const financePage = currentPage.startsWith('admin-finance');
+            window.location.replace(financePage ? 'finance-login.html' : window.location.pathname.toLowerCase().includes('admin-') ? 'admin-login.html' : ictPage ? 'ict-login.html' : teacherPage ? 'teacher-login.html' : 'login.html');
           }
         } catch (e) {
           /* ignore */
@@ -479,7 +499,7 @@ function logout() {
   console.log('localStorage keys cleared for logout');
   const currentPage = window.location.pathname.toLowerCase().split('/').pop();
   const teacherPage = currentPage === 'teacher-portal.html' || currentPage === 'lecturer-dashboard.html' || currentPage === 'teacher.html';
-  window.location.href = teacherPage ? 'teacher-login.html' : currentPage.startsWith('admin-') ? 'admin-login.html' : 'login.html';
+  window.location.href = currentPage.startsWith('admin-finance') ? 'finance-login.html' : currentPage === 'ict-portal.html' ? 'ict-login.html' : teacherPage ? 'teacher-login.html' : currentPage.startsWith('admin-') ? 'admin-login.html' : 'login.html';
 }
 
 // Helper: Validate email

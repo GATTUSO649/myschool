@@ -2,6 +2,7 @@ const express = require('express');
 const finance = require('../controllers/financeController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { documentsUpload } = require('../middleware/uploadMiddleware');
+const { authorizeFinanceRole } = require('../middleware/adminMiddleware');
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 router.get('/files/:filename', finance.serveFile);
 
 router.use(authMiddleware);
+router.use(authorizeFinanceRole());
 
 router.get('/overview', finance.overview);
 router.get('/overview-charts', finance.overviewCharts);

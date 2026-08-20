@@ -290,8 +290,9 @@ async function saveSettings(req, res) {
 }
 
 async function getPublicSettings(req, res) {
-  const rows = await query("SELECT setting_value AS settingValue FROM app_settings WHERE setting_key = 'maintenanceMode' LIMIT 1");
-  res.json({ success: true, maintenanceMode: rows[0]?.settingValue === 'true' });
+  const rows = await query("SELECT setting_key AS settingKey, setting_value AS settingValue FROM app_settings WHERE setting_key IN ('maintenanceMode','schoolName','schoolMotto','footerText','contactEmail','contactPhone','contactAddress','landingHeroTitle','landingHeroText','landingAboutTitle','landingAboutText')");
+  const settings = rows.reduce((result, row) => { result[row.settingKey] = row.settingValue; return result; }, {});
+  res.json({ success: true, maintenanceMode: settings.maintenanceMode === 'true', settings });
 }
 
 async function getDatabaseOverview(req, res) {
@@ -449,11 +450,12 @@ async function createTeacherWithAssignments(req, res) {
   try {
     const name = String(req.body.name || '').trim();
     const email = String(req.body.email || '').trim() || null;
-    const subject = String(req.body.subject || '').trim();
+    const rawSubjects = Array.isArray(req.body.subjects) ? req.body.subjects : [req.body.subject];
+    const subjects = [...new Set(rawSubjects.map((item) => String(item || '').trim()).filter(Boolean))];
     const classes = Array.isArray(req.body.classes) ? req.body.classes : [];
     const academicYear = Number(req.body.academicYear || new Date().getFullYear());
-    if (!name || !subject || !classes.length) {
-      return res.status(400).json({ success: false, message: 'Name, subject, and at least one class are required' });
+    if (!name || !subjects.length || !classes.length) {
+      return res.status(400).json({ success: false, message: 'Name, at least one subject, and at least one class are required' });
     }
 
     const year = new Date().getFullYear();
@@ -463,19 +465,22 @@ async function createTeacherWithAssignments(req, res) {
     );
     const staffNumber = `TC/${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}/${year}`;
     const passwordHash = await bcrypt.hash(staffNumber, 10);
+    const primarySubject = subjects[0];
     const result = await query(
       `INSERT INTO students (name, username, email, password_hash, role, subject, staff_number, active)
        VALUES (?, ?, ?, ?, 'lecturer', ?, ?, 1)`,
-      [name, staffNumber, email, passwordHash, subject, staffNumber]
+      [name, staffNumber, email, passwordHash, primarySubject, staffNumber]
     );
-    for (const className of classes) {
-      await query(
-        `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
-         VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
-        [result.insertId, String(className), subject, academicYear]
-      );
+    for (const subject of subjects) {
+      for (const className of classes) {
+        await query(
+          `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
+           VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
+          [result.insertId, String(className), subject, academicYear]
+        );
+      }
     }
-    res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, initialPassword: staffNumber, subject, classes } });
+    res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, initialPassword: staffNumber, subject: primarySubject, subjects, classes } });
   } catch (error) {
     console.error('Error creating teacher:', error);
     res.status(500).json({ success: false, message: 'Could not create teacher role' });
@@ -485,23 +490,112 @@ async function createTeacherWithAssignments(req, res) {
 async function updateTeacherAssignments(req, res) {
   try {
     const teacherId = Number(req.params.teacherId);
-    const subject = String(req.body.subject || '').trim();
+    const rawSubjects = Array.isArray(req.body.subjects) ? req.body.subjects : [req.body.subject];
+    const subjects = [...new Set(rawSubjects.map((item) => String(item || '').trim()).filter(Boolean))];
     const classes = Array.isArray(req.body.classes) ? req.body.classes : [];
     const academicYear = Number(req.body.academicYear || new Date().getFullYear());
-    if (!teacherId || !subject || !classes.length) return res.status(400).json({ success: false, message: 'Subject and classes are required' });
+    if (!teacherId || !subjects.length || !classes.length) return res.status(400).json({ success: false, message: 'At least one subject and class are required' });
     await query('UPDATE teacher_assignments SET active = 0 WHERE teacher_id = ? AND academic_year = ?', [teacherId, academicYear]);
-    for (const className of classes) {
-      await query(
-        `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
-         VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
-        [teacherId, String(className), subject, academicYear]
-      );
+    for (const subject of subjects) {
+      for (const className of classes) {
+        await query(
+          `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
+           VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
+          [teacherId, String(className), subject, academicYear]
+        );
+      }
     }
-    await query('UPDATE students SET subject = ? WHERE id = ?', [subject, teacherId]);
+    await query('UPDATE students SET subject = ? WHERE id = ?', [subjects[0], teacherId]);
     res.json({ success: true, message: 'Teacher assignments updated' });
   } catch (error) {
     console.error('Error updating teacher assignments:', error);
     res.status(500).json({ success: false, message: 'Could not update teacher assignments' });
+  }
+}
+
+async function getFinanceAccounts(req, res) {
+  try {
+    const accounts = await query(
+      `SELECT id, name, username, email, staff_number AS staffNumber, finance_working_area AS workingArea, active, last_login AS lastLogin, created_at AS createdAt
+       FROM students WHERE role = 'finance' ORDER BY name`
+    );
+    res.json({ success: true, accounts });
+  } catch (error) {
+    console.error('Error getting finance accounts:', error);
+    res.status(500).json({ success: false, message: 'Could not load finance accounts' });
+  }
+}
+
+async function createFinanceAccount(req, res) {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const workingArea = String(req.body.workingArea || '').trim();
+    if (!name || !email || !workingArea) {
+      return res.status(400).json({ success: false, message: 'Name, email, and working area are required' });
+    }
+
+    const year = new Date().getFullYear();
+    const nextRows = await query(
+      `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(staff_number, '/', 2), '/', -1) AS UNSIGNED)), 0) + 1 AS nextNumber
+       FROM students WHERE staff_number LIKE ?`, [`FC/%/${year}`]
+    );
+    const staffNumber = `FC/${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}/${year}`;
+    const passwordHash = await bcrypt.hash(staffNumber, 12);
+    const result = await query(
+      `INSERT INTO students (name, username, email, password_hash, role, staff_number, finance_working_area, active)
+       VALUES (?, ?, ?, ?, 'finance', ?, ?, 1)`,
+      [name, staffNumber, email, passwordHash, staffNumber, workingArea]
+    );
+    await logActivity(req.user.id, 'finance_account_created', `Created finance account ${staffNumber} for ${workingArea}`);
+    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea, initialPassword: staffNumber } });
+  } catch (error) {
+    console.error('Error creating finance account:', error);
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Username or email is already in use' });
+    res.status(500).json({ success: false, message: 'Could not create finance account' });
+  }
+}
+
+async function getICTAccounts(req, res) {
+  try {
+    const accounts = await query(
+      `SELECT id, name, username, email, staff_number AS staffNumber, ict_working_area AS workingArea, active, last_login AS lastLogin, created_at AS createdAt
+       FROM students WHERE role = 'ict' ORDER BY name`
+    );
+    res.json({ success: true, accounts });
+  } catch (error) {
+    console.error('Error getting ICT accounts:', error);
+    res.status(500).json({ success: false, message: 'Could not load ICT accounts' });
+  }
+}
+
+async function createICTAccount(req, res) {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const workingArea = String(req.body.workingArea || '').trim();
+    if (!name || !email || !workingArea) {
+      return res.status(400).json({ success: false, message: 'Name, email, and working area are required' });
+    }
+
+    const year = new Date().getFullYear();
+    const nextRows = await query(
+      `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(staff_number, '-', 2), '-', -1) AS UNSIGNED)), 0) + 1 AS nextNumber
+       FROM students WHERE staff_number LIKE ?`, [`ict-%-${year}`]
+    );
+    const staffNumber = `ict-${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}-${year}`;
+    const passwordHash = await bcrypt.hash(staffNumber, 12);
+    const result = await query(
+      `INSERT INTO students (name, username, email, password_hash, role, staff_number, ict_working_area, active)
+       VALUES (?, ?, ?, ?, 'ict', ?, ?, 1)`,
+      [name, staffNumber, email, passwordHash, staffNumber, workingArea]
+    );
+    await logActivity(req.user.id, 'ict_account_created', `Created ICT account ${staffNumber} for ${workingArea}`);
+    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea, initialPassword: staffNumber } });
+  } catch (error) {
+    console.error('Error creating ICT account:', error);
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Generated ICT staff number or email is already in use' });
+    res.status(500).json({ success: false, message: 'Could not create ICT account' });
   }
 }
 
@@ -524,4 +618,8 @@ module.exports = {
   ,getTeachersWithAssignments
   ,createTeacherWithAssignments
   ,updateTeacherAssignments
+  ,getFinanceAccounts
+  ,createFinanceAccount
+  ,getICTAccounts
+  ,createICTAccount
 };

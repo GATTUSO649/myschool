@@ -9,6 +9,9 @@ function normalizeRole(role) {
   if (['finance', 'accountant', 'accounts'].includes(value)) {
     return 'finance';
   }
+  if (['ict', 'it', 'ict_staff', 'technology'].includes(value)) {
+    return 'ict';
+  }
   if (['academics', 'academic', 'lecturer', 'teacher', 'teaching'].includes(value)) {
     return 'teacher';
   }
@@ -23,6 +26,8 @@ function getTokenFromRequest(req) {
   if (header.startsWith('Bearer ')) {
     return header.slice(7);
   }
+  if (req.path.startsWith('/ict-') && req.cookies?.ictSessionToken) return req.cookies.ictSessionToken;
+  if (req.path.startsWith('/admin-finance') && req.cookies?.financeSessionToken) return req.cookies.financeSessionToken;
   return req.headers['x-auth-token'] || null;
 }
 
@@ -38,7 +43,8 @@ async function authMiddleware(req, res, next) {
     if (!token) {
       if (isHtmlRequest(req)) {
         const redirectTo = req.originalUrl && req.originalUrl !== '/' ? req.originalUrl : '/dashboard.html';
-        return res.redirect(`/login.html?redirect=${encodeURIComponent(redirectTo)}`);
+        const loginPage = req.path.startsWith('/ict-') ? '/ict-login.html' : req.path.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
+        return res.redirect(`${loginPage}?redirect=${encodeURIComponent(redirectTo)}`);
       }
       return res.status(401).json({ success: false, message: 'Authentication token required' });
     }
@@ -55,9 +61,18 @@ async function authMiddleware(req, res, next) {
         console.warn('authMiddleware: token verification failed (could not print token snippet)', err.message || err);
       }
       if (isHtmlRequest(req)) {
-        return res.redirect('/login.html');
+        const loginPage = req.path.startsWith('/ict-') ? '/ict-login.html' : req.path.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
+        return res.redirect(loginPage);
       }
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    try {
+      const sessionRows = await query('SELECT id FROM ict_sessions WHERE jti = ? AND revoked_at IS NULL LIMIT 1', [decoded.jti || '']);
+      if (decoded.jti && !sessionRows.length) return res.status(401).json({ success: false, message: 'Session revoked or expired' });
+      if (decoded.jti) await query('UPDATE ict_sessions SET last_activity = NOW() WHERE jti = ?', [decoded.jti]);
+    } catch (error) {
+      console.warn('Session registry check unavailable:', error.message || error);
     }
 
     const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
@@ -69,6 +84,7 @@ async function authMiddleware(req, res, next) {
         email: `${decoded.username}@cresenthighschool.com`,
         admission_number: 'ADMIN',
         role: 'admin',
+        rawRole: 'super_admin',
         class_name: 'Administration',
         stream: null,
         avatar: null,
@@ -78,7 +94,7 @@ async function authMiddleware(req, res, next) {
     }
 
     const rows = await query(
-      'SELECT id, name, username, email, admission_number, staff_number, role, class_name, stream, avatar, subject, active FROM students WHERE id = ? LIMIT 1',
+      'SELECT id, name, username, email, admission_number, staff_number, finance_working_area, ict_working_area, role, class_name, stream, avatar, subject, active FROM students WHERE id = ? LIMIT 1',
       [decoded.id]
     );
     const user = rows[0];
@@ -91,6 +107,7 @@ async function authMiddleware(req, res, next) {
 
     req.user = {
       ...user,
+      rawRole: String(user.role || '').toLowerCase(),
       role: normalizeRole(user.role)
     };
     next();

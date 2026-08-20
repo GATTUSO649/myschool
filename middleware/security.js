@@ -90,7 +90,7 @@ const securityHeaders = helmet({
 const parseCookies = cookieParser();
 
 function getClientIp(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 
 async function recordSecurityEvent(userId, action, details, req) {

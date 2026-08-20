@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="site-common.css">
   <link rel="stylesheet" href="dashboard.css">
   <link rel="stylesheet" href="admin-dashboard.css">
+  <link rel="stylesheet" href="finance-admin.css">
   <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="admin-dashboard-page has-site-footer">
@@ -27,28 +28,29 @@
   </header>
 
   <div class="student-shell">
-    <aside class="student-sidebar">
-      <div class="sidebar-brand">Admin Control</div>
-      <div class="sidebar-section">
-        <h3>Core</h3>
-        <a class="sidebar-link" href="admin-dashboard.html"><svg viewBox="0 0 24 24"><path d="M4 12.5 12 4l8 8.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-7.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Dashboard</span></a>
-        <a class="sidebar-link" href="admin-applications.html"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l5 5V19a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Zm7 1.5v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 12h8M8 16h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Applications</span></a>
-        <a class="sidebar-link" href="admin-students.html"><svg viewBox="0 0 24 24"><path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm10 8v-1a4 4 0 0 0-3-3.87M17 4.5a3 3 0 0 1 0 5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Students</span></a>
-        <a class="sidebar-link" href="admin-academics.html"><svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4Zm-7 7 7 3 7-3M5 11v4.5c0 1.2 3.2 2.5 7 2.5s7-1.3 7-2.5V11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Academics</span></a>
-        <a class="sidebar-link" href="admin-uploads.html"><svg viewBox="0 0 24 24"><path d="M12 15V4m0 0 4 4m-4-4-4 4M4 16.5v1.2A1.3 1.3 0 0 0 5.3 19h13.4A1.3 1.3 0 0 0 20 17.7v-1.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Uploads</span></a>
-        <a class="sidebar-link active" href="admin-finance.html"><svg viewBox="0 0 24 24"><path d="M3.5 8.5A2.5 2.5 0 0 1 6 6h12a2.5 2.5 0 0 1 2.5 2.5v8A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-8Zm2.5-1V12h12V7.5M8 15h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Finance</span></a>
-        <a class="sidebar-link" href="admin-settings.html"><svg viewBox="0 0 24 24"><path d="M12 3.5v2.2m0 14.6v2.2m8.5-8.5h-2.2M5.7 12H3.5m13.8-6.3-1.6 1.6M8.3 15.7l-1.6 1.6m0-11.6 1.6 1.6m6.8 6.8 1.6 1.6M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Settings</span></a>
-      </div>
+    <aside class="student-sidebar finance-sidebar">
+      <div class="sidebar-brand">Finance workspace</div>
+      <div class="sidebar-section"><h3>Overview</h3><a class="sidebar-link active" href="admin-finance.html">Dashboard</a><a class="sidebar-link" href="admin-finance-balances.html">Balances</a><a class="sidebar-link" href="admin-finance-receipts.html">Receipt ledger</a></div>
+      <div class="sidebar-section"><h3>Operations</h3><a class="sidebar-link" href="admin-finance-payments.html">Record payment</a><a class="sidebar-link" href="admin-finance-structure.html">Fee structures</a><a class="sidebar-link" href="admin-finance-statements.html">Statements</a><a class="sidebar-link" href="admin-finance-upload.html">Documents</a></div>
+      <div class="sidebar-section finance-admin-only"><h3>Administration</h3><a class="sidebar-link" href="admin-roles.html">Staff roles</a><a class="sidebar-link" href="admin-dashboard.html">Admin portal</a></div>
+      <div class="sidebar-section"><a class="sidebar-link" href="#" data-admin-logout>Sign out</a></div>
     </aside>
 
     <main class="dashboard-main">
       <section class="admin-section">
         <div class="dashboard-panel page-intro">
-          <div class="panel-header">
+          <div class="panel-header finance-dashboard-heading">
             <div>
               <h2>Finance command center</h2>
               <p class="footer-note">Track collections, review balances, and publish finance documents with a modern administrative workflow.</p>
             </div>
+            <div class="finance-heading-actions"><span class="finance-period">Live ledger</span><button type="button" class="secondary-button" id="refreshFinanceDashboard">Refresh</button></div>
+          </div>
+
+          <div class="finance-chart-grid">
+            <section class="finance-chart-panel finance-chart-wide"><div class="finance-chart-heading"><div><h3>Collections by form</h3><p>Compare billed, paid, and outstanding balances.</p></div><span class="chart-key"><i class="key-paid"></i>Paid <i class="key-balance"></i>Outstanding</span></div><div id="financeCollectionsChart" class="finance-canvas-wrap"><canvas id="financeCollectionsCanvas" aria-label="Collections by form"></canvas></div></section>
+            <section class="finance-chart-panel"><div class="finance-chart-heading"><div><h3>Collection rate</h3><p>Paid amount against total billed.</p></div></div><div id="financeRateChart" class="finance-canvas-wrap"><canvas id="financeRateCanvas" aria-label="Collection rate"></canvas></div></section>
+            <section class="finance-chart-panel"><div class="finance-chart-heading"><div><h3>Monthly movement</h3><p>Payment activity across the year.</p></div></div><div id="financeTrendChart" class="finance-canvas-wrap"><canvas id="financeTrendCanvas" aria-label="Monthly payment movement"></canvas></div></section>
           </div>
         </div>
 
@@ -107,16 +109,13 @@
                 <a class="sheet-button secondary" href="admin-finance-balances.html">Audit</a>
               </div>
             </article>
-            <article class="module-card">
-              <h3>Student portal</h3>
-              <p>Publish finance documents to the correct student finance pages.</p>
-              <div class="module-actions">
-                <a class="sheet-button primary" href="admin-finance-upload.html">Upload file</a>
-                <a class="sheet-button secondary" href="admin-finance-statements.html">Statement</a>
-                <a class="sheet-button secondary" href="admin-finance-structure.html">Structure</a>
-                <a class="sheet-button secondary" href="admin-finance-receipts.html">Records</a>
-              </div>
-            </article>
+          </div>
+
+          <div class="finance-quick-grid" aria-label="Finance quick actions">
+            <a class="finance-quick-link" href="admin-finance-payments.html"><strong>Record payment</strong><span>Post a receipt to a student ledger</span></a>
+            <a class="finance-quick-link" href="admin-finance-balances.html"><strong>Review balances</strong><span>Find outstanding student accounts</span></a>
+            <a class="finance-quick-link" href="admin-finance-statements.html"><strong>Generate statements</strong><span>Create portal-ready statements</span></a>
+            <a class="finance-quick-link" href="admin-finance-upload.html"><strong>Publish document</strong><span>Share finance files with learners</span></a>
           </div>
 
         </div>
@@ -128,6 +127,7 @@
 
   <script src="auth.js"></script>
   <script src="admin-dashboard.js"></script>
+  <script src="finance-dashboard.js"></script>
   <script>
     // Toast on finance doc creation via socket
     (function(){

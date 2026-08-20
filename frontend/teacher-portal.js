@@ -1,4 +1,4 @@
-const teacherPortalState = { assignments: [], students: [], selected: null };
+const teacherPortalState = { assignments: [], students: [], performance: [], termPerformance: [], topStudents: [], selected: null };
 
 function teacherEscape(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
@@ -6,6 +6,25 @@ function teacherEscape(value) {
 
 function teacherUser() { return getStudentInfo() || {}; }
 function teacherSet(id, value) { const element = document.getElementById(id); if (element) element.textContent = value; }
+function getCurrentTerm() {
+  const month = new Date().getMonth() + 1;
+  if (month >= 1 && month <= 4) return 'Term 1';
+  if (month >= 5 && month <= 8) return 'Term 2';
+  return 'Term 3';
+}
+function getTeacherGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+function updateTeacherGreeting(name) {
+  const greeting = getTeacherGreeting();
+  const title = document.getElementById('teacherGreetingPrefix');
+  if (title) title.textContent = greeting;
+  const welcome = document.getElementById('teacherWelcome');
+  if (welcome) welcome.textContent = (name || 'Teacher').split(' ')[0];
+}
 function gradeForMark(mark) { const score = Number(mark); if (!Number.isFinite(score)) return '-'; if (score >= 80) return 'A'; if (score >= 70) return 'A-'; if (score >= 60) return 'B'; if (score >= 50) return 'C'; if (score >= 40) return 'D'; if (score >= 30) return 'E'; return 'F'; }
 function selectedOptions() { return { term: document.getElementById('teacherTermSelect').value, academicYear: document.getElementById('teacherYearInput').value, examType: document.getElementById('teacherExamInput').value.trim() || 'End Term' }; }
 
@@ -90,17 +109,89 @@ async function loadAssignedStudents() {
 
 async function selectAssignment(index) { teacherPortalState.selected = index; renderAssignments(); try { await loadAssignedStudents(); } catch (error) { teacherSet('teacherSyncStatus', error.message); showAlert(error.message, 'error'); } }
 
+function renderSubjectPerformanceChart() {
+  const chart = document.getElementById('subjectPerformanceChart');
+  if (!chart) return;
+  const performance = teacherPortalState.performance || [];
+  if (!performance.length) {
+    chart.innerHTML = '<div class="teacher-empty">No subject performance data yet for this academic year.</div>';
+    return;
+  }
+  const maxAverage = Math.max(...performance.map((entry) => Number(entry.average || 0)), 100);
+  chart.innerHTML = performance.map((entry) => {
+    const average = Number(entry.average || 0);
+    const width = Math.max(8, ((average / maxAverage) * 100));
+    return `
+      <div class="teacher-performance-row">
+        <div class="teacher-performance-meta"><span>${teacherEscape(entry.subject || 'Subject')}</span><strong>${average.toFixed(1)}%</strong></div>
+        <div class="teacher-performance-bar"><span style="width:${width}%"></span></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTermPerformanceChart() {
+  const chart = document.getElementById('termPerformanceChart');
+  if (!chart) return;
+  const termPerformance = Array.isArray(teacherPortalState.termPerformance) ? teacherPortalState.termPerformance : [];
+  if (!termPerformance.length) {
+    chart.innerHTML = '<div class="teacher-empty">No term trend data available yet.</div>';
+    return;
+  }
+
+  const width = 360;
+  const height = 180;
+  const padding = 24;
+  const values = termPerformance.map((entry) => Number(entry.average || 0));
+  const maxValue = Math.max(...values, 100);
+  const xStep = termPerformance.length > 1 ? (width - padding * 2) / (termPerformance.length - 1) : 0;
+
+  const points = termPerformance.map((entry, index) => {
+    const x = padding + index * xStep;
+    const value = Number(entry.average || 0);
+    const y = height - padding - (value / maxValue) * (height - padding * 2);
+    return { x, y, label: entry.term || `Term ${index + 1}`, value };
+  });
+
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const gridLines = [0, 25, 50, 75, 100].map((tick) => {
+    const y = height - padding - (tick / maxValue) * (height - padding * 2);
+    return `<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="#e8eef9" stroke-width="1" />`;
+  }).join('');
+
+  chart.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Teacher performance by term">
+      ${gridLines}
+      <path d="${linePath}" fill="none" stroke="#1953c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      ${points.map((point) => `
+        <g>
+          <circle cx="${point.x}" cy="${point.y}" r="4.5" fill="#ffffff" stroke="#1953c8" stroke-width="3" />
+          <text x="${point.x}" y="${height - 6}" text-anchor="middle" font-size="10" fill="#5f6d87">${teacherEscape(point.label)}</text>
+          <text x="${point.x}" y="${point.y - 10}" text-anchor="middle" font-size="9" fill="#102853">${Number(point.value).toFixed(0)}%</text>
+        </g>
+      `).join('')}
+    </svg>
+  `;
+}
+
 async function loadTeacherWorkspace() {
   if (!checkAuth()) return;
   const user = teacherUser();
   if (!['teacher', 'lecturer'].includes(String(user.role || '').toLowerCase())) return;
-  teacherSet('teacherName', user.name || user.username || 'Teacher'); teacherSet('teacherWelcome', (user.name || user.username || 'Teacher').split(' ')[0]); teacherSet('teacherStaffNumber', user.staffNumber || user.staff_number || 'Teaching staff');
+  const teacherName = user.name || user.username || 'Teacher';
+  const displayName = teacherName.split(' ')[0];
+  teacherSet('teacherName', teacherName); teacherSet('teacherWelcome', displayName); teacherSet('teacherStaffNumber', user.staffNumber || user.staff_number || 'Teaching staff');
+  updateTeacherGreeting(teacherName);
+  teacherSet('currentTerm', getCurrentTerm());
   const year = document.getElementById('teacherYearInput').value;
   const response = await fetchWithAuth(`/academics/teacher/dashboard?academicYear=${encodeURIComponent(year)}`);
   const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Could not load teacher workspace');
   teacherPortalState.assignments = data.assignments || [];
+  teacherPortalState.performance = Array.isArray(data.performance) ? data.performance : [];
+  teacherPortalState.termPerformance = Array.isArray(data.termPerformance) ? data.termPerformance : [];
+  teacherPortalState.topStudents = Array.isArray(data.topStudents) ? data.topStudents : [];
   teacherSet('assignedClassCount', new Set(teacherPortalState.assignments.map((item) => item.className)).size); teacherSet('assignedSubjectCount', new Set(teacherPortalState.assignments.map((item) => item.subject)).size);
-  renderAssignments(); renderExistingSavedSheets(); if (teacherPortalState.assignments.length) await selectAssignment(0);
+  renderAssignments(); renderExistingSavedSheets(); renderSubjectPerformanceChart(); renderTermPerformanceChart(); if (teacherPortalState.assignments.length) await selectAssignment(0);
 }
 
 async function saveMarks() {
@@ -120,4 +211,16 @@ async function saveLesson(event) { event.preventDefault(); const response = awai
 
 async function uploadNotes(event) { event.preventDefault(); const assignment = teacherPortalState.assignments[teacherPortalState.selected]; const formData = new FormData(); formData.append('title', notesTitle.value); formData.append('className', assignment.className); formData.append('subject', assignment.subject); formData.append('academicYear', selectedOptions().academicYear); formData.append('file', notesFile.files[0]); const response = await fetchWithAuth('/academics/docs', { method:'POST', body:formData }); const data = await response.json(); showAlert(data.message || 'Learning material uploaded.', response.ok ? 'success' : 'error'); if (response.ok) event.target.reset(); }
 
-document.addEventListener('DOMContentLoaded', () => { document.getElementById('refreshTeacherDashboard').addEventListener('click', () => loadTeacherWorkspace().catch((error) => showAlert(error.message, 'error'))); document.getElementById('saveMarksButton').addEventListener('click', () => saveMarks().catch((error) => showAlert(error.message, 'error'))); document.getElementById('clearMarksButton').addEventListener('click', () => document.querySelectorAll('.grade-input').forEach((input) => { input.value = ''; input.closest('tr').querySelector('.grade-value').textContent = '-'; })); document.getElementById('saveAttendanceButton').addEventListener('click', () => saveAttendance().catch((error) => showAlert(error.message, 'error'))); document.getElementById('lessonForm').addEventListener('submit', saveLesson); document.getElementById('notesForm').addEventListener('submit', uploadNotes); document.getElementById('teacherTermSelect').addEventListener('change', () => loadAssignedStudents().catch((error) => showAlert(error.message, 'error'))); loadTeacherWorkspace().catch((error) => { teacherSet('teacherSyncStatus', 'Could not load workspace'); showAlert(error.message, 'error'); }); });
+document.addEventListener('DOMContentLoaded', () => {
+  const user = teacherUser();
+  updateTeacherGreeting(user.name || user.username || 'Teacher');
+  setInterval(() => updateTeacherGreeting((teacherUser().name || teacherUser().username || 'Teacher')), 60000);
+  document.getElementById('refreshTeacherDashboard').addEventListener('click', () => loadTeacherWorkspace().catch((error) => showAlert(error.message, 'error')));
+  document.getElementById('saveMarksButton').addEventListener('click', () => saveMarks().catch((error) => showAlert(error.message, 'error')));
+  document.getElementById('clearMarksButton').addEventListener('click', () => document.querySelectorAll('.grade-input').forEach((input) => { input.value = ''; input.closest('tr').querySelector('.grade-value').textContent = '-'; }));
+  document.getElementById('saveAttendanceButton').addEventListener('click', () => saveAttendance().catch((error) => showAlert(error.message, 'error')));
+  document.getElementById('lessonForm').addEventListener('submit', saveLesson);
+  document.getElementById('notesForm').addEventListener('submit', uploadNotes);
+  document.getElementById('teacherTermSelect').addEventListener('change', () => loadAssignedStudents().catch((error) => showAlert(error.message, 'error')));
+  loadTeacherWorkspace().catch((error) => { teacherSet('teacherSyncStatus', 'Could not load workspace'); showAlert(error.message, 'error'); });
+});

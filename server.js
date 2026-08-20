@@ -89,6 +89,16 @@ const generalLimiter = createGeneralRateLimiter();
 
 app.use(securityHeaders);
 app.use(cors(corsOptions));
+app.use(parseCookies);
+app.use((req, res, next) => {
+  if (!req.path.endsWith('.html') || !req.path.startsWith('/ict-') || req.path === '/ict-login.html') return next();
+  return authMiddleware(req, res, (error) => {
+    if (error) return next(error);
+    const rawRole = String(req.user?.rawRole || '').toLowerCase();
+    if (!['ict', 'super_admin'].includes(rawRole)) return res.redirect('/ict-login.html');
+    return next();
+  });
+});
 app.use(express.static(path.join(__dirname, 'frontend'), { index: false }));
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
@@ -98,7 +108,6 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
-app.use(parseCookies);
 
 function wrapAsyncRoutes(router) {
   router.stack.forEach((layer) => {
@@ -207,6 +216,15 @@ const protectedPagePatterns = [
   '/admin.html',
   '/admin-dashboard.html',
   '/admin-roles.html',
+  '/admin-finance.html',
+  '/admin-finance-balances.html',
+  '/admin-finance-payments.html',
+  '/admin-finance-receipts.html',
+  '/admin-finance-statements.html',
+  '/admin-finance-structure.html',
+  '/admin-finance-upload.html',
+  '/ict-portal.html',
+  '/ict-dashboard.html', '/ict-health.html', '/ict-activity.html', '/ict-users.html', '/ict-permissions.html', '/ict-sessions.html', '/ict-security.html', '/ict-audit.html', '/ict-configuration.html', '/ict-logs.html', '/ict-integrations.html', '/ict-updates.html', '/ict-database.html', '/ict-backups.html', '/ict-storage.html', '/ict-email.html', '/ict-messages.html', '/ict-maintenance.html', '/ict-tickets.html', '/ict-history.html', '/ict-profile.html',
   '/teacher.html',
   '/student.html',
   '/profile.html',
@@ -239,6 +257,35 @@ const protectedPageRoleMap = {
   '/admin.html': ['admin'],
   '/admin-dashboard.html': ['admin'],
   '/admin-roles.html': ['admin'],
+  '/admin-finance.html': ['finance', 'admin'],
+  '/admin-finance-balances.html': ['finance', 'admin'],
+  '/admin-finance-payments.html': ['finance', 'admin'],
+  '/admin-finance-receipts.html': ['finance', 'admin'],
+  '/admin-finance-statements.html': ['finance', 'admin'],
+  '/admin-finance-structure.html': ['finance', 'admin'],
+  '/admin-finance-upload.html': ['finance', 'admin'],
+  '/ict-portal.html': ['ict'],
+  '/ict-dashboard.html': ['ict', 'admin'],
+  '/ict-health.html': ['ict', 'admin'],
+  '/ict-activity.html': ['ict', 'admin'],
+  '/ict-users.html': ['ict', 'admin'],
+  '/ict-permissions.html': ['ict', 'admin'],
+  '/ict-sessions.html': ['ict', 'admin'],
+  '/ict-security.html': ['ict', 'admin'],
+  '/ict-audit.html': ['ict', 'admin'],
+  '/ict-configuration.html': ['ict', 'admin'],
+  '/ict-logs.html': ['ict', 'admin'],
+  '/ict-integrations.html': ['ict', 'admin'],
+  '/ict-updates.html': ['ict', 'admin'],
+  '/ict-database.html': ['ict', 'admin'],
+  '/ict-backups.html': ['ict', 'admin'],
+  '/ict-storage.html': ['ict', 'admin'],
+  '/ict-email.html': ['ict', 'admin'],
+  '/ict-messages.html': ['ict', 'admin'],
+  '/ict-maintenance.html': ['ict', 'admin'],
+  '/ict-tickets.html': ['ict', 'admin'],
+  '/ict-history.html': ['ict', 'admin'],
+  '/ict-profile.html': ['ict', 'admin'],
   '/teacher.html': ['teacher', 'admin'],
   '/student.html': ['admin', 'teacher'],
   '/profile.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
@@ -270,7 +317,8 @@ app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
   }
   const userRole = req.user?.role;
   if (!userRole || !allowedRoles.includes(userRole)) {
-    return res.status(403).redirect('/login.html');
+    const loginPage = pathname.startsWith('/ict-') ? '/ict-login.html' : pathname.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
+    return res.status(403).redirect(loginPage);
   }
   const pagePath = path.join(__dirname, 'frontend', pathname.replace(/^\//, ''));
   res.sendFile(pagePath, (error) => {

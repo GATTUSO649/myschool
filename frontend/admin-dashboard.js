@@ -103,6 +103,7 @@ function normalizeAdminSidebar() {
       <a class="sidebar-link${page === 'admin-roles.html' ? ' active' : ''}" href="admin-roles.html">Roles & staff</a>
       <a class="sidebar-link${page === 'admin-students.html' ? ' active' : ''}" href="admin-students.html">All Students</a>
       <a class="sidebar-link${page === 'admin-applications.html' ? ' active' : ''}" href="admin-applications.html">Applications</a>
+      <a class="sidebar-link${page.startsWith('admin-finance') ? ' active' : ''}" href="admin-finance.html">Finance</a>
       <a class="sidebar-link${page === 'admin-database.html' ? ' active' : ''}" href="admin-database.html">Database</a>
     </div>
     <div class="sidebar-section">

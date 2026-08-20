@@ -86,6 +86,66 @@ async function runMigrations() {
     )
   `);
 
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS ict_permissions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      role VARCHAR(40) NOT NULL,
+      permission_key VARCHAR(100) NOT NULL,
+      enabled TINYINT(1) NOT NULL DEFAULT 1,
+      UNIQUE KEY uniq_ict_permission (role, permission_key)
+    )
+  `);
+  const ictPermissionKeys = ['students.view', 'students.manage', 'finance.view', 'finance.manage', 'academics.view', 'academics.manage', 'users.manage', 'security.view', 'system.manage', 'backups.manage', 'maintenance.manage'];
+  for (const permissionKey of ictPermissionKeys) {
+    await getPool().query('INSERT IGNORE INTO ict_permissions (role, permission_key, enabled) VALUES (\'ict\', ?, 1)', [permissionKey]);
+  }
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS ict_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      jti VARCHAR(80) NOT NULL UNIQUE,
+      user_id INT NULL,
+      role VARCHAR(40) NOT NULL,
+      login_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      last_activity DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      ip_address VARCHAR(80),
+      user_agent VARCHAR(255),
+      revoked_at DATETIME NULL,
+      CONSTRAINT fk_ict_sessions_user FOREIGN KEY (user_id) REFERENCES students(id) ON DELETE SET NULL,
+      INDEX idx_ict_sessions_user (user_id),
+      INDEX idx_ict_sessions_active (revoked_at, last_activity)
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS ict_backups (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'requested',
+      size_bytes BIGINT DEFAULT 0,
+      created_by INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME NULL,
+      error_message TEXT,
+      CONSTRAINT fk_ict_backups_user FOREIGN KEY (created_by) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS ict_tickets (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(180) NOT NULL,
+      module VARCHAR(80),
+      description TEXT NOT NULL,
+      priority VARCHAR(20) NOT NULL DEFAULT 'normal',
+      status VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+      created_by INT NULL,
+      assigned_to INT NULL,
+      attachment VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_ict_ticket_creator FOREIGN KEY (created_by) REFERENCES students(id) ON DELETE SET NULL,
+      CONSTRAINT fk_ict_ticket_assignee FOREIGN KEY (assigned_to) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+
   await addColumnIfMissing('calendar_events', 'start_date', 'DATETIME NULL');
   await addColumnIfMissing('calendar_events', 'end_date', 'DATETIME NULL');
   await addColumnIfMissing('calendar_events', 'subject', 'VARCHAR(100) NULL');
@@ -95,6 +155,13 @@ async function runMigrations() {
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
   await addColumnIfMissing('students', 'subject', 'VARCHAR(100) NULL');
   await addColumnIfMissing('students', 'staff_number', 'VARCHAR(30) NULL');
+  await addColumnIfMissing('students', 'finance_working_area', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('students', 'ict_working_area', 'VARCHAR(100) NULL');
+  try {
+    await getPool().query(`ALTER TABLE students MODIFY role ENUM('student','lecturer','teacher','rba','admin','school_admin','super_admin','finance','accountant','ict') NOT NULL DEFAULT 'student'`);
+  } catch (error) {
+    console.warn('Could not update student role options:', error.message || error);
+  }
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
   await addColumnIfMissing('applications', 'birth_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'kcpe_certificate_path', 'VARCHAR(255) NULL');
