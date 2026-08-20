@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>CRESENT HIGH SCHOOL - Transcript</title>
   <link rel="stylesheet" href="site-common.css">
   <link rel="stylesheet" href="dashboard.css">
@@ -482,6 +482,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="student-portal">
   <header class="dashboard-header">
@@ -790,7 +791,8 @@
       if (!newWin) { window.print(); return; }
       const content = container.outerHTML;
       newWin.document.open();
-      newWin.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body>${content}  <script src="shared-bindings.js"></script>
+      newWin.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">${styles}
+</head><body>${content}  <script src="shared-bindings.js"></script>
 </body></html>`);
       newWin.document.close();
       // remove download button in print window if present

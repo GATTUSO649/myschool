@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Login | Admin Portal</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/site-common.css">
@@ -14,12 +16,16 @@
             .auth-image { display:none; }
             .auth-card { flex:1; padding:2rem; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; }
             .brand-block { margin-bottom:1.25rem; }
+            .security-badge { font-size:0.75rem; color:#059669; margin-top:0.5rem; display:flex; align-items:center; gap:0.25rem; }
+            .security-badge::before { content:'🔒'; }
+            .failed-attempts { font-size:0.85rem; color:#dc2626; margin-top:0.5rem; display:none; }
             @media (max-width:900px) {
                 .auth-shell { justify-content:center; padding:2rem; }
                 .auth-container { max-width:100%; }
                 .auth-card { padding:1.25rem; }
             }
         </style>
+  <link rel="stylesheet" href="responsive.css">
 </head>
 <body>
         <main class="auth-shell">
@@ -30,20 +36,23 @@
                 <div class="brand-mark">C</div>
                 <h1 id="loginTitle"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
                 <p>Admin Portal</p>
+                <div class="security-badge">Secure Connection</div>
             </div>
-            <form class="auth-form" id="loginForm">
+            <form class="auth-form" id="adminLoginForm" autocomplete="off">
+                <input type="hidden" id="csrfToken" name="csrfToken">
                 <div class="form-field">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="Enter your admin username">
+                    <label for="username">Admin Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your admin username" autocomplete="username" required>
                 </div>
                 <div class="form-field">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
                 </div>
                 <div class="form-field">
-                    <label><input type="checkbox" id="rememberMe" name="remember"> Remember me</label>
+                    <label><input type="checkbox" id="rememberMe" name="remember"> Remember this device for 7 days</label>
                 </div>
-                <button type="submit" class="auth-button">Login</button>
+                <div class="failed-attempts" id="failedAttempts"></div>
+                <button type="submit" class="auth-button" id="loginBtn">Login</button>
             </form>
             <div class="auth-links">
                 <a href="login.html">Student Portal</a>
@@ -53,8 +62,8 @@
       </div>
     </main>
     <footer class="auth-footer">&copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
-    <script src="/auth.js"></script>
     <script src="/site-common.js"></script>
+    <script src="/admin-auth.js"></script>
   <script src="shared-bindings.js"></script>
 </body>
 </html>

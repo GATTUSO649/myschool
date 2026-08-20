@@ -135,12 +135,36 @@
   }
 
   function wireMenus() {
+    let backdrop = document.querySelector('.mobile-sidebar-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('button');
+      backdrop.type = 'button';
+      backdrop.className = 'mobile-sidebar-backdrop';
+      backdrop.setAttribute('aria-label', 'Close navigation menu');
+      document.body.appendChild(backdrop);
+    }
+
+    const setSidebarOpen = (isOpen) => {
+      const sidebar = document.querySelector('.student-sidebar');
+      if (!sidebar) return;
+      sidebar.classList.toggle('is-open', isOpen);
+      backdrop.classList.toggle('is-visible', isOpen);
+      document.body.classList.toggle('sidebar-open', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    };
+
     document.querySelectorAll('.mobile-sidebar-toggle').forEach((button) => {
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        document.querySelector('.student-sidebar')?.classList.toggle('is-open');
+        const sidebar = document.querySelector('.student-sidebar');
+        setSidebarOpen(!sidebar?.classList.contains('is-open'));
       });
+    });
+
+    backdrop.addEventListener('click', () => setSidebarOpen(false));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
     });
 
     document.querySelectorAll('.site-menu-toggle, .menu-toggle').forEach((button) => {
@@ -167,8 +191,12 @@
 
       const sidebar = document.querySelector('.student-sidebar');
       if (sidebar && sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && !event.target.closest('.mobile-sidebar-toggle')) {
-        sidebar.classList.remove('is-open');
+        setSidebarOpen(false);
       }
+    });
+
+    document.querySelectorAll('.student-sidebar a').forEach((link) => {
+      link.addEventListener('click', () => setSidebarOpen(false));
     });
 
     document.querySelectorAll('.logout-button').forEach((button) => {

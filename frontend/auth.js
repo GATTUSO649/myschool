@@ -56,6 +56,12 @@ if (loginForm) {
       console.log('Response data:', data);
 
       if (data.success) {
+        const loginPage = window.location.pathname.toLowerCase();
+        const loginRole = (data.student?.role || '').toLowerCase();
+        if (loginPage.includes('teacher-login.html') && !['teacher', 'lecturer'].includes(loginRole)) {
+          showAlert('This page is for teacher accounts only.', 'error');
+          return;
+        }
         // Normalize student admission identifier in localStorage.
         const student = data.student || {};
         const normalizedAdmission = student.admission_number || student.adm || student.admissionNumber;
@@ -70,8 +76,9 @@ if (loginForm) {
         // Save token and normalized student data to localStorage
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('student', JSON.stringify(student));
+        localStorage.setItem('authSessionExpiresAt', String(Date.now() + 10 * 60 * 1000));
 
-        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+        const expires = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
         document.cookie = `authToken=${encodeURIComponent(data.token)}; path=/; expires=${expires}; SameSite=Lax`;
         
         console.log('✅ Token saved to localStorage');
@@ -93,8 +100,8 @@ if (loginForm) {
               console.log('Redirecting admin to admin-dashboard.html');
               window.location.href = 'admin-dashboard.html';
             } else if (role === 'teacher' || role === 'lecturer') {
-              console.log('Redirecting lecturer to lecturer-dashboard.html');
-              window.location.href = 'lecturer-dashboard.html';
+              console.log('Redirecting teacher to teacher-portal.html');
+              window.location.href = 'teacher-portal.html';
             } else {
               console.log('Redirecting student to dashboard.html');
               window.location.href = 'dashboard.html';
@@ -183,6 +190,17 @@ function checkAuth() {
   const path = window.location.pathname.toLowerCase();
   const page = path.split('/').pop();
 
+  const sessionExpiresAt = Number(localStorage.getItem('authSessionExpiresAt') || 0);
+  if (token && sessionExpiresAt && Date.now() >= sessionExpiresAt) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('student');
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('authSessionExpiresAt');
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    window.location.replace('login.html');
+    return false;
+  }
+
   if (!token) {
     if (!page.includes('login.html') && !page.includes('signup.html')) {
       window.location.replace('login.html');
@@ -199,6 +217,7 @@ function checkAuth() {
     'academic.html': ['teacher', 'admin', 'student'],
     'admissions.html': ['admin'],
     'admin-dashboard.html': ['admin'],
+    'admin-roles.html': ['admin'],
     'admin.html': ['admin'],
     'teacher.html': ['teacher', 'admin'],
     'student.html': ['admin', 'teacher'],
@@ -307,6 +326,7 @@ async function fetchWithAuth(endpoint, options = {}) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('student');
         localStorage.removeItem('rememberMe');
+        localStorage.removeItem('authSessionExpiresAt');
         document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       } catch (err) {
         console.warn('Error clearing auth storage', err);
@@ -385,6 +405,7 @@ function logout() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('student');
   localStorage.removeItem('rememberMe');
+  localStorage.removeItem('authSessionExpiresAt');
   document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   console.log('localStorage keys cleared for logout');
   window.location.href = 'login.html';

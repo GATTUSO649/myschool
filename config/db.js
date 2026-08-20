@@ -94,6 +94,7 @@ async function runMigrations() {
   await addColumnIfMissing('students', 'date_of_birth', 'DATE NULL');
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
   await addColumnIfMissing('students', 'subject', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('students', 'staff_number', 'VARCHAR(30) NULL');
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
   await addColumnIfMissing('applications', 'birth_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'kcpe_certificate_path', 'VARCHAR(255) NULL');
@@ -118,6 +119,47 @@ async function runMigrations() {
       expires_at DATETIME NOT NULL,
       used_at DATETIME NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS teacher_assignments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      teacher_id INT NOT NULL,
+      class_name VARCHAR(40) NOT NULL,
+      subject VARCHAR(100) NOT NULL,
+      academic_year INT NOT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_teacher_assignment (teacher_id, class_name, subject, academic_year),
+      INDEX idx_teacher_assignment_teacher (teacher_id),
+      CONSTRAINT fk_teacher_assignment_teacher FOREIGN KEY (teacher_id) REFERENCES students(id) ON DELETE CASCADE
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS student_attendance (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      teacher_id INT NOT NULL,
+      student_id INT NOT NULL,
+      class_name VARCHAR(40) NOT NULL,
+      attendance_date DATE NOT NULL,
+      status ENUM('present','absent','late') NOT NULL DEFAULT 'present',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_student_attendance (teacher_id, student_id, attendance_date),
+      CONSTRAINT fk_student_attendance_teacher FOREIGN KEY (teacher_id) REFERENCES students(id) ON DELETE CASCADE,
+      CONSTRAINT fk_student_attendance_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS teacher_lesson_attendance (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      teacher_id INT NOT NULL,
+      attendance_date DATE NOT NULL,
+      status ENUM('present','absent','late') NOT NULL DEFAULT 'present',
+      notes VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_teacher_lesson_attendance (teacher_id, attendance_date),
+      CONSTRAINT fk_teacher_lesson_attendance_teacher FOREIGN KEY (teacher_id) REFERENCES students(id) ON DELETE CASCADE
     )
   `);
 

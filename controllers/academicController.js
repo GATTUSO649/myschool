@@ -207,6 +207,17 @@ async function listEntryStudents(req, res) {
     const term = req.query.term || 'Term 1';
     const examType = req.query.examType || req.query.exam_type || 'End-Term';
 
+    if (['lecturer', 'teacher'].includes(req.user?.role)) {
+      const assignments = await query(
+        `SELECT class_name AS className, subject FROM teacher_assignments
+         WHERE teacher_id = ? AND academic_year = ? AND active = 1`,
+        [req.user.id, academicYear]
+      );
+      const matching = assignments.filter((assignment) => !filters.className || assignment.className.toLowerCase() === String(filters.className).toLowerCase());
+      if (!matching.length) return res.status(403).json({ success: false, message: 'This class is not assigned to you' });
+      filters.className = matching[0].className;
+    }
+
     const params = [];
     let where = "WHERE role = 'student' AND active = 1";
     if (filters.className) {
@@ -268,7 +279,7 @@ async function saveEntryResults(req, res) {
     const className = body.className || body.class_name || null;
     const admissionNumber = body.admissionNumber || body.admission_number || null;
 
-    if (req.user?.role === 'lecturer') {
+    if (['lecturer', 'teacher'].includes(req.user?.role)) {
       if (!req.user.subject) {
         return res.status(403).json({ success: false, message: 'Lecturer subject is not configured' });
       }
@@ -277,6 +288,12 @@ async function saveEntryResults(req, res) {
       } else if (String(subject).trim().toLowerCase() !== String(req.user.subject).trim().toLowerCase()) {
         return res.status(403).json({ success: false, message: 'Lecturers can only enter results for their assigned subject' });
       }
+      const assignmentRows = await query(
+        `SELECT id FROM teacher_assignments
+         WHERE teacher_id = ? AND class_name = ? AND subject = ? AND academic_year = ? AND active = 1 LIMIT 1`,
+        [req.user.id, className, subject, academicYear]
+      );
+      if (!assignmentRows.length) return res.status(403).json({ success: false, message: 'This class and subject are not assigned to you' });
     }
 
     if (!subject || !entries.length) {
@@ -375,6 +392,52 @@ async function academicDashboard(req, res) {
   }
 }
 
+async function teacherDashboard(req, res) {
+  try {
+    const year = Number(req.query.academicYear || new Date().getFullYear());
+    const assignments = await query(`SELECT class_name AS className, subject FROM teacher_assignments WHERE teacher_id = ? AND academic_year = ? AND active = 1`, [req.user.id, year]);
+    if (!assignments.length) return res.json({ success: true, assignments: [], performance: [], topStudents: [], students: [] });
+    const classes = [...new Set(assignments.map((item) => item.className))];
+    const subjects = [...new Set(assignments.map((item) => item.subject))];
+    const classPlaceholders = classes.map(() => '?').join(',');
+    const subjectPlaceholders = subjects.map(() => '?').join(',');
+    const performance = await query(`SELECT r.subject, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY r.subject ORDER BY r.subject`, [...classes, ...subjects, year]);
+    const topStudents = await query(`SELECT s.name, s.admission_number AS admissionNumber, s.class_name AS className, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY s.id ORDER BY average DESC LIMIT 10`, [...classes, ...subjects, year]);
+    const students = await query(`SELECT id, name, admission_number AS admissionNumber, class_name AS className, stream FROM students WHERE role = 'student' AND active = 1 AND class_name IN (${classPlaceholders}) ORDER BY class_name, name`, classes);
+    res.json({ success: true, assignments, performance, topStudents, students });
+  } catch (error) {
+    console.error('Teacher dashboard error:', error);
+    res.status(500).json({ success: false, message: 'Could not load teacher dashboard' });
+  }
+}
+
+async function saveStudentAttendance(req, res) {
+  try {
+    const attendanceDate = String(req.body.attendanceDate || '').trim();
+    const entries = Array.isArray(req.body.entries) ? req.body.entries : [];
+    if (!attendanceDate || !entries.length) return res.status(400).json({ success: false, message: 'Attendance date and entries are required' });
+    for (const entry of entries) {
+      await query(`INSERT INTO student_attendance (teacher_id, student_id, class_name, attendance_date, status) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status)`, [req.user.id, entry.studentId, entry.className, attendanceDate, entry.status]);
+    }
+    res.json({ success: true, message: `Saved ${entries.length} attendance records` });
+  } catch (error) {
+    console.error('Student attendance error:', error);
+    res.status(500).json({ success: false, message: 'Could not save student attendance' });
+  }
+}
+
+async function saveLessonAttendance(req, res) {
+  try {
+    const attendanceDate = String(req.body.attendanceDate || '').trim();
+    const status = String(req.body.status || 'present');
+    await query(`INSERT INTO teacher_lesson_attendance (teacher_id, attendance_date, status, notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status), notes = VALUES(notes)`, [req.user.id, attendanceDate, status, req.body.notes || null]);
+    res.json({ success: true, message: 'Lesson attendance saved' });
+  } catch (error) {
+    console.error('Lesson attendance error:', error);
+    res.status(500).json({ success: false, message: 'Could not save lesson attendance' });
+  }
+}
+
 // New: Average score per form (Form 1..4) for charting
 async function formAverages(req, res) {
   try {
@@ -401,6 +464,14 @@ async function createDoc(req, res) {
     const file = req.file;
     if (!file) return res.status(400).json({ success: false, message: 'File is required' });
     const body = req.body;
+    if (['lecturer', 'teacher'].includes(req.user?.role)) {
+      const assignmentRows = await query(
+        `SELECT id FROM teacher_assignments
+         WHERE teacher_id = ? AND class_name = ? AND subject = ? AND academic_year = ? AND active = 1 LIMIT 1`,
+        [req.user.id, body.class_name || body.className, body.subject, Number(body.academicYear || new Date().getFullYear())]
+      );
+      if (!assignmentRows.length) return res.status(403).json({ success: false, message: 'You can only upload notes for assigned classes and subjects' });
+    }
     const result = await query(
       `INSERT INTO academic_documents
        (title, type, subject, class_name, topic, category, description, filename, original_name, mime_type, file_size, due_date, uploaded_by)
@@ -524,6 +595,9 @@ module.exports = {
   listEntryStudents,
   saveEntryResults,
   academicDashboard,
+  teacherDashboard,
+  saveStudentAttendance,
+  saveLessonAttendance,
   formAverages,
   createDoc,
   updateDoc,

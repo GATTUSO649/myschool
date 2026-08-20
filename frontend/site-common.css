@@ -691,6 +691,140 @@ body.student-portal .dashboard-main {
   border-radius: 16px;
 }
 
+/* Responsive foundation: keep page-level components inside their parent. */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+  font-size: clamp(0.95rem, 0.25vw + 0.9rem, 1.05rem);
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+.sidebar-link,
+.logout-button,
+.mobile-sidebar-toggle,
+.quick-links a,
+.auth-button,
+.primary-link,
+.btn,
+.panel-link {
+  min-height: 44px;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.65);
+  outline-offset: 2px;
+}
+
+.dashboard-header,
+.header-content,
+.student-shell,
+.dashboard-main,
+.student-main-content,
+.profile-main,
+.page-container,
+.hero-panel,
+.dashboard-grid,
+.stats-grid,
+.dashboard-panel,
+.section-card,
+.page-card,
+.panel-header,
+.form-row,
+.form-grid {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-main,
+.student-main-content,
+.profile-main,
+.page-container {
+  width: 100%;
+}
+
+.table-wrapper,
+.record-table-wrapper,
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper > table,
+.record-table-wrapper > table,
+.table-container > table {
+  min-width: 640px;
+}
+
+body.student-portal .dashboard-header {
+  height: var(--header-height);
+  min-height: var(--header-height);
+}
+
+body.student-portal .dashboard-main,
+body.student-portal .student-main-content,
+body.student-portal .profile-main {
+  min-height: calc(100dvh - var(--header-height));
+}
+
+body.student-portal .hero-panel,
+body.student-portal .welcome-card,
+body.student-portal .finance-strip,
+body.student-portal .dashboard-panel,
+body.student-portal .section-card,
+body.student-portal .page-card,
+body.student-portal .stat-card {
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+
+body.student-portal .hero-panel h1,
+body.student-portal .hero-panel p,
+body.student-portal .school-name,
+body.student-portal .header-note,
+body.student-portal .header-pill {
+  overflow-wrap: anywhere;
+}
+
+.mobile-sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 1080px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -827,6 +961,273 @@ body.student-portal .dashboard-main {
   .notes-page-header,
   .subject-tile {
     padding: 16px;
+  }
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --sidebar-width: 280px;
+    --header-height: 72px;
+  }
+
+  body.student-portal .dashboard-header {
+    height: var(--header-height);
+    min-height: var(--header-height);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  body.student-portal .header-content {
+    min-height: var(--header-height);
+    padding: 0 16px;
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+
+  body.student-portal .header-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.student-portal .brand-bar {
+    min-width: 0;
+    gap: 2px;
+  }
+
+  body.student-portal .school-name {
+    font-size: clamp(0.78rem, 3.5vw, 1.05rem);
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  body.student-portal .header-note {
+    font-size: 0.76rem;
+    line-height: 1.2;
+  }
+
+  body.student-portal .header-actions {
+    flex: 0 0 auto;
+    width: auto;
+    margin-left: 0;
+  }
+
+  body.student-portal .header-pill {
+    display: none;
+  }
+
+  body.student-portal .logout-button {
+    min-width: 44px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  body.student-portal .mobile-sidebar-toggle {
+    display: inline-flex;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  body.student-portal .student-sidebar {
+    top: 0;
+    bottom: auto;
+    width: min(300px, 85vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    z-index: 2100;
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  body.student-portal .student-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  body.student-portal .dashboard-main,
+  body.student-portal .student-main-content,
+  body.student-portal .profile-main {
+    margin-left: 0;
+    width: 100%;
+    padding: calc(var(--header-height) + 16px) 20px 24px;
+  }
+
+  .mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2050;
+    display: block;
+    border: 0;
+    background: rgba(2, 12, 27, 0.56);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .mobile-sidebar-backdrop.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.student-portal .hero-panel,
+  body.student-portal .academic-hero,
+  body.student-portal .finance-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  body.student-portal .hero-details {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.student-portal .dashboard-grid,
+  body.student-portal .dashboard-grid.secondary,
+  body.student-portal .academic-panels,
+  body.student-portal .academic-charts,
+  body.student-portal .finance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.student-portal .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.student-portal .results-filter-panel,
+  body.student-portal .transcript-filter-header,
+  body.student-portal .transcript-filter-panel {
+    min-width: 0;
+  }
+
+  body.student-portal .results-filters,
+  body.student-portal .transcript-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --header-height: 68px;
+  }
+
+  body.student-portal {
+    background-attachment: scroll;
+  }
+
+  body.student-portal .header-content {
+    padding-inline: 12px;
+  }
+
+  body.student-portal .dashboard-main,
+  body.student-portal .student-main-content,
+  body.student-portal .profile-main {
+    padding: calc(var(--header-height) + 12px) 16px 20px;
+    gap: 16px;
+  }
+
+  body.student-portal .hero-panel,
+  body.student-portal .welcome-card,
+  body.student-portal .dashboard-panel,
+  body.student-portal .section-card,
+  body.student-portal .page-card,
+  body.student-portal .notes-page-header,
+  body.student-portal .subject-tile {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  body.student-portal .hero-panel h1,
+  body.student-portal .academic-hero h1,
+  body.student-portal h1 {
+    font-size: clamp(1.55rem, 7vw, 2.2rem);
+    line-height: 1.15;
+  }
+
+  body.student-portal h2 {
+    font-size: clamp(1.25rem, 5vw, 1.8rem);
+  }
+
+  body.student-portal .dashboard-grid,
+  body.student-portal .dashboard-grid.secondary,
+  body.student-portal .academic-panels,
+  body.student-portal .academic-charts,
+  body.student-portal .finance-grid,
+  body.student-portal .stats-grid,
+  body.student-portal .summary-grid,
+  body.student-portal .transcript-metrics {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  body.student-portal .hero-details,
+  body.student-portal .results-filters,
+  body.student-portal .transcript-filters {
+    grid-template-columns: 1fr;
+  }
+
+  body.student-portal .chart-wrapper {
+    height: 240px;
+    min-height: 0;
+  }
+
+  body.student-portal .panel-header,
+  body.student-portal .transcript-card-content,
+  body.student-portal .finance-document-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  body.student-portal .panel-header .panel-pill,
+  body.student-portal .panel-header .btn,
+  body.student-portal .panel-header .panel-link {
+    align-self: flex-start;
+  }
+
+  body.student-portal .quick-links a,
+  body.student-portal .btn,
+  body.student-portal .results-search-button,
+  body.student-portal .transcript-filters button {
+    width: 100%;
+  }
+
+  .auth-shell {
+    min-height: 100svh;
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .site-footer,
+  .dashboard-footer {
+    padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 380px) {
+  body.student-portal .dashboard-main,
+  body.student-portal .student-main-content,
+  body.student-portal .profile-main {
+    padding-inline: 12px;
+  }
+
+  body.student-portal .hero-panel,
+  body.student-portal .welcome-card,
+  body.student-portal .dashboard-panel,
+  body.student-portal .section-card,
+  body.student-portal .page-card {
+    padding: 16px;
+  }
+
+  body.student-portal .school-name {
+    font-size: 0.78rem;
   }
 }
 

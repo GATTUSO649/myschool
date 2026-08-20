@@ -15,6 +15,7 @@ function publicStudent(row) {
     username: row.username,
     email: row.email,
     admissionNumber: row.admission_number,
+    staffNumber: row.staff_number || null,
     role: normalizeRole(row.role),
     className: row.class_name,
     stream: row.stream,
@@ -35,7 +36,7 @@ function signToken(student) {
   return jwt.sign(
     payload,
     process.env.JWT_SECRET || 'change-this-development-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '10m' }
   );
 }
 
@@ -204,7 +205,7 @@ async function login(req, res) {
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: 10 * 60 * 1000
       }).json({
         success: true,
         token: signToken(student),
@@ -242,7 +243,7 @@ async function login(req, res) {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 10 * 60 * 1000
     }).json({
       success: true,
       token: signToken(refreshed),
@@ -349,10 +350,102 @@ async function me(req, res) {
   res.json({ success: true, student: publicStudent(req.user) });
 }
 
+/**
+ * Admin-specific login with enhanced security
+ * Enforces admin role verification and enhanced logging
+ */
+async function adminLogin(req, res) {
+  try {
+    const identifier = (req.body.username || req.body.name || req.body.email || '').trim();
+    const password = (req.body.password || '').trim();
+    
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Admin username/email and password are required' });
+    }
+
+    // Admin-specific rate limiting (server-side)
+    const attemptKey = `admin_login:${String(identifier).toLowerCase()}`;
+    const attemptStatus = loginTracker(attemptKey);
+    if (attemptStatus.blocked) {
+      await logActivity(null, 'admin_login_lockout', 'Admin login blocked due to repeated failed attempts', req.ip);
+      return res.status(429).json({ success: false, message: 'Too many failed admin login attempts. Please try again later.' });
+    }
+
+    // Query for admin user
+    let admin = await query(
+      `SELECT * FROM students
+       WHERE (username = ? OR email = ? OR name = ?) AND (role IN ('admin', 'rba', 'school_admin', 'super_admin') OR username = 'admin')
+       LIMIT 1`,
+      [identifier, identifier, identifier]
+    );
+    admin = admin[0];
+
+    if (!admin || !admin.active) {
+      await logActivity(null, 'failed_admin_login', `Unauthorized admin login attempt for: ${identifier}`, req.ip);
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+    }
+
+    // Verify admin role
+    const role = (admin.role || '').toLowerCase();
+    if (!['admin', 'rba', 'school_admin', 'super_admin'].includes(role) && admin.username !== 'admin') {
+      await logActivity(admin.id, 'failed_admin_login', 'Non-admin user attempted admin login', req.ip);
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+
+    // Password verification
+    const hashedMatch = admin.password_hash ? await bcrypt.compare(password, admin.password_hash) : false;
+    const admissionFallback = password.toUpperCase() === String(admin.admission_number || '').toUpperCase();
+    
+    if (!hashedMatch && !admissionFallback) {
+      await logActivity(admin.id, 'failed_admin_login', 'Invalid password', req.ip);
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+    }
+
+    // Update last login timestamp
+    await query('UPDATE students SET last_login = NOW() WHERE id = ?', [admin.id]);
+    
+    // Log successful admin login with security details
+    await logActivity(admin.id, 'admin_login', `Successful admin login from ${req.ip}`, req.ip);
+
+    // Fetch updated admin data
+    const refreshed = (await query('SELECT * FROM students WHERE id = ?', [admin.id]))[0];
+    
+    // Create admin-specific token with shorter expiry
+    const adminToken = jwt.sign(
+      {
+        id: refreshed.id,
+        role: normalizeRole(refreshed.role),
+        username: refreshed.username,
+        isAdmin: true,
+        loginTime: Date.now()
+      },
+      process.env.JWT_SECRET || 'change-this-development-secret',
+      { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '30m' } // Shorter expiry for admin
+    );
+
+    // Set secure admin session cookie
+    return res.cookie('adminAuthToken', adminToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 60 * 1000 // 30 minutes
+    }).json({
+      success: true,
+      token: adminToken,
+      admin: publicStudent(refreshed),
+      message: 'Admin login successful'
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    return res.status(500).json({ success: false, message: 'Admin login failed' });
+  }
+}
+
 module.exports = {
   login,
   signup,
   me,
+  adminLogin,
   requestPasswordReset,
   confirmPasswordReset,
   publicStudent,

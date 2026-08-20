@@ -425,6 +425,86 @@ async function runDatabaseQuery(req, res) {
   res.json({ success: true, rows: Array.isArray(rows) ? rows.slice(0, 200) : rows });
 }
 
+async function getTeachersWithAssignments(req, res) {
+  try {
+    const teachers = await query(
+      `SELECT id, name, username, email, staff_number AS staffNumber, role, active
+       FROM students WHERE role = 'lecturer' ORDER BY name`
+    );
+    const assignments = await query(
+      `SELECT teacher_id AS teacherId, class_name AS className, subject, academic_year AS academicYear
+       FROM teacher_assignments WHERE active = 1 ORDER BY class_name, subject`
+    );
+    teachers.forEach((teacher) => {
+      teacher.assignments = assignments.filter((assignment) => assignment.teacherId === teacher.id);
+    });
+    res.json({ success: true, teachers });
+  } catch (error) {
+    console.error('Error getting teacher assignments:', error);
+    res.status(500).json({ success: false, message: 'Could not load teacher roles' });
+  }
+}
+
+async function createTeacherWithAssignments(req, res) {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim() || null;
+    const subject = String(req.body.subject || '').trim();
+    const classes = Array.isArray(req.body.classes) ? req.body.classes : [];
+    const academicYear = Number(req.body.academicYear || new Date().getFullYear());
+    if (!name || !subject || !classes.length) {
+      return res.status(400).json({ success: false, message: 'Name, subject, and at least one class are required' });
+    }
+
+    const year = new Date().getFullYear();
+    const nextRows = await query(
+      `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(staff_number, '/', 2), '/', -1) AS UNSIGNED)), 0) + 1 AS nextNumber
+       FROM students WHERE staff_number LIKE ?`, [`TC/%/${year}`]
+    );
+    const staffNumber = `TC/${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}/${year}`;
+    const passwordHash = await bcrypt.hash(staffNumber, 10);
+    const result = await query(
+      `INSERT INTO students (name, username, email, password_hash, role, subject, staff_number, active)
+       VALUES (?, ?, ?, ?, 'lecturer', ?, ?, 1)`,
+      [name, staffNumber, email, passwordHash, subject, staffNumber]
+    );
+    for (const className of classes) {
+      await query(
+        `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
+         VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
+        [result.insertId, String(className), subject, academicYear]
+      );
+    }
+    res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, initialPassword: staffNumber, subject, classes } });
+  } catch (error) {
+    console.error('Error creating teacher:', error);
+    res.status(500).json({ success: false, message: 'Could not create teacher role' });
+  }
+}
+
+async function updateTeacherAssignments(req, res) {
+  try {
+    const teacherId = Number(req.params.teacherId);
+    const subject = String(req.body.subject || '').trim();
+    const classes = Array.isArray(req.body.classes) ? req.body.classes : [];
+    const academicYear = Number(req.body.academicYear || new Date().getFullYear());
+    if (!teacherId || !subject || !classes.length) return res.status(400).json({ success: false, message: 'Subject and classes are required' });
+    await query('UPDATE teacher_assignments SET active = 0 WHERE teacher_id = ? AND academic_year = ?', [teacherId, academicYear]);
+    for (const className of classes) {
+      await query(
+        `INSERT INTO teacher_assignments (teacher_id, class_name, subject, academic_year)
+         VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE active = 1`,
+        [teacherId, String(className), subject, academicYear]
+      );
+    }
+    await query('UPDATE students SET subject = ? WHERE id = ?', [subject, teacherId]);
+    res.json({ success: true, message: 'Teacher assignments updated' });
+  } catch (error) {
+    console.error('Error updating teacher assignments:', error);
+    res.status(500).json({ success: false, message: 'Could not update teacher assignments' });
+  }
+}
+
 module.exports = {
   getStats,
   getStudents,
@@ -441,4 +521,7 @@ module.exports = {
   createDatabaseRecord,
   updateDatabaseRecord,
   deleteDatabaseRecord
+  ,getTeachersWithAssignments
+  ,createTeacherWithAssignments
+  ,updateTeacherAssignments
 };

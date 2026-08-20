@@ -7,9 +7,12 @@ const { documentsUpload } = require('../middleware/uploadMiddleware');
 const router = express.Router();
 
 router.get('/docs', authMiddleware, controller.listDocs);
-router.get('/entry/students', authMiddleware, authorizeRole(['lecturer', 'admin', 'rba']), controller.listEntryStudents);
-router.post('/entry/results', authMiddleware, authorizeRole(['lecturer', 'admin', 'rba']), controller.saveEntryResults);
+router.get('/entry/students', authMiddleware, authorizeRole(['lecturer', 'teacher', 'admin', 'rba']), controller.listEntryStudents);
+router.post('/entry/results', authMiddleware, authorizeRole(['lecturer', 'teacher', 'admin', 'rba']), controller.saveEntryResults);
 router.get('/dashboard', authMiddleware, controller.academicDashboard);
+router.get('/teacher/dashboard', authMiddleware, authorizeRole(['teacher']), controller.teacherDashboard);
+router.post('/teacher/student-attendance', authMiddleware, authorizeRole(['teacher']), controller.saveStudentAttendance);
+router.post('/teacher/lesson-attendance', authMiddleware, authorizeRole(['teacher']), controller.saveLessonAttendance);
 router.get('/form-averages', authMiddleware, controller.formAverages);
 router.get('/transcript', authMiddleware, controller.getStudentTranscript);
 router.post('/docs', authMiddleware, documentsUpload.single('file'), controller.createDoc);

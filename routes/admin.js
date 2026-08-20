@@ -13,6 +13,9 @@ router.get('/security-dashboard', authMiddleware, authorizeRole(['admin', 'rba']
 router.post('/password-reset/request', authMiddleware, authorizeRole(['admin', 'rba']), authController.requestPasswordReset);
 router.post('/password-reset/direct', authMiddleware, authorizeRole(['admin', 'rba']), controller.resetStudentPassword);
 router.get('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.getStudents);
+router.get('/roles/teachers', authMiddleware, authorizeRole(['admin', 'rba']), controller.getTeachersWithAssignments);
+router.post('/roles/teachers', authMiddleware, authorizeRole(['admin', 'rba']), controller.createTeacherWithAssignments);
+router.put('/roles/teachers/:teacherId/assignments', authMiddleware, authorizeRole(['admin', 'rba']), controller.updateTeacherAssignments);
 router.post('/students', authMiddleware, authorizeRole(['admin', 'rba']), controller.createStudent);
 router.put('/students/:studentId/deactivate', authMiddleware, authorizeRole(['admin', 'rba']), controller.deactivateStudent);
 router.get('/settings/public', controller.getPublicSettings);
