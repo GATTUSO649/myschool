@@ -87,6 +87,26 @@ async function runMigrations() {
   `);
 
   await getPool().query(`
+    CREATE TABLE IF NOT EXISTS email_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      application_id INT NULL,
+      recipient VARCHAR(255) NOT NULL,
+      email_type VARCHAR(80) NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      status ENUM('PENDING','SENT','FAILED') NOT NULL DEFAULT 'PENDING',
+      failure_reason VARCHAR(255) NULL,
+      triggered_by INT NULL,
+      sent_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_email_logs_status (status),
+      INDEX idx_email_logs_type (email_type),
+      INDEX idx_email_logs_application (application_id),
+      CONSTRAINT fk_email_logs_app FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
+      CONSTRAINT fk_email_logs_trigger FOREIGN KEY (triggered_by) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+
+  await getPool().query(`
     CREATE TABLE IF NOT EXISTS ict_permissions (
       id INT AUTO_INCREMENT PRIMARY KEY,
       role VARCHAR(40) NOT NULL,

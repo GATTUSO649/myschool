@@ -39,14 +39,14 @@ let trustProxyValue = false;
 if (typeof process.env.TRUST_PROXY !== 'undefined' && process.env.TRUST_PROXY !== '') {
   const raw = String(process.env.TRUST_PROXY).trim();
   if (raw.toLowerCase() === 'true') {
-    trustProxyValue = 'loopback';
+    trustProxyValue = 1;
   } else if (/^\d+$/.test(raw)) {
     trustProxyValue = Number(raw);
   } else {
-    trustProxyValue = raw; // allow 'loopback', 'uniquelocal', IP, cidr, etc.
+    trustProxyValue = raw;
   }
 } else if (process.env.RENDER || isProduction) {
-  trustProxyValue = 'loopback';
+  trustProxyValue = 1;
 }
 app.set('trust proxy', trustProxyValue);
 console.log('Express trust proxy set to', trustProxyValue);
