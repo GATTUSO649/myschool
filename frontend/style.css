@@ -466,4 +466,15 @@ body.landing-page .landing-footer { padding: 22px 0 0; background: var(--landing
   .landing-hero .landing-access { bottom: 12px; }
 }
 
+@media (min-width: 561px) and (max-width: 760px) {
+  body.landing-page:not(.public-page) .landing-menu-toggle { display:none; }
+  body.landing-page:not(.public-page) .landing-nav { position:static; display:flex; flex-direction:row; align-items:center; gap:12px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+  body.landing-page:not(.public-page) .landing-nav a { padding:0; font-size:.62rem; }
+  body.landing-page:not(.public-page) .landing-nav-login { margin-top:0; padding:8px 10px !important; }
+  body.landing-page:not(.public-page) .landing-header-inner { width:min(100% - 32px,1000px); }
+  body.landing-page:not(.public-page) .landing-brand strong { font-size:.9rem; }
+  body.landing-page:not(.public-page) .landing-brand small { font-size:.48rem; }
+  body.landing-page:not(.public-page) .landing-footer-grid { width:min(100% - 204px,870px); grid-template-columns:1.4fr 1fr 1.25fr; gap:22px; }
+}
+
 

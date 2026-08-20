@@ -7,164 +7,116 @@
   <script src="config.js"></script>
   <link rel="stylesheet" href="site-common.css">
   <style>
-    * { box-sizing: border-box; }
-    .application-shell {
-      min-height: 100vh;
-      padding: 40px 18px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      background: rgba(5, 18, 35, 0.38);
-    }
-    .application-card {
-      width: min(980px, 100%);
-      background: rgba(255, 255, 255, 0.97);
-      border-radius: 8px;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
-      overflow: hidden;
-    }
-    .application-header {
-      background: #1a3a52;
-      color: #fff;
-      padding: 26px 30px;
-    }
-    .application-header h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      color: #05cdab;
-      font-family: Georgia, "Times New Roman", Times, serif;
-    }
-    .application-header p {
-      margin: 8px 0 0;
-      color: #e6efe8;
-    }
-    form { padding: 28px 30px 32px; }
-    .form-section {
-      margin-bottom: 26px;
-      padding-bottom: 22px;
-      border-bottom: 1px solid #e4e9ef;
-    }
-    .form-section h2 {
-      margin: 0 0 16px;
-      font-size: 1.05rem;
-      color: #1a3a52;
-    }
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .form-group { margin-bottom: 16px; }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 700;
-      color: #24364a;
-    }
-    input, select, textarea {
-      width: 100%;
-      border: 1px solid #ced7e0;
-      border-radius: 6px;
-      padding: 11px 12px;
-      font: inherit;
-      background: #fff;
-    }
-    textarea { resize: vertical; }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #1565c0;
-      box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
-    }
-    .form-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .btn {
-      border: 0;
-      border-radius: 6px;
-      padding: 12px 18px;
-      font-weight: 800;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-primary {
-      background: linear-gradient(90deg, #1565c0 0%, #1a237e 100%);
-      color: #fff;
-    }
-    .btn-secondary {
-      background: #edf2f7;
-      color: #1a3a52;
-    }
-    .application-status {
-      margin-top: 18px;
-      border-radius: 6px;
-      padding: 13px 14px;
-      display: none;
-      font-weight: 700;
-    }
-    .application-status.success {
-      display: block;
-      background: #e8f5e9;
-      color: #1b5e20;
-    }
-    .application-status.error {
-      display: block;
-      background: #ffebee;
-      color: #b71c1c;
-    }
-    .submission-card {
-      margin-top: 18px;
-      padding: 24px;
-      border-radius: 12px;
-      background: rgba(5, 68, 109, 0.08);
-      border: 1px solid rgba(21, 101, 192, 0.14);
-      color: #0b2440;
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-    }
-    .submission-card.hidden {
-      display: none;
-    }
-    .submission-card h3 {
-      margin-top: 0;
-      color: #064a7a;
-    }
-    .submission-card p {
-      margin: 12px 0 0;
-      line-height: 1.6;
-      color: #1b3d60;
-    }
-    @media (max-width: 720px) {
-      .form-row { grid-template-columns: 1fr; }
-      form { padding: 22px 18px 26px; }
-      .application-header { padding: 22px 18px; }
+    :root { --application-navy:#061d48; --application-blue:#1953c8; --application-pale:#eaf2ff; --application-ink:#102853; --application-muted:#5d6e87; }
+    * { box-sizing:border-box; }
+    body.application-page { margin:0; color:var(--application-ink); background:#f4f7fc; font-family:"Segoe UI",Arial,sans-serif; }
+    .application-page .landing-header { height:74px; background:var(--application-navy); }
+    .application-page .landing-header-inner { width:min(100% - 72px,1000px); min-height:74px; }
+    .application-page .landing-brand { gap:9px; line-height:1; }
+    .application-page .landing-brand-mark { width:43px; height:51px; border:2px solid #fff; border-radius:48% 48% 45% 45%; clip-path:polygon(50% 0,100% 12%,94% 63%,76% 86%,50% 100%,24% 86%,6% 63%,0 12%); font-family:Georgia,serif; }
+    .application-page .landing-brand-mark span { font-size:1.55rem; }
+    .application-page .landing-brand strong { display:block; color:#fff; font-family:Georgia,serif; font-size:1.1rem; letter-spacing:.02em; }
+    .application-page .landing-brand small { display:block; margin-top:4px; color:#fff; font-family:Georgia,serif; font-size:.55rem; font-style:italic; }
+    .application-page .landing-nav { display:flex; align-items:center; gap:28px; }
+    .application-page .landing-nav a { color:#fff; font-size:.74rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+    .application-page .landing-nav-login { padding:9px 13px; border:1px solid rgba(255,255,255,.7); border-radius:14px; }
+    .application-page .landing-menu-toggle { display:none; }
+    .application-shell { min-height:calc(100vh - 74px); padding:16px 8vw 28px; display:flex; justify-content:center; align-items:flex-start; background:#f4f7fc; }
+    .application-card { width:min(900px,100%); background:#fff; border-radius:8px; box-shadow:0 8px 22px rgba(16,40,83,.08); overflow:hidden; }
+    .application-header { position:relative; min-height:80px; padding:18px 28px 17px; color:#fff; background:linear-gradient(150deg,#061d48 0%,#0a2d68 100%); }
+    .application-header h1 { margin:0; color:#fff; font-size:1.35rem; font-weight:800; }
+    .application-header p { margin:5px 0 0; color:#e3ecff; font-size:.78rem; }
+    .application-year { position:absolute; top:13px; right:20px; padding:7px 13px; border:1px solid rgba(255,255,255,.28); border-radius:5px; color:#dce7ff; text-align:center; font-size:.62rem; }
+    .application-year strong { display:block; color:#fff; font-size:1.05rem; }
+    .application-progress { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:14px 28px 13px; border-bottom:1px solid #e0e7f1; background:#fff; }
+    .progress-step { position:relative; text-align:center; color:#5e6e87; font-size:.62rem; }
+    .progress-step::before { content:""; position:absolute; top:10px; right:calc(50% + 11px); left:calc(-50% + 11px); height:2px; background:#d8e2f3; }
+    .progress-step:first-child::before { display:none; }
+    .progress-step strong { position:relative; z-index:1; display:grid; place-items:center; width:20px; height:20px; margin:0 auto 5px; border-radius:50%; background:#e5edf9; color:#23385c; font-size:.67rem; }
+    .progress-step:first-child strong { background:var(--application-blue); color:#fff; }
+    .progress-step:first-child { color:var(--application-navy); font-weight:700; }
+    form { counter-reset:application-section; padding:14px 20px 22px; }
+    .form-section { margin-bottom:17px; padding:0 10px 2px; }
+    .form-section h2 { display:flex; align-items:center; gap:7px; min-height:28px; margin:0 -1px 10px; padding:5px 8px; border-radius:5px; background:var(--application-pale); color:var(--application-navy); font-size:.78rem; }
+    .form-section h2::before { display:grid; place-items:center; width:17px; height:17px; border-radius:50%; background:var(--application-navy); color:#fff; content:counter(application-section); counter-increment:application-section; font-size:.63rem; }
+    .form-section h2 span { margin-left:auto; color:#6b7b93; font-size:.57rem; font-weight:400; }
+    .form-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+    .form-group { margin-bottom:10px; }
+    label { display:block; margin-bottom:4px; color:#172b50; font-size:.66rem; font-weight:700; }
+    .required-marker { color:#d32642; }
+    input,select,textarea { width:100%; min-height:31px; border:1px solid #d3ddea; border-radius:5px; padding:7px 9px; color:#2f4263; font-size:.65rem; background:#fff; }
+    textarea { min-height:62px; resize:vertical; }
+    input:focus,select:focus,textarea:focus { outline:none; border-color:#1953c8; box-shadow:0 0 0 3px rgba(25,83,200,.1); }
+    .application-note { margin:2px 10px 15px; padding:10px 12px; border-left:3px solid #1953c8; border-radius:3px; background:#eef4ff; color:#17356f; font-size:.62rem; line-height:1.45; }
+    .form-actions { display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+    .btn { min-width:130px; min-height:31px; border:0; border-radius:5px; padding:8px 15px; font-size:.66rem; font-weight:800; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+    .btn-primary { background:linear-gradient(90deg,#1953c8 0%,#0d3cac 100%); color:#fff; }
+    .btn-secondary { background:#fff; color:#183979; border:1px solid #1953c8; }
+    .application-status { display:none; margin:12px 10px 0; padding:10px 12px; border-radius:6px; font-weight:700; }
+    .application-status.success { display:block; background:#e8f5e9; color:#1b5e20; }
+    .application-status.error { display:block; background:#ffebee; color:#b71c1c; }
+    .submission-card { margin:12px 10px 0; padding:18px; border-radius:8px; background:#eef5ff; border:1px solid #d7e5fb; color:#0b2440; }
+    .submission-card.hidden { display:none; }
+    .submission-card h3 { margin-top:0; color:#064a7a; }
+    .submission-card p { margin:8px 0 0; line-height:1.6; color:#1b3d60; }
+    .application-footer { padding:18px 0 10px; background:linear-gradient(135deg,#03183f 0%,#061d48 58%,#08275c 100%); color:#dce7ff; }
+    .application-footer-inner { width:min(100% - 72px,900px); margin:0 auto; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:24px; }
+    .application-footer-brand { display:flex; align-items:center; gap:9px; }
+    .application-footer-mark { display:grid; place-items:center; width:31px; height:38px; border:1px solid #fff; border-radius:48% 48% 45% 45%; clip-path:polygon(50% 0,100% 12%,94% 63%,76% 86%,50% 100%,24% 86%,6% 63%,0 12%); font-family:Georgia,serif; font-size:1rem; }
+    .application-footer strong { color:#fff; font-family:Georgia,serif; font-size:.88rem; }
+    .application-footer h2 { margin:0 0 5px; color:#fff; font-size:.68rem; }
+    .application-footer p { margin:3px 0 0; font-size:.59rem; line-height:1.5; }
+    .application-footer a { color:#dce7ff; text-decoration:none; }
+    .application-footer-links { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+    .application-footer-bottom { margin-top:12px; padding-top:7px; border-top:1px solid rgba(255,255,255,.14); text-align:center; font-size:.57rem; }
+    @media (max-width:560px) {
+      .form-row { grid-template-columns:1fr; }
+      .application-page .landing-header,.application-page .landing-header-inner { height:66px; min-height:66px; }
+      .application-page .landing-menu-toggle { display:inline-flex; flex-direction:column; justify-content:center; gap:4px; width:42px; padding:8px; border:1px solid rgba(255,255,255,.4); background:transparent; }
+      .application-page .landing-menu-toggle span { display:block; height:2px; background:#fff; }
+      .application-page .landing-nav { position:absolute; top:66px; left:16px; right:16px; display:none; flex-direction:column; align-items:stretch; gap:0; padding:10px; border-radius:8px; background:#0a2853; z-index:20; }
+      .application-page .landing-nav.is-open { display:flex; }
+      .application-page .landing-nav a { padding:12px 10px; }
+      .application-shell { min-height:calc(100vh - 66px); padding:10px 8px 18px; }
+      .application-header { padding:16px 16px 15px; }
+      .application-header h1 { padding-right:72px; font-size:1.08rem; }
+      .application-year { right:12px; }
+      .application-progress { padding:12px 8px; }
+      form { padding:12px 8px 18px; }
+      .form-section { padding-right:2px; padding-left:2px; }
+      .form-row { gap:0; }
+      .application-footer-inner { width:min(100% - 32px,560px); grid-template-columns:1fr; gap:12px; }
     }
   </style>
   <link rel="stylesheet" href="responsive.css">
 </head>
-<body>
+<body class="application-page">
+  <header class="landing-header">
+    <div class="landing-container landing-header-inner">
+      <a class="landing-brand" href="index.html" aria-label="CRESENT High School home"><span class="landing-brand-mark" aria-hidden="true"><span>C</span></span><span><strong>CRESENT</strong><strong>HIGH SCHOOL</strong><small>Excellence. Discipline. Success.</small></span></a>
+      <button class="landing-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <nav class="landing-nav" aria-label="Main navigation"><a href="index.html">Home</a><a href="about.html">About Us</a><a href="academics.html">Academics</a><a class="is-active" href="application.html">Admissions</a><a href="index.html#portal">Student Portal</a><a href="contact.html">Contact Us</a><a class="landing-nav-login" href="login.html">Student Login</a></nav>
+    </div>
+  </header>
   <main class="application-shell">
     <section class="application-card">
       <div class="application-header">
-        <h1><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
-        <p>Student admission application</p>
+        <h1>Student Admission Application</h1>
+        <p>Apply to join CRESENT High School and build your future with us.</p>
+        <div class="application-year">Academic Year<strong>2026</strong></div>
       </div>
+      <div class="application-progress" aria-label="Application progress"><div class="progress-step"><strong>1</strong>Applicant Details</div><div class="progress-step"><strong>2</strong>Parent / Guardian</div><div class="progress-step"><strong>3</strong>Academic Info</div><div class="progress-step"><strong>4</strong>Review &amp; Submit</div></div>
 
       <form id="applicationForm">
         <div class="form-section">
-          <h2>Applicant Profile</h2>
+          <h2>Applicant Profile <span>Tell us about the applicant</span></h2>
           <div class="form-row">
             <div class="form-group">
-              <label for="fullName">Full Name *</label>
-              <input type="text" id="fullName" name="fullName" required>
+              <label for="fullName">Full Name <span class="required-marker">*</span></label>
+              <input type="text" id="fullName" name="fullName" placeholder="Enter full name as in birth certificate" required>
             </div>
             <div class="form-group">
-              <label for="className">Applying For *</label>
+              <label for="className">Applying For <span class="required-marker">*</span></label>
               <select id="className" name="className" required>
                 <option value="">Select Class</option>
                 <option value="Form 1">Form 1</option>
@@ -176,12 +128,12 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="dob">Date of Birth</label>
-              <input type="date" id="dob" name="dob">
+              <label for="dob">Date of Birth <span class="required-marker">*</span></label>
+              <input type="date" id="dob" name="dob" required>
             </div>
             <div class="form-group">
-              <label for="gender">Gender</label>
-              <select id="gender" name="gender">
+              <label for="gender">Gender <span class="required-marker">*</span></label>
+              <select id="gender" name="gender" required>
                 <option value="">Select Gender</option>
                 <option value="Female">Female</option>
                 <option value="Male">Male</option>
@@ -191,64 +143,51 @@
           <div class="form-row">
             <div class="form-group">
               <label for="previousSchool">Previous School</label>
-              <input type="text" id="previousSchool" name="previousSchool">
+              <input type="text" id="previousSchool" name="previousSchool" placeholder="Enter name of previous school">
             </div>
             <div class="form-group">
               <label for="kcpeMarks">KCPE Marks / Previous Score</label>
-              <input type="text" id="kcpeMarks" name="kcpeMarks">
+              <input type="text" id="kcpeMarks" name="kcpeMarks" placeholder="Enter KCPE marks or previous score">
             </div>
           </div>
+        </div>
 
         <div class="form-section">
-          <h2>Parent / Guardian Details</h2>
+          <h2>Parent / Guardian Details <span>Provide parent or guardian information</span></h2>
           <div class="form-row">
             <div class="form-group">
-              <label for="parentName">Parent / Guardian Name *</label>
-              <input type="text" id="parentName" name="parentName" required>
+              <label for="parentName">Parent / Guardian Name <span class="required-marker">*</span></label>
+              <input type="text" id="parentName" name="parentName" placeholder="Enter parent / guardian full name" required>
             </div>
             <div class="form-group">
-              <label for="parentPhone">Parent / Guardian Phone *</label>
-              <input type="tel" id="parentPhone" name="parentPhone" required>
+              <label for="parentPhone">Parent / Guardian Phone <span class="required-marker">*</span></label>
+              <input type="tel" id="parentPhone" name="parentPhone" placeholder="Enter phone number e.g. 0712 345 678" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="parentEmail">Parent Email</label>
-              <input type="email" id="parentEmail" name="parentEmail">
+              <input type="email" id="parentEmail" name="parentEmail" placeholder="Enter parent / guardian email address">
             </div>
             <div class="form-group">
               <label for="address">Home Address</label>
-              <input type="text" id="address" name="address">
+              <input type="text" id="address" name="address" placeholder="Enter home address">
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <h2>Required Documents</h2>
-          <p style="margin:0 0 16px;color:#567;">Upload files from your device or paste a Google Drive link for each document.</p>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="birthCertificate">Birth Certificate</label>
-              <input type="file" id="birthCertificate" name="birthCertificate" accept=".pdf,.jpg,.jpeg,.png">
-              <input type="url" id="birthCertificateUrl" name="birthCertificateUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
-            </div>
-            <div class="form-group">
-              <label for="kcpeCertificate">KCPE Certificate</label>
-              <input type="file" id="kcpeCertificate" name="kcpeCertificate" accept=".pdf,.jpg,.jpeg,.png">
-              <input type="url" id="kcpeCertificateUrl" name="kcpeCertificateUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="medicalForm">Medical Form</label>
-              <input type="file" id="medicalForm" name="medicalForm" accept=".pdf,.jpg,.jpeg,.png">
-              <input type="url" id="medicalFormUrl" name="medicalFormUrl" placeholder="Or paste Google Drive link" style="margin-top:8px;">
-            </div>
+          <h2>Additional Information <span>Any other relevant information</span></h2>
+          <div class="form-group">
+            <label for="additionalInformation">Additional Information (Optional)</label>
+            <textarea id="additionalInformation" name="requirements" placeholder="Enter any additional information (medical details, special needs, etc.)"></textarea>
           </div>
         </div>
 
+        <div class="application-note"><strong>Please note:</strong><br>• Provide accurate and truthful information.<br>• All fields marked with * are required.<br>• You will be notified on the status of your application through the contact details provided.</div>
+
         <div class="form-actions">
-          <a href="index.html" class="btn btn-secondary">Back</a>
+          <a href="index.html" class="btn btn-secondary">&#8592; Back to Home</a>
           <button type="submit" class="btn btn-primary">Submit Application</button>
         </div>
         <div id="applicationStatus" class="application-status"></div>
@@ -256,6 +195,8 @@
       </form>
     </section>
   </main>
+
+  <footer class="application-footer"><div class="application-footer-inner"><div class="application-footer-brand"><span class="application-footer-mark" aria-hidden="true">C</span><span><strong>CRESENT HIGH SCHOOL</strong><p>Excellence. Discipline. Success.</p></span></div><div><h2>Quick Links</h2><div class="application-footer-links"><p><a href="index.html">Home</a><br><a href="about.html">About Us</a><br><a href="academics.html">Academics</a></p><p><a href="application.html">Admissions</a><br><a href="index.html#portal">Student Portal</a><br><a href="contact.html">Contact Us</a></p></div></div><div><h2>Contact Us</h2><p>P.O. Box 1234, Your Town<br>Phone: 0712 345 678<br>Email: info@cresentschool.ac.ke</p></div></div><div class="application-footer-bottom">&copy; 2026 CRESENT High School. All rights reserved.</div></footer>
 
   <script src="application-client.js"></script>
   <script>

@@ -37,7 +37,13 @@ body.public-page {
 .public-contact-card h2 { margin: 0 0 18px; color: var(--public-navy); font-family: Georgia, serif; }
 .public-contact-card p { margin: 0 0 15px; color: var(--public-muted); line-height: 1.7; }
 .public-contact-card a { color: var(--public-blue); font-weight: 700; }
-.public-page .landing-footer { min-height: 0; }
+.public-page .landing-footer { min-height:0; padding:22px 0 0; background:#061d48 !important; color:#dce7ff !important; box-shadow:none !important; text-align:left !important; }
+.public-page .landing-footer-grid { width:min(100% - 204px,870px); grid-template-columns:1.4fr 1fr 1.25fr; gap:22px; padding-bottom:20px; }
+.public-page .landing-footer strong { color:#fff; font-size:1rem; }
+.public-page .landing-footer h2 { color:#fff; font-size:.7rem; }
+.public-page .landing-footer p { font-size:.65rem; line-height:1.45; }
+.public-page .landing-footer a { color:#dce7ff; }
+.public-page .landing-footer-bottom { width:100%; padding:8px 0 9px; color:#a9bfdc; font-size:.65rem; }
 
 @media (max-width: 760px) {
   .public-page .landing-header, .public-page .landing-header-inner { height: 66px; min-height: 66px; }
@@ -46,4 +52,18 @@ body.public-page {
   .public-hero { padding: 46px 0 44px; }
   .public-story-grid, .public-academic-grid, .public-contact-layout { grid-template-columns: 1fr; }
   .public-academic-card img { height: 210px; }
+}
+
+@media (min-width: 561px) and (max-width: 760px) {
+  .public-page .landing-menu-toggle { display:none; }
+  .public-page .landing-nav { position:static; display:flex; flex-direction:row; align-items:center; gap:12px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+  .public-page .landing-nav a { padding:0; font-size:.62rem; }
+  .public-page .landing-nav-login { margin-top:0; padding:8px 10px !important; }
+  .public-page .landing-header-inner { width:min(100% - 32px,1000px); }
+  .public-page .landing-brand strong { font-size:.9rem; }
+  .public-page .landing-brand small { font-size:.48rem; }
+}
+
+@media (max-width: 560px) {
+  .public-page .landing-footer-grid { width:min(100% - 40px,560px); grid-template-columns:1fr; gap:14px; }
 }
