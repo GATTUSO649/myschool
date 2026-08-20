@@ -164,7 +164,7 @@
         if (!response.ok) return null;
         const profile = await response.json();
         if (profile && profile.id) {
-          localStorage.setItem('student', JSON.stringify(profile));
+          sessionStorage.setItem('student', JSON.stringify(profile));
           return profile;
         }
       } catch (err) {

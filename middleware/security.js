@@ -51,8 +51,7 @@ function csrfProtection(req, res, next) {
     return next();
   }
   const hasAuthHeader = Boolean(req.headers.authorization || req.headers['x-auth-token']);
-  const hasAuthCookie = Boolean(req.cookies?.authToken || req.cookies?.token);
-  if (hasAuthHeader || hasAuthCookie) {
+  if (hasAuthHeader) {
     return next();
   }
   return csrfMiddleware(req, res, next);

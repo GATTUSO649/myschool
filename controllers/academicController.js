@@ -201,7 +201,8 @@ async function listEntryStudents(req, res) {
   try {
     const filters = {
       className: req.query.className || req.query.class_name || null,
-      stream: req.query.stream || null
+      stream: req.query.stream || null,
+      subject: req.query.subject || null
     };
     const academicYear = req.query.academicYear || req.query.academic_year || String(new Date().getFullYear());
     const term = req.query.term || 'Term 1';
@@ -213,9 +214,14 @@ async function listEntryStudents(req, res) {
          WHERE teacher_id = ? AND academic_year = ? AND active = 1`,
         [req.user.id, academicYear]
       );
-      const matching = assignments.filter((assignment) => !filters.className || assignment.className.toLowerCase() === String(filters.className).toLowerCase());
+      const matching = assignments.filter((assignment) => {
+        const classMatches = !filters.className || assignment.className.toLowerCase() === String(filters.className).toLowerCase();
+        const subjectMatches = !filters.subject || assignment.subject.toLowerCase() === String(filters.subject).toLowerCase();
+        return classMatches && subjectMatches;
+      });
       if (!matching.length) return res.status(403).json({ success: false, message: 'This class is not assigned to you' });
       filters.className = matching[0].className;
+      filters.subject = matching[0].subject;
     }
 
     const params = [];
@@ -280,20 +286,25 @@ async function saveEntryResults(req, res) {
     const admissionNumber = body.admissionNumber || body.admission_number || null;
 
     if (['lecturer', 'teacher'].includes(req.user?.role)) {
-      if (!req.user.subject) {
-        return res.status(403).json({ success: false, message: 'Lecturer subject is not configured' });
-      }
-      if (!subject) {
-        subject = req.user.subject;
-      } else if (String(subject).trim().toLowerCase() !== String(req.user.subject).trim().toLowerCase()) {
-        return res.status(403).json({ success: false, message: 'Lecturers can only enter results for their assigned subject' });
-      }
+      if (!subject || !className) return res.status(400).json({ success: false, message: 'Assigned class and subject are required' });
       const assignmentRows = await query(
         `SELECT id FROM teacher_assignments
          WHERE teacher_id = ? AND class_name = ? AND subject = ? AND academic_year = ? AND active = 1 LIMIT 1`,
         [req.user.id, className, subject, academicYear]
       );
       if (!assignmentRows.length) return res.status(403).json({ success: false, message: 'This class and subject are not assigned to you' });
+
+      const studentIds = entries.map((entry) => entry.student_id || entry.studentId).filter(Boolean);
+      if (studentIds.length) {
+        const placeholders = studentIds.map(() => '?').join(',');
+        const assignedStudents = await query(
+          `SELECT id FROM students WHERE id IN (${placeholders}) AND role = 'student' AND active = 1 AND class_name = ?`,
+          [...studentIds, className]
+        );
+        if (assignedStudents.length !== new Set(studentIds.map(Number)).size) {
+          return res.status(403).json({ success: false, message: 'One or more students are outside your assigned class' });
+        }
+      }
     }
 
     if (!subject || !entries.length) {
@@ -416,6 +427,16 @@ async function saveStudentAttendance(req, res) {
     const attendanceDate = String(req.body.attendanceDate || '').trim();
     const entries = Array.isArray(req.body.entries) ? req.body.entries : [];
     if (!attendanceDate || !entries.length) return res.status(400).json({ success: false, message: 'Attendance date and entries are required' });
+    if (['lecturer', 'teacher'].includes(req.user?.role)) {
+      const classNames = [...new Set(entries.map((entry) => String(entry.className || '').trim()).filter(Boolean))];
+      if (!classNames.length) return res.status(400).json({ success: false, message: 'Assigned class is required' });
+      const placeholders = classNames.map(() => '?').join(',');
+      const assignments = await query(
+        `SELECT class_name FROM teacher_assignments WHERE teacher_id = ? AND academic_year = ? AND active = 1 AND class_name IN (${placeholders})`,
+        [req.user.id, new Date().getFullYear(), ...classNames]
+      );
+      if (assignments.length !== classNames.length) return res.status(403).json({ success: false, message: 'Attendance is limited to your assigned classes' });
+    }
     for (const entry of entries) {
       await query(`INSERT INTO student_attendance (teacher_id, student_id, class_name, attendance_date, status) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status)`, [req.user.id, entry.studentId, entry.className, attendanceDate, entry.status]);
     }

@@ -73,20 +73,15 @@ if (loginForm) {
           student.adm = student.admission_number;
         }
 
-        // Save token and normalized student data to localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('student', JSON.stringify(student));
-        localStorage.setItem('authSessionExpiresAt', String(Date.now() + 10 * 60 * 1000));
+        // Keep each portal session isolated to its browser tab.
+        sessionStorage.setItem('authToken', data.token);
+        sessionStorage.setItem('student', JSON.stringify(student));
+        sessionStorage.setItem('authSessionExpiresAt', String(Date.now() + 10 * 60 * 1000));
 
-        const expires = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
-        document.cookie = `authToken=${encodeURIComponent(data.token)}; path=/; expires=${expires}; SameSite=Lax`;
-        
-        console.log('✅ Token saved to localStorage');
-        console.log('authToken now =', localStorage.getItem('authToken'));
-        console.log('student now =', localStorage.getItem('student'));
+        console.log('✅ Token saved to sessionStorage');
         
         if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
+          sessionStorage.setItem('rememberMe', 'true');
         }
 
         showAlert('Login successful! Redirecting...', 'success');
@@ -187,7 +182,7 @@ if (registerForm) {
 function checkAuth() {
   const path = window.location.pathname.toLowerCase();
   const adminPage = path.includes('admin-');
-  const token = adminPage ? sessionStorage.getItem('adminAuthToken') : localStorage.getItem('authToken');
+  const token = adminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
   const student = adminPage
     ? JSON.parse(sessionStorage.getItem('adminUser') || 'null')
     : getStudentInfo();
@@ -195,15 +190,15 @@ function checkAuth() {
 
   const sessionExpiresAt = adminPage
     ? Number(sessionStorage.getItem('tokenTimestamp') || 0) + 30 * 60 * 1000
-    : Number(localStorage.getItem('authSessionExpiresAt') || 0);
+    : Number(sessionStorage.getItem('authSessionExpiresAt') || 0);
   if (token && sessionExpiresAt && Date.now() >= sessionExpiresAt) {
     if (adminPage) {
       sessionStorage.clear();
     } else {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('student');
-      localStorage.removeItem('rememberMe');
-      localStorage.removeItem('authSessionExpiresAt');
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('student');
+      sessionStorage.removeItem('rememberMe');
+      sessionStorage.removeItem('authSessionExpiresAt');
     }
     document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     window.location.replace(adminPage ? 'admin-login.html' : 'login.html');
@@ -212,7 +207,8 @@ function checkAuth() {
 
   if (!token) {
     if (!page.includes('login.html') && !page.includes('signup.html')) {
-      window.location.replace(adminPage ? 'admin-login.html' : 'login.html');
+      const teacherPage = page === 'teacher-portal.html' || page === 'lecturer-dashboard.html' || page === 'teacher.html';
+      window.location.replace(adminPage ? 'admin-login.html' : teacherPage ? 'teacher-login.html' : 'login.html');
     }
     return false;
   }
@@ -221,7 +217,7 @@ function checkAuth() {
   const normalizedRole = role === 'rba' || role === 'admin' || role === 'super_admin' || role === 'superadmin' || role === 'school_admin' || role === 'schooladmin' ? 'admin' : role;
 
   const protectedPages = {
-    'dashboard.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+     'dashboard.html': ['student', 'parent'],
     'finance.html': ['finance', 'admin', 'student'],
     'academic.html': ['teacher', 'admin', 'student'],
     'admissions.html': ['admin'],
@@ -240,6 +236,7 @@ function checkAuth() {
     'feestatement.html': ['student', 'finance', 'admin'],
     'feestructure.html': ['student', 'finance', 'admin'],
     'lecturer-dashboard.html': ['teacher', 'admin'],
+    'teacher-portal.html': ['teacher', 'lecturer'],
     'student-transcript.html': ['admin', 'teacher', 'student'],
     'receipt_view.html': ['student', 'finance', 'admin'],
     'notifications.html': ['student', 'teacher', 'admin', 'parent'],
@@ -250,9 +247,14 @@ function checkAuth() {
   };
 
   if (protectedPages[page] && !protectedPages[page].includes(normalizedRole)) {
-    if (normalizedRole === 'admin') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('student');
+    if (page === 'teacher-portal.html' || page === 'teacher-login.html') {
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('student');
+      sessionStorage.removeItem('authSessionExpiresAt');
+      window.location.replace('teacher-login.html');
+    } else if (normalizedRole === 'admin') {
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('student');
       window.location.replace('admin-login.html');
     } else if (normalizedRole === 'teacher') {
       window.location.replace('lecturer-dashboard.html');
@@ -267,7 +269,7 @@ function checkAuth() {
 
 function isAdminPath() {
   const path = window.location.pathname.toLowerCase();
-  return path.includes('admin') || path.includes('login.html') || path.includes('signup.html') || path.endsWith('/') || path.includes('index.html');
+  return path.includes('admin') || path.includes('login.html') || path.includes('teacher-login.html') || path.includes('signup.html') || path.endsWith('/') || path.includes('index.html');
 }
 
 async function enforceMaintenanceMode() {
@@ -292,7 +294,7 @@ async function enforceMaintenanceMode() {
 
 // Get current student info
 function getStudentInfo() {
-  const studentJson = localStorage.getItem('student');
+  const studentJson = sessionStorage.getItem('student');
   return studentJson ? JSON.parse(studentJson) : null;
 }
 
@@ -301,7 +303,52 @@ function getAuthToken() {
   const page = window.location.pathname.toLowerCase();
   return page.includes('admin-')
     ? sessionStorage.getItem('adminAuthToken')
-    : localStorage.getItem('authToken');
+    : sessionStorage.getItem('authToken');
+}
+
+function startInactivityLogout() {
+  const page = window.location.pathname.toLowerCase().split('/').pop();
+  const isAdminPage = page.startsWith('admin-');
+  const isTeacherPage = ['teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html'].includes(page);
+  const token = isAdminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
+  if (!token || window.__inactivityLogoutStarted) return;
+
+  window.__inactivityLogoutStarted = true;
+  const idleLimit = 10 * 60 * 1000;
+  let idleTimer;
+  let lastActivity = 0;
+
+  const redirectTarget = isAdminPage ? 'admin-login.html' : isTeacherPage ? 'teacher-login.html' : 'login.html';
+  const expireSession = () => {
+    if (isAdminPage) {
+      sessionStorage.removeItem('adminAuthToken');
+      sessionStorage.removeItem('adminUser');
+      sessionStorage.removeItem('tokenTimestamp');
+    } else {
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('student');
+      sessionStorage.removeItem('rememberMe');
+      sessionStorage.removeItem('authSessionExpiresAt');
+    }
+    window.location.replace(`${redirectTarget}?reason=idle-timeout`);
+  };
+
+  const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(expireSession, idleLimit);
+  };
+
+  const recordActivity = () => {
+    const now = Date.now();
+    if (now - lastActivity < 1000) return;
+    lastActivity = now;
+    resetIdleTimer();
+  };
+
+  ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach((eventName) => {
+    document.addEventListener(eventName, recordActivity, { passive: true });
+  });
+  resetIdleTimer();
 }
 
 function getCsrfToken() {
@@ -340,10 +387,10 @@ async function fetchWithAuth(endpoint, options = {}) {
         if (window.location.pathname.toLowerCase().includes('admin-')) {
           sessionStorage.clear();
         } else {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('student');
-          localStorage.removeItem('rememberMe');
-          localStorage.removeItem('authSessionExpiresAt');
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('student');
+          sessionStorage.removeItem('rememberMe');
+          sessionStorage.removeItem('authSessionExpiresAt');
         }
         document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       } catch (err) {
@@ -353,7 +400,9 @@ async function fetchWithAuth(endpoint, options = {}) {
       setTimeout(() => {
         try {
           if (!window.location.pathname.toLowerCase().includes('login.html')) {
-            window.location.replace(window.location.pathname.toLowerCase().includes('admin-') ? 'admin-login.html' : 'login.html');
+            const currentPage = window.location.pathname.toLowerCase().split('/').pop();
+            const teacherPage = currentPage === 'teacher-portal.html' || currentPage === 'lecturer-dashboard.html' || currentPage === 'teacher.html';
+            window.location.replace(window.location.pathname.toLowerCase().includes('admin-') ? 'admin-login.html' : teacherPage ? 'teacher-login.html' : 'login.html');
           }
         } catch (e) {
           /* ignore */
@@ -421,14 +470,16 @@ function logout() {
     return;
   }
   
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('student');
-  localStorage.removeItem('rememberMe');
-  localStorage.removeItem('authSessionExpiresAt');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('student');
+  sessionStorage.removeItem('rememberMe');
+  sessionStorage.removeItem('authSessionExpiresAt');
   sessionStorage.clear();
   document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   console.log('localStorage keys cleared for logout');
-  window.location.href = 'login.html';
+  const currentPage = window.location.pathname.toLowerCase().split('/').pop();
+  const teacherPage = currentPage === 'teacher-portal.html' || currentPage === 'lecturer-dashboard.html' || currentPage === 'teacher.html';
+  window.location.href = teacherPage ? 'teacher-login.html' : currentPage.startsWith('admin-') ? 'admin-login.html' : 'login.html';
 }
 
 // Helper: Validate email
@@ -518,7 +569,7 @@ document.head.appendChild(style);
 
 // Auto-login if rememberMe was enabled
 window.addEventListener('load', () => {
-  const token = localStorage.getItem('authToken');
+  const token = sessionStorage.getItem('authToken');
   const student = getStudentInfo();
   const page = window.location.pathname.split('/').pop().toLowerCase();
 
@@ -563,9 +614,9 @@ window.addEventListener('DOMContentLoaded', () => {
   showAdminLink();
   const page = window.location.pathname.split('/').pop().toLowerCase();
   const protectedPages = new Set([
-    'dashboard.html','finance.html','academic.html','academics.html','admissions.html','admin.html','admin-dashboard.html','admin-security.html','teacher.html','student.html','profile.html','settings.html','reports.html','notes.html','transcript.html','subject.html','paymentreceipts.html','feestatement.html','feestructure.html','lecturer-dashboard.html','student-transcript.html','receipt_view.html','notifications.html','calendar.html','clearance-request.html','revision.html','exams.html'
+    'dashboard.html','finance.html','academic.html','academics.html','admissions.html','admin.html','admin-dashboard.html','admin-security.html','teacher.html','teacher-portal.html','student.html','profile.html','settings.html','reports.html','notes.html','transcript.html','subject.html','paymentreceipts.html','feestatement.html','feestructure.html','lecturer-dashboard.html','student-transcript.html','receipt_view.html','notifications.html','calendar.html','clearance-request.html','revision.html','exams.html'
   ]);
   if (protectedPages.has(page)) {
-    checkAuth();
+    if (checkAuth()) startInactivityLogout();
   }
 });

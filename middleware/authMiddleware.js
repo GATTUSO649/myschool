@@ -23,16 +23,7 @@ function getTokenFromRequest(req) {
   if (header.startsWith('Bearer ')) {
     return header.slice(7);
   }
-
-  const cookieHeader = req.headers.cookie || '';
-  const cookies = cookieHeader.split(';').reduce((acc, entry) => {
-    const [name, ...rest] = entry.split('=');
-    if (!name) return acc;
-    acc[name.trim()] = decodeURIComponent(rest.join('='));
-    return acc;
-  }, {});
-
-  return cookies.authToken || cookies.token || req.headers['x-auth-token'] || null;
+  return req.headers['x-auth-token'] || null;
 }
 
 function isHtmlRequest(req) {

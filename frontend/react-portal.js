@@ -156,7 +156,7 @@
     try {
       return typeof getStudentInfo === 'function'
         ? getStudentInfo()
-        : JSON.parse(localStorage.getItem('student') || '{}');
+        : JSON.parse(sessionStorage.getItem('student') || '{}');
     } catch {
       return {};
     }
@@ -164,7 +164,7 @@
 
   async function api(endpoint, options = {}) {
     if (typeof fetchWithAuth === 'function') return fetchWithAuth(endpoint, options);
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     const base = typeof getApiUrl === 'function' ? getApiUrl() : `${window.location.origin}/api`;
     const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.slice(4) : endpoint;
     const isForm = options.body instanceof FormData;

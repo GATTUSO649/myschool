@@ -8,7 +8,7 @@ function getApiUrl(){
   return 'https://cresenthighschool.onrender.com/api';
 }
 function getAuthToken(){
-  return localStorage.getItem('authToken');
+  return sessionStorage.getItem('authToken');
 }
 async function fetchWithAuth(endpoint, options={}){
   const token = getAuthToken();

@@ -5,8 +5,16 @@ const csrf = require('csurf');
 
 const router = express.Router();
 
+const csrfTokenProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
+});
+
 // CSRF token endpoint for secure login
-router.get('/csrf-token', csrf(), (req, res) => {
+router.get('/csrf-token', csrfTokenProtection, (req, res) => {
   res.json({ token: req.csrfToken() });
 });
 

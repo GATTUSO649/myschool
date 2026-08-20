@@ -44,7 +44,7 @@ async function loadStudentProfile() {
     if (!response.ok) return null;
     const profile = await response.json();
     if (profile && profile.id) {
-      localStorage.setItem('student', JSON.stringify(profile));
+      sessionStorage.setItem('student', JSON.stringify(profile));
       return profile;
     }
   } catch (error) {
@@ -393,9 +393,9 @@ async function loadStudentDashboardSummary() {
 
 // Logout function
 function logout() {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('student');
-  localStorage.removeItem('rememberMe');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('student');
+  sessionStorage.removeItem('rememberMe');
   window.location.href = 'login.html';
 }
 

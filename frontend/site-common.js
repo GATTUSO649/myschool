@@ -40,7 +40,7 @@
 
   function getStudentDisplayName() {
     try {
-      const student = JSON.parse(localStorage.getItem('student') || 'null');
+      const student = JSON.parse(sessionStorage.getItem('student') || 'null');
       if (student?.name) return student.name.split(' ')[0];
     } catch (error) {
       // ignore
@@ -210,9 +210,10 @@
           window.logout();
           return;
         }
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('student');
-        localStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('student');
+        sessionStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('authSessionExpiresAt');
         window.location.href = 'login.html';
       });
     });

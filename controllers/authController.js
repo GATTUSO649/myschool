@@ -236,12 +236,7 @@ async function login(req, res) {
     await logActivity(student.id, 'login', 'Successful login', req.ip);
 
     const refreshed = (await query('SELECT * FROM students WHERE id = ?', [student.id]))[0];
-    return res.cookie('authToken', signToken(refreshed), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 10 * 60 * 1000
-    }).json({
+    return res.json({
       success: true,
       token: signToken(refreshed),
       student: publicStudent(refreshed)
@@ -420,13 +415,7 @@ async function adminLogin(req, res) {
       { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '30m' } // Shorter expiry for admin
     );
 
-    // Set secure admin session cookie
-    return res.cookie('adminAuthToken', adminToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 30 * 60 * 1000 // 30 minutes
-    }).json({
+    return res.json({
       success: true,
       token: adminToken,
       admin: publicStudent(refreshed),

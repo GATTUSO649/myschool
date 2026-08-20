@@ -139,10 +139,14 @@ const publicApiPaths = new Set([
 
 app.use('/api', (req, res, next) => {
   const isPublicHealth = req.path === '/health';
-  const isPublicAuthRoute = req.path.startsWith('/auth/login') || req.path.startsWith('/auth/signup');
+  const isPublicAuthRoute = req.path.startsWith('/auth/login')
+    || req.path.startsWith('/auth/signup')
+    || req.path.startsWith('/auth/admin-login')
+    || req.path.startsWith('/auth/csrf-token');
+  const isPublicMaintenanceSettings = req.method === 'GET' && req.path === '/admin/settings/public';
   const isPublicApplicationCreate = req.method === 'POST' && req.path === '/applications';
 
-  if (isPublicHealth || isPublicAuthRoute || isPublicApplicationCreate) {
+  if (isPublicHealth || isPublicAuthRoute || isPublicMaintenanceSettings || isPublicApplicationCreate) {
     return next();
   }
 

@@ -6,14 +6,14 @@
 
   // Check if user is authenticated
   function isAuthenticated() {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     return !!token && token.length > 0;
   }
 
   // Load student name
   function loadStudentName() {
     try {
-      const studentJson = localStorage.getItem('student');
+      const studentJson = sessionStorage.getItem('student');
       if (!studentJson) return false;
       
       const student = JSON.parse(studentJson);

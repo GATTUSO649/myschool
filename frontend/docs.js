@@ -3,7 +3,7 @@ function getApiUrl(){
   return (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : window.location.origin + '/api';
 }
 function getAuthToken(){
-  return localStorage.getItem('authToken');
+  return sessionStorage.getItem('authToken');
 }
 async function fetchWithAuth(endpoint, options={}){
   const token = getAuthToken();
@@ -51,7 +51,7 @@ function renderDocs(docs){
     container.innerHTML = '<p class="text-center text-muted">No documents found.</p>';
     return;
   }
-  const student = JSON.parse(localStorage.getItem('student')||'{}');
+  const student = JSON.parse(sessionStorage.getItem('student')||'{}');
   const isLecturer = student.role === 'lecturer' || student.role === 'rba';
   docs.forEach(doc => {
     const card = document.createElement('div');
@@ -120,7 +120,7 @@ async function loadDocCounts(){
 }
 
 function showUploadFormIfLecturer(){
-  const student = JSON.parse(localStorage.getItem('student') || '{}');
+  const student = JSON.parse(sessionStorage.getItem('student') || '{}');
   if(student.role === 'lecturer' || student.role === 'rba'){
     const s = document.getElementById('uploadSection');
     if(s) s.style.display = 'block';
