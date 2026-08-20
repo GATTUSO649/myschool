@@ -24,6 +24,11 @@
     .support-item { display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:#fbfdff; border:1px solid #eef4ff }
     .right-column .contact { margin-bottom:12px }
     .empty-state { padding:28px; text-align:center; color:#64748b }
+    .support-topics-heading { margin-top:18px }
+    .topic-content { margin-top:18px }
+    .feedback-label { display:block; margin-bottom:6px; color:#334e68; font-weight:600 }
+    #feedbackText { width:100%; padding:8px; border-radius:8px; border:1px solid #e6eefc; font:inherit; resize:vertical }
+    .feedback-actions { margin-top:10px; text-align:right }
   </style>
   <link rel="stylesheet" href="responsive.css">
 </head>
@@ -64,7 +69,7 @@
           <a class="quick-link" href="mailto:support@cresenthigh.ac.ke">Contact Us</a>
         </div>
 
-        <h3 style="margin-top:18px">Top support topics</h3>
+        <h3 class="support-topics-heading">Top support topics</h3>
         <div class="support-list" id="supportList">
           <div class="support-item"><div>Reset password</div><div><a href="#" data-open-topic="reset-password">Open</a></div></div>
           <div class="support-item"><div>Make a payment</div><div><a href="#" data-open-topic="payments">Open</a></div></div>
@@ -72,7 +77,7 @@
           <div class="support-item"><div>Contact Us</div><div><a href="#" data-open-topic="contact-us">Open</a></div></div>
         </div>
 
-        <div id="topicContent" style="margin-top:18px">
+        <div id="topicContent" class="topic-content">
           <div class="empty-state">Select a topic to view a short guide.</div>
         </div>
       </section>
@@ -89,8 +94,9 @@
         <div class="help-card">
           <h3>Feedback</h3>
           <p class="muted">Help us improve — send quick feedback.</p>
-          <textarea id="feedbackText" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e6eefc"></textarea>
-          <div style="margin-top:10px;text-align:right"><button class="btn btn-primary" id="sendFeedback">Send</button></div>
+          <label class="feedback-label" for="feedbackText">Your feedback</label>
+          <textarea id="feedbackText" rows="4" placeholder="Tell us how we can improve"></textarea>
+          <div class="feedback-actions"><button class="btn btn-primary" id="sendFeedback">Send</button></div>
         </div>
 
         <div class="help-card">

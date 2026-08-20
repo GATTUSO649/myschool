@@ -3,29 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Admissions | CRESENT High School</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="CRESENT High School student portal for academic services, applications and student support.">
+  <title>Student Portal | CRESENT High School</title>
+  <link rel="stylesheet" href="style.css?v=landing-reference-2026">
   <link rel="stylesheet" href="site-common.css">
   <link rel="stylesheet" href="responsive.css">
 </head>
-<body>
-  <main class="container">
-    <section class="glass-card welcome-card">
-      <h1 class="welcome-brand"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
-      <h2>Welcome</h2>
-      <p class="hero-subtitle">Begin your admission application with confidence and track approval progress from the school administration.</p>
-      <p class="hero-subtitle">Once approved, use your assigned admission number to create a portal account and access student services immediately.</p>
+<body class="landing-page">
+  <header class="landing-header">
+    <div class="landing-container landing-header-inner">
+      <a class="landing-brand" href="index.html" aria-label="CRESENT High School home">
+        <span class="landing-brand-mark" aria-hidden="true"><span>C</span></span>
+        <span><strong>CRESENT</strong><strong>HIGH SCHOOL</strong><small>Excellence. Discipline. Success.</small></span>
+      </a>
+      <button class="landing-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <nav class="landing-nav" aria-label="Main navigation">
+        <a class="is-active" href="#home">Home</a>
+        <a href="about.html">About Us</a>
+        <a href="academics.html">Academics</a>
+        <a href="application.html">Admissions</a>
+        <a href="#portal">Student Portal</a>
+        <a href="contact.html">Contact Us</a>
+        <a class="landing-nav-login" href="login.html">Student Login</a>
+      </nav>
+    </div>
+  </header>
 
-      <button class="btn login-btn" type="button" data-go-apply>Apply</button>
-      <div class="welcome-links">
-        <a href="login.html">Student Login</a>
-        <a href="signup.html">Create Portal Account</a>
+  <main>
+    <section class="landing-hero" id="home">
+      <div class="landing-hero-inner">
+        <div class="landing-hero-copy">
+          <p class="landing-welcome">Welcome to</p>
+          <h1>Cresent<br>High School</h1>
+          <span class="landing-rule" aria-hidden="true"></span>
+          <p class="landing-hero-text">A center of academic excellence committed to nurturing discipline, character and leadership for a brighter future.</p>
+        </div>
+      </div>
+
+      <section class="landing-access" id="portal" aria-labelledby="access-title">
+        <div class="landing-container landing-access-panel">
+          <div class="landing-section-heading"><h2 id="access-title">STUDENT PORTAL</h2><p>Access your academic information, fee details, results and more.</p></div>
+        <div class="landing-access-grid">
+          <article class="landing-access-card landing-access-login"><h3>LOGIN</h3><span class="landing-card-rule" aria-hidden="true"></span><p>Already have an account?<br>Login to access your student portal.</p><a class="landing-card-button" href="login.html">Student Login</a></article>
+          <article class="landing-access-card landing-access-apply"><h3>NEW STUDENT APPLICATION</h3><span class="landing-card-rule" aria-hidden="true"></span><p>Join CRESENT High School family.<br>Apply for admission for the next academic year.</p><a class="landing-card-button" href="application.html">Start Application</a></article>
+        </div>
+      </div>
+      </section>
+    </section>
+
+    <section class="landing-information" id="about" aria-labelledby="about-title">
+      <div class="landing-container">
+        <div class="landing-information-intro"><p class="landing-kicker">ABOUT CRESENT</p><h2 id="about-title">A clear path to your school services</h2><p>The student portal keeps everyday school information close at hand, from academic records and notes to fees, receipts and support.</p></div>
+        <div class="landing-information-grid">
+          <div id="academics"><h3>About the school</h3><p>CRESENT High School is committed to disciplined learning, character and a strong foundation for every student.</p></div>
+          <div><h3>Admissions</h3><p>Start an application online and follow the school’s approval process before creating your portal account.</p></div>
+          <div><h3>Student services</h3><p>View results, academic documents, fee information, payment receipts and useful support resources.</p></div>
+        </div>
       </div>
     </section>
   </main>
 
+  <footer class="landing-footer" id="contact">
+    <div class="landing-container landing-footer-grid"><div><strong>CRESENT HIGH SCHOOL</strong><p>Excellence. Discipline. Success.</p></div><div><h2>Quick Links</h2><p><a href="about.html">About Us</a><br><a href="academics.html">Academics</a><br><a href="application.html">Admissions</a></p></div><div><h2>Contact Us</h2><p><a href="contact.html">P.O. Box 1234, Your Town</a><br>Phone: 0712 345 678<br>Email: info@cresentschool.ac.ke</p></div></div>
+    <div class="landing-container landing-footer-bottom">© 2026 CRESENT High School. All rights reserved.</div>
+  </footer>
+
   <script src="script.js"></script>
-  <script src="site-common.js"></script>
+  <script src="site-common.js?v=landing-2026"></script>
   <script src="shared-bindings.js"></script>
 </body>
 </html>

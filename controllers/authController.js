@@ -201,16 +201,13 @@ async function login(req, res) {
     }
 
     if (student && student.bootstrapAdmin) {
-      return res.cookie('authToken', signToken(student), {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 10 * 60 * 1000
-      }).json({
-        success: true,
-        token: signToken(student),
-        student: publicStudent(student)
-      });
+      await logActivity(null, 'blocked_admin_login', 'Bootstrap administrator attempted student portal login', req.ip);
+      return res.status(403).json({ success: false, message: 'Administrators must use the admin portal.' });
+    }
+
+    if (student && ['admin', 'rba', 'school_admin', 'super_admin', 'superadmin', 'schooladmin'].includes(String(student.role || '').toLowerCase())) {
+      await logActivity(student.id, 'blocked_admin_login', 'Administrator attempted student portal login', req.ip);
+      return res.status(403).json({ success: false, message: 'Administrators must use the admin portal.' });
     }
 
     if (!student) {

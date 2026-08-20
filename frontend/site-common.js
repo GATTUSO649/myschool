@@ -135,8 +135,13 @@
   }
 
   function wireMenus() {
+    const hasStudentSidebar = Boolean(document.querySelector('.student-sidebar'));
     let backdrop = document.querySelector('.mobile-sidebar-backdrop');
-    if (!backdrop) {
+    if (!hasStudentSidebar && backdrop) {
+      backdrop.remove();
+      backdrop = null;
+    }
+    if (hasStudentSidebar && !backdrop) {
       backdrop = document.createElement('button');
       backdrop.type = 'button';
       backdrop.className = 'mobile-sidebar-backdrop';
@@ -162,7 +167,7 @@
       });
     });
 
-    backdrop.addEventListener('click', () => setSidebarOpen(false));
+    if (backdrop) backdrop.addEventListener('click', () => setSidebarOpen(false));
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') setSidebarOpen(false);
     });

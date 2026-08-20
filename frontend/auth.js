@@ -97,8 +97,8 @@ if (loginForm) {
             const role = (data.student && data.student.role ? data.student.role : '').toLowerCase();
             const username = data.student && data.student.username;
             if (role === 'admin' || role === 'rba' || role === 'school_admin' || role === 'super_admin' || username === 'admin') {
-              console.log('Redirecting admin to admin-dashboard.html');
-              window.location.href = 'admin-dashboard.html';
+              showAlert('Administrators must use the admin portal.', 'error');
+              return;
             } else if (role === 'teacher' || role === 'lecturer') {
               console.log('Redirecting teacher to teacher-portal.html');
               window.location.href = 'teacher-portal.html';
@@ -185,25 +185,34 @@ if (registerForm) {
 
 // Check if user is authenticated (call this on protected pages like dashboard)
 function checkAuth() {
-  const token = localStorage.getItem('authToken');
-  const student = getStudentInfo();
   const path = window.location.pathname.toLowerCase();
+  const adminPage = path.includes('admin-');
+  const token = adminPage ? sessionStorage.getItem('adminAuthToken') : localStorage.getItem('authToken');
+  const student = adminPage
+    ? JSON.parse(sessionStorage.getItem('adminUser') || 'null')
+    : getStudentInfo();
   const page = path.split('/').pop();
 
-  const sessionExpiresAt = Number(localStorage.getItem('authSessionExpiresAt') || 0);
+  const sessionExpiresAt = adminPage
+    ? Number(sessionStorage.getItem('tokenTimestamp') || 0) + 30 * 60 * 1000
+    : Number(localStorage.getItem('authSessionExpiresAt') || 0);
   if (token && sessionExpiresAt && Date.now() >= sessionExpiresAt) {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('student');
-    localStorage.removeItem('rememberMe');
-    localStorage.removeItem('authSessionExpiresAt');
+    if (adminPage) {
+      sessionStorage.clear();
+    } else {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('student');
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('authSessionExpiresAt');
+    }
     document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-    window.location.replace('login.html');
+    window.location.replace(adminPage ? 'admin-login.html' : 'login.html');
     return false;
   }
 
   if (!token) {
     if (!page.includes('login.html') && !page.includes('signup.html')) {
-      window.location.replace('login.html');
+      window.location.replace(adminPage ? 'admin-login.html' : 'login.html');
     }
     return false;
   }
@@ -242,7 +251,9 @@ function checkAuth() {
 
   if (protectedPages[page] && !protectedPages[page].includes(normalizedRole)) {
     if (normalizedRole === 'admin') {
-      window.location.replace('admin-dashboard.html');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('student');
+      window.location.replace('admin-login.html');
     } else if (normalizedRole === 'teacher') {
       window.location.replace('lecturer-dashboard.html');
     } else {
@@ -287,7 +298,10 @@ function getStudentInfo() {
 
 // Get authentication token
 function getAuthToken() {
-  return localStorage.getItem('authToken');
+  const page = window.location.pathname.toLowerCase();
+  return page.includes('admin-')
+    ? sessionStorage.getItem('adminAuthToken')
+    : localStorage.getItem('authToken');
 }
 
 function getCsrfToken() {
@@ -323,10 +337,14 @@ async function fetchWithAuth(endpoint, options = {}) {
     if (response.status === 401) {
       console.warn('fetchWithAuth: received 401 Unauthorized — clearing auth and redirecting to login');
       try {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('student');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('authSessionExpiresAt');
+        if (window.location.pathname.toLowerCase().includes('admin-')) {
+          sessionStorage.clear();
+        } else {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('student');
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('authSessionExpiresAt');
+        }
         document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       } catch (err) {
         console.warn('Error clearing auth storage', err);
@@ -335,7 +353,7 @@ async function fetchWithAuth(endpoint, options = {}) {
       setTimeout(() => {
         try {
           if (!window.location.pathname.toLowerCase().includes('login.html')) {
-            window.location.replace('login.html');
+            window.location.replace(window.location.pathname.toLowerCase().includes('admin-') ? 'admin-login.html' : 'login.html');
           }
         } catch (e) {
           /* ignore */
@@ -368,6 +386,7 @@ window.EIGHT_FOUR_FOUR_SUBJECTS = window.EIGHT_FOUR_FOUR_SUBJECTS || [
 function enforceSchoolAcademicOptions() {
   const subjectSelectors = ['select[name="subject"]', '#noteSubject', '#materialSubject', '#docSubject', '#docSubjectFilter'];
   document.querySelectorAll(subjectSelectors.join(',')).forEach((select) => {
+    if (select.id === 'teacherSubject') return;
     const firstLabel = select.id === 'docSubjectFilter' || select.id === 'subjectFilter' ? 'All Subjects' : 'Select Subject';
     const allowAll = select.id === 'docSubjectFilter' || select.id === 'subjectFilter';
     select.innerHTML = `<option value="${allowAll ? 'all' : ''}">${firstLabel}</option>` +
@@ -406,6 +425,7 @@ function logout() {
   localStorage.removeItem('student');
   localStorage.removeItem('rememberMe');
   localStorage.removeItem('authSessionExpiresAt');
+  sessionStorage.clear();
   document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   console.log('localStorage keys cleared for logout');
   window.location.href = 'login.html';
