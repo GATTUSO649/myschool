@@ -1,5 +1,5 @@
 const { query } = require('../config/db');
-const { deliverMail } = require('./emailUtils');
+const { deliverMail, verifyMailTransport } = require('./emailUtils');
 
 function cleanRecipients(value) {
   const values = Array.isArray(value) ? value : String(value || '').split(/[,;\n]/);
@@ -19,6 +19,10 @@ async function recipients(req, res) {
   res.json({ success: true, recipients: rows });
 }
 
+async function status(req, res) {
+  res.json({ success: true, email: await verifyMailTransport() });
+}
+
 async function send(req, res) {
   const to = cleanRecipients(req.body.to || req.body.recipients);
   const subject = String(req.body.subject || '').trim();
@@ -34,4 +38,4 @@ async function send(req, res) {
   res.json({ success: true, sent: results.filter((result) => result.delivered).length, queued: results.length, results });
 }
 
-module.exports = { recipients, send };
+module.exports = { recipients, status, send };

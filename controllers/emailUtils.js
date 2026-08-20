@@ -31,6 +31,18 @@ function createTransport() {
   });
 }
 
+async function verifyMailTransport() {
+  const transport = createTransport();
+  if (!transport) return { configured: false, reachable: false, message: 'SMTP is not configured' };
+  try {
+    await transport.verify();
+    return { configured: true, reachable: true, host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587) };
+  } catch (error) {
+    console.warn('SMTP verification failed:', error.message || error);
+    return { configured: true, reachable: false, host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), message: 'SMTP connection could not be verified' };
+  }
+}
+
 async function deliverMail({ to, subject, text, html }) {
   const transport = createTransport();
   if (transport) {
@@ -124,5 +136,6 @@ module.exports = {
   sendPasswordResetEmail,
   sendApplicationConfirmationEmail,
   deliverMail,
+  verifyMailTransport,
   recordAuditEvent
 };

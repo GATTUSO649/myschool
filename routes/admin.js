@@ -23,6 +23,7 @@ router.post('/roles/finance', authMiddleware, authorizeRole(['admin', 'rba']), c
 router.get('/roles/ict', authMiddleware, authorizeRole(['admin', 'rba']), controller.getICTAccounts);
 router.post('/roles/ict', authMiddleware, authorizeRole(['admin', 'rba']), controller.createICTAccount);
 router.get('/email/recipients', authMiddleware, authorizeRole(['admin', 'ict']), emailController.recipients);
+router.get('/email/status', authMiddleware, authorizeRole(['admin', 'ict']), emailController.status);
 router.post('/email/send', authMiddleware, authorizeRole(['admin', 'ict']), emailController.send);
 router.get('/ict/dashboard', authMiddleware, authorizeICT(['system.manage']), ictController.dashboard);
 router.get('/ict/health', authMiddleware, authorizeICT(['system.manage']), ictController.health);
