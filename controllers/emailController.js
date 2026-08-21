@@ -1,5 +1,5 @@
 const { query } = require('../config/db');
-const { deliverMail, verifyMailTransport } = require('./emailUtils');
+const { deliverMail, verifyMailTransport, getSmtpConfiguration, isValidRecipientEmail } = require('./emailUtils');
 
 function cleanRecipients(value) {
   const values = Array.isArray(value) ? value : String(value || '').split(/[,;\n]/);
@@ -35,7 +35,38 @@ async function send(req, res) {
   for (const address of to) {
     results.push({ address, ...(await deliverMail({ to: address, subject, text, html })) });
   }
-  res.json({ success: true, sent: results.filter((result) => result.delivered).length, queued: results.length, results });
+  const sent = results.filter((result) => result.delivered).length;
+  res.status(sent ? 200 : 502).json({ success: sent > 0, sent, queued: results.length, results, message: sent ? 'Email processed' : 'Email delivery failed' });
 }
 
-module.exports = { recipients, status, send };
+async function test(req, res) {
+  const recipient = String(req.body?.to || '').trim().toLowerCase();
+  const configuration = getSmtpConfiguration();
+  const authorizedRecipients = new Set([
+    configuration.user.toLowerCase(),
+    configuration.fromAddress.toLowerCase(),
+    String(process.env.SMTP_TEST_RECIPIENT || '').trim().toLowerCase()
+  ].filter(Boolean));
+
+  if (!isValidRecipientEmail(recipient) || !authorizedRecipients.has(recipient)) {
+    return res.status(403).json({ success: false, message: 'Test recipient is not authorized' });
+  }
+
+  const result = await deliverMail({
+    to: recipient,
+    subject: 'Crescent High School SMTP Test',
+    text: 'This is a test email from the Crescent High School portal email service.',
+    html: '<p>This is a test email from the Crescent High School portal email service.</p>',
+    emailType: 'SMTP_TEST',
+    triggeredBy: req.user?.id || null
+  });
+
+  if (!result.delivered) {
+    return res.status(502).json({ success: false, message: 'Email delivery failed', reason: result.failureReason || 'SMTP_DELIVERY_FAILED' });
+  }
+
+  console.log('SMTP test email sent. messageId:', result.messageId || 'not provided');
+  res.json({ success: true, message: 'Test email sent successfully' });
+}
+
+module.exports = { recipients, status, send, test };

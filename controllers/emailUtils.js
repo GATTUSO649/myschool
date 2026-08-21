@@ -37,24 +37,69 @@ function schoolEmail(value, fallback) {
   return `${emailLocalPart(email || fallback)}@${STUDENT_EMAIL_DOMAIN}`;
 }
 
+function getSmtpConfiguration() {
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpSecure = String(process.env.SMTP_SECURE || '').trim().toLowerCase() === 'true';
+  const smtpFrom = String(process.env.SMTP_FROM || '').trim();
+  const fromMatch = smtpFrom.match(/<([^<>\s]+@[^<>\s]+)>/);
+  const configuredFromAddress = (fromMatch ? fromMatch[1] : smtpFrom).trim().toLowerCase();
+  const fromAddress = isValidRecipientEmail(configuredFromAddress)
+    ? configuredFromAddress
+    : String(process.env.SMTP_USER || '').trim().toLowerCase();
+  return {
+    host: String(process.env.SMTP_HOST || '').trim(),
+    port: smtpPort,
+    secure: smtpSecure,
+    user: String(process.env.SMTP_USER || '').trim(),
+    password: String(process.env.SMTP_PASS || ''),
+    from: isValidRecipientEmail(configuredFromAddress)
+      ? smtpFrom
+      : (process.env.SMTP_USER ? `Crescent High School <${process.env.SMTP_USER}>` : ''),
+    fromAddress
+  };
+}
+
+function getSafeSmtpStatus() {
+  const configuration = getSmtpConfiguration();
+  return {
+    hostConfigured: Boolean(configuration.host),
+    portConfigured: Boolean(process.env.SMTP_PORT),
+    secureConfigured: Boolean(process.env.SMTP_SECURE),
+    userConfigured: Boolean(configuration.user),
+    passwordConfigured: Boolean(configuration.password),
+    fromConfigured: Boolean(configuration.from),
+    host: configuration.host || null,
+    port: configuration.port,
+    secure: configuration.secure
+  };
+}
+
 function createTransport() {
-  const host = process.env.SMTP_HOST || process.env.SMTP_HOSTNAME;
-  if (!host) return null;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = normalizeSmtpSecure(process.env.SMTP_SECURE, port === 465);
+  const configuration = getSmtpConfiguration();
+  if (!configuration.host || !configuration.user || !configuration.password) return null;
   return nodemailer.createTransport({
-    host,
-    port,
-    secure,
+    host: configuration.host,
+    port: configuration.port,
+    secure: configuration.secure,
+    requireTLS: configuration.port === 587,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-    auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    } : undefined,
-    tls: { rejectUnauthorized: false }
+    auth: { user: configuration.user, pass: configuration.password },
+    tls: { rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false' }
   });
+}
+
+function classifyEmailError(error) {
+  const code = String(error?.code || '').toUpperCase();
+  const responseCode = Number(error?.responseCode || 0);
+  const message = String(error?.message || '').toLowerCase();
+  if (['EAUTH', 'AUTH'].includes(code) || responseCode === 535 || message.includes('authentication')) return 'SMTP_AUTHENTICATION_FAILED';
+  if (['ETIMEDOUT', 'ESOCKET', 'ECONNECTION'].includes(code) || message.includes('timeout')) return 'SMTP_CONNECTION_TIMEOUT';
+  if (['ENOTFOUND', 'EAI_AGAIN'].includes(code) || message.includes('getaddrinfo')) return 'SMTP_DNS_FAILED';
+  if (code === 'ETLS' || message.includes('tls') || message.includes('certificate')) return 'SMTP_TLS_FAILED';
+  if (responseCode >= 500 || responseCode === 550 || responseCode === 553) return 'SMTP_MESSAGE_REJECTED';
+  return 'SMTP_DELIVERY_FAILED';
 }
 
 async function recordEmailLog({ applicationId = null, recipient, emailType, subject, status = 'PENDING', failureReason = null, triggeredBy = null }) {
@@ -71,15 +116,16 @@ async function recordEmailLog({ applicationId = null, recipient, emailType, subj
 }
 
 async function verifyMailTransport() {
+  const configuration = getSmtpConfiguration();
   const transport = createTransport();
-  if (!transport) return { configured: false, reachable: false, message: 'SMTP is not configured' };
+  if (!transport) return { ...getSafeSmtpStatus(), configured: false, reachable: false, message: 'SMTP_REQUIRED_VARIABLES_MISSING' };
   try {
     await transport.verify();
-    return { configured: true, reachable: true, host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: normalizeSmtpSecure(process.env.SMTP_SECURE, Number(process.env.SMTP_PORT || 587) === 465) };
+    return { ...getSafeSmtpStatus(), configured: true, reachable: true };
   } catch (error) {
-    const safe = error && error.message ? error.message : 'SMTP connection could not be verified';
-    console.warn('SMTP verification failed:', safe.replace(process.env.SMTP_PASS || '', '[REDACTED]').replace(process.env.SMTP_USER || '', '[REDACTED]'));
-    return { configured: true, reachable: false, host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: normalizeSmtpSecure(process.env.SMTP_SECURE, Number(process.env.SMTP_PORT || 587) === 465), message: 'SMTP connection failed. Check the SMTP host, port, credentials, and security mode in Render.' };
+    const failureReason = classifyEmailError(error);
+    console.warn('SMTP verification failed:', failureReason);
+    return { ...getSafeSmtpStatus(), configured: true, reachable: false, failureReason, message: 'SMTP_VERIFICATION_FAILED' };
   }
 }
 
@@ -98,7 +144,7 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
   }
 
   if (!transport) {
-    const failureReason = 'SMTP_NOT_CONFIGURED';
+    const failureReason = 'SMTP_REQUIRED_VARIABLES_MISSING';
     await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason, triggeredBy });
     console.warn('SMTP is not configured. Email not delivered to:', destination);
     return { delivered: false, messageId: null, failureReason };
@@ -106,7 +152,7 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
 
   try {
     const info = await transport.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@cresenthighschool.com',
+      from: getSmtpConfiguration().from,
       to: destination,
       subject: safeSubject,
       text: String(text || '').trim() || 'Portal notification',
@@ -115,10 +161,10 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
     await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'SENT', triggeredBy });
     return { delivered: true, messageId: info.messageId };
   } catch (error) {
-    const fallbackReason = error && error.message ? error.message.replace(process.env.SMTP_PASS || '', '[REDACTED]').replace(process.env.SMTP_USER || '', '[REDACTED]') : 'Unable to deliver email';
-    console.warn('Email delivery failed:', fallbackReason);
-    await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason: fallbackReason.slice(0, 255), triggeredBy });
-    return { delivered: false, messageId: null, failureReason: fallbackReason.slice(0, 255) };
+    const failureReason = classifyEmailError(error);
+    console.warn('Email delivery failed:', failureReason);
+    await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason, triggeredBy });
+    return { delivered: false, messageId: null, failureReason };
   }
 }
 
@@ -358,6 +404,9 @@ module.exports = {
   sanitizeRecipientEmail,
   isValidRecipientEmail,
   normalizeSmtpSecure,
+  getSmtpConfiguration,
+  getSafeSmtpStatus,
+  classifyEmailError,
   sendAdmissionApprovalEmail,
   sendApplicationRejectionEmail,
   sendPasswordResetEmail,

@@ -25,6 +25,7 @@ router.post('/roles/ict', authMiddleware, authorizeRole(['admin', 'rba']), contr
 router.get('/email/recipients', authMiddleware, authorizeRole(['admin', 'ict']), emailController.recipients);
 router.get('/email/status', authMiddleware, authorizeRole(['admin', 'ict']), emailController.status);
 router.post('/email/send', authMiddleware, authorizeRole(['admin', 'ict']), emailController.send);
+router.post('/email/test', authMiddleware, authorizeRole(['admin', 'ict']), emailController.test);
 router.get('/ict/dashboard', authMiddleware, authorizeICT(['system.manage']), ictController.dashboard);
 router.get('/ict/health', authMiddleware, authorizeICT(['system.manage']), ictController.health);
 router.get('/ict/users', authMiddleware, authorizeICT(['users.manage']), ictController.users);
