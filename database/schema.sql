@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS applications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(150) NOT NULL,
   email VARCHAR(150),
+  parent_email VARCHAR(150),
   phone VARCHAR(40),
   date_of_birth DATE NULL,
   gender VARCHAR(30),

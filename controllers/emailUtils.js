@@ -119,76 +119,82 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
   }
 }
 
-function buildApprovalEmailHtml({ fullName, admissionNumber, className, stream, academicYear, applicationReference, portalUrl, loginLabel, initialPasswordText, schoolEmailAddress }) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admission Application Approved</title></head><body style="margin:0;padding:0;background:#edf5ff;font-family:Arial,sans-serif;color:#102a43;">
-  <div style="max-width:640px;margin:32px auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dfeaf6;">
-    <div style="background:#102a43;padding:28px 32px;color:#ffffff;">
-      <h1 style="margin:0;font-size:28px;letter-spacing:0.04em;">CRESENT HIGH SCHOOL</h1>
-      <p style="margin:8px 0 0;color:#dfeaf6;">Student Admissions</p>
-    </div>
-    <div style="padding:32px;">
-      <p style="margin:0 0 12px;font-size:16px;">Dear ${fullName},</p>
-      <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Congratulations! We are pleased to inform you that your application to Cresent High School has been APPROVED.</p>
-      <h2 style="margin:18px 0 10px;font-size:20px;color:#102a43;">APPLICATION DETAILS</h2>
-      <table role="presentation" cellpadding="8" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px;">
-        <tr><td style="width:45%;font-weight:bold;border-bottom:1px solid #e7edf5;">Student Name</td><td style="border-bottom:1px solid #e7edf5;">${fullName}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Admission Number</td><td style="border-bottom:1px solid #e7edf5;">${admissionNumber || 'Pending'}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Form/Class</td><td style="border-bottom:1px solid #e7edf5;">${className || 'Assigned by administration'}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Stream</td><td style="border-bottom:1px solid #e7edf5;">${stream || 'Assigned by administration'}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Academic Year</td><td style="border-bottom:1px solid #e7edf5;">${academicYear || 'N/A'}</td></tr>
-        <tr><td style="font-weight:bold;">Application Reference</td><td>${applicationReference || 'N/A'}</td></tr>
-      </table>
-      <h2 style="margin:26px 0 10px;font-size:20px;color:#102a43;">PORTAL LOGIN DETAILS</h2>
-      <p style="margin:0 0 10px;line-height:1.6;">Portal: <a href="${portalUrl}" style="color:#1d4ed8;">${portalUrl}</a></p>
-      <p style="margin:0 0 10px;line-height:1.6;">Username: ${loginLabel}</p>
-      <p style="margin:0 0 8px;line-height:1.6;">Initial Password: ${initialPasswordText}</p>
-      <p style="margin:12px 0 0;color:#4b5563;font-size:13px;">If your account requires a password change, you will be prompted to set a new password after your first login.</p>
-      <h2 style="margin:26px 0 10px;font-size:20px;color:#102a43;">WHAT TO DO NEXT</h2>
-      <ol style="padding-left:20px;line-height:1.8;margin:0 0 20px;">
-        <li>Visit the student portal.</li>
-        <li>Log in using the credentials above.</li>
-        <li>Change your password if required.</li>
-        <li>Complete any required student information.</li>
-        <li>Check your academic and finance information.</li>
-      </ol>
-      <p style="margin:0 0 18px;line-height:1.6;">If you have any questions, please contact the school administration.</p>
-      <p style="margin:0 0 4px;line-height:1.6;font-weight:bold;">Regards,</p>
-      <p style="margin:0;line-height:1.6;">CRESENT HIGH SCHOOL<br>Student Admissions Office</p>
-    </div>
-    <div style="background:#edf5ff;padding:16px 24px;text-align:center;font-size:12px;color:#4b5563;">${schoolEmailAddress || 'info@cresenthighschool.com'}</div>
-  </div>
+function escapeEmailHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+}
+
+function emailShell({ title, eyebrow, content, schoolEmailAddress }) {
+  const schoolEmail = escapeEmailHtml(schoolEmailAddress || 'info@cresenthighschool.com');
+  const schoolPhone = escapeEmailHtml(process.env.SCHOOL_PHONE || '');
+  const schoolWebsite = escapeEmailHtml(process.env.APP_URL || 'https://cresenthighschool.onrender.com');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeEmailHtml(title)}</title></head><body style="margin:0;padding:0;background:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#172b4d;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f8;width:100%;"><tr><td align="center" style="padding:28px 12px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:680px;background:#ffffff;border:1px solid #dbe4ee;">
+      <tr><td style="background:#102a43;padding:30px 36px;color:#ffffff;"><div style="font-size:12px;letter-spacing:2px;color:#b9d8f2;font-weight:bold;">${escapeEmailHtml(eyebrow)}</div><h1 style="margin:10px 0 0;font-size:26px;line-height:1.2;letter-spacing:.5px;">CRESCENT HIGH SCHOOL</h1><div style="margin-top:8px;color:#d9e8f5;font-size:14px;">Student Admissions &amp; Administration</div></td></tr>
+      <tr><td style="padding:36px 38px;">${content}</td></tr>
+      <tr><td style="background:#f4f7fa;padding:22px 30px;text-align:center;color:#526579;font-size:12px;line-height:1.8;">Admissions Office &middot; Crescent High School<br>${schoolEmail}${schoolPhone ? ` &middot; ${schoolPhone}` : ''}<br><a href="${schoolWebsite}" style="color:#1b5d91;text-decoration:none;">${schoolWebsite}</a></td></tr>
+    </table>
+  </td></tr></table>
 </body></html>`;
 }
 
-function buildRejectionEmailHtml({ fullName, applicationReference, decisionDate, reason, schoolEmailAddress }) {
-  const safeReason = reason && String(reason).trim() ? `Reason: ${String(reason).trim()}` : 'Please contact the school administration if you require further information regarding this decision.';
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admission Application Update</title></head><body style="margin:0;padding:0;background:#edf5ff;font-family:Arial,sans-serif;color:#102a43;">
-  <div style="max-width:640px;margin:32px auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #dfeaf6;">
-    <div style="background:#102a43;padding:28px 32px;color:#ffffff;">
-      <h1 style="margin:0;font-size:28px;letter-spacing:0.04em;">CRESENT HIGH SCHOOL</h1>
-      <p style="margin:8px 0 0;color:#dfeaf6;">Admissions Office</p>
-    </div>
-    <div style="padding:32px;">
-      <p style="margin:0 0 12px;font-size:16px;">Dear ${fullName},</p>
-      <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Thank you for applying to Cresent High School. After careful consideration of your application, we regret to inform you that your application has not been successful at this time.</p>
-      <h2 style="margin:18px 0 10px;font-size:20px;color:#102a43;">APPLICATION DETAILS</h2>
-      <table role="presentation" cellpadding="8" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px;">
-        <tr><td style="width:45%;font-weight:bold;border-bottom:1px solid #e7edf5;">Student Name</td><td style="border-bottom:1px solid #e7edf5;">${fullName}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Application Reference</td><td style="border-bottom:1px solid #e7edf5;">${applicationReference || 'N/A'}</td></tr>
-        <tr><td style="font-weight:bold;border-bottom:1px solid #e7edf5;">Application Status</td><td style="border-bottom:1px solid #e7edf5;">NOT APPROVED</td></tr>
-        <tr><td style="font-weight:bold;">Decision Date</td><td>${decisionDate || new Date().toISOString().slice(0, 10)}</td></tr>
-      </table>
-      <p style="margin:18px 0 12px;line-height:1.6;">${safeReason}</p>
-      <p style="margin:0;line-height:1.6;">Regards,</p>
-      <p style="margin:0;line-height:1.6;font-weight:bold;">CRESENT HIGH SCHOOL<br>Admissions Office</p>
-    </div>
-    <div style="background:#edf5ff;padding:16px 24px;text-align:center;font-size:12px;color:#4b5563;">${schoolEmailAddress || 'info@cresenthighschool.com'}</div>
-  </div>
-</body></html>`;
+function emailDetailTable(rows) {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:14px 0 26px;font-size:14px;">${rows.map(([label, value]) => `<tr><td style="width:42%;padding:11px 12px;border-bottom:1px solid #e6edf3;color:#526579;font-weight:bold;">${escapeEmailHtml(label)}</td><td style="padding:11px 12px;border-bottom:1px solid #e6edf3;color:#172b4d;">${escapeEmailHtml(value)}</td></tr>`).join('')}</table>`;
+}
+
+function statusBanner(label, background, color) {
+  return `<div style="margin:20px 0 28px;padding:16px 18px;background:${background};border-left:5px solid ${color};color:${color};font-size:15px;font-weight:bold;letter-spacing:1px;">${label}</div>`;
+}
+
+function buildReceivedEmailHtml({ fullName, applicationReference, submittedDate, schoolEmailAddress }) {
+  const content = `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Dear Parent/Guardian,</p>
+    <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Thank you for choosing Crescent High School.</p>
+    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">We are pleased to confirm that the admission application for the following student has been successfully received:</p>
+    <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT DETAILS</h2>
+    ${emailDetailTable([['Student Name', fullName || 'Applicant'], ['Application Reference', applicationReference || 'N/A'], ['Date Submitted', submittedDate || new Date().toISOString().slice(0, 10)]])}
+    ${statusBanner('PENDING REVIEW', '#fff7df', '#8a5a00')}
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Your application has been successfully submitted and is now awaiting review by our admissions team.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#526579;"><strong>Please note:</strong> This email confirms receipt of your application and does not constitute admission to Crescent High School.</p>
+    <p style="margin:0 0 24px;font-size:15px;line-height:1.7;">Once the application has been reviewed, you will receive another email informing you whether the application has been approved or rejected.</p>
+    <p style="margin:0;font-size:15px;line-height:1.7;">Thank you for your interest in Crescent High School.</p>
+    <p style="margin:28px 0 0;font-size:15px;line-height:1.7;">Kind regards,<br><strong>Admissions Office</strong><br>Crescent High School<br>Student Admissions &amp; Administration</p>`;
+  return emailShell({ title: 'Application Received Successfully', eyebrow: 'APPLICATION RECEIVED', content, schoolEmailAddress });
+}
+
+function buildApprovalEmailHtml({ fullName, admissionNumber, className, stream, academicYear, portalUrl, loginLabel, initialPasswordText, schoolEmailAddress }) {
+  const content = `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Dear Parent/Guardian,</p>
+    <p style="margin:0 0 6px;font-size:21px;line-height:1.4;color:#1d6b45;font-weight:bold;">Congratulations!</p>
+    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">We are pleased to inform you that the admission application for <strong>${escapeEmailHtml(fullName || 'the student')}</strong> has been approved.</p>
+    <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT DETAILS</h2>
+    ${emailDetailTable([['Student Name', fullName || 'Student'], ['Admission Number', admissionNumber || 'Pending'], ['Form', className || 'Assigned by administration'], ['Stream', stream || 'Assigned by administration'], ['Academic Year', academicYear || 'N/A']])}
+    ${statusBanner('ADMISSION APPROVED', '#e7f6ed', '#1d6b45')}
+    <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT PORTAL LOGIN DETAILS</h2>
+    ${emailDetailTable([['Portal', portalUrl || 'Student Portal'], ['Username', loginLabel || admissionNumber || 'Student'], ['Password', initialPasswordText || 'Your admission number']])}
+    <p style="margin:0 0 24px;padding:14px 16px;background:#f4f7fa;color:#526579;font-size:14px;line-height:1.7;">For security, the student should change the initial password after the first successful login if this feature is enabled.</p>
+    <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">IMPORTANT INFORMATION</h2>
+    <ul style="margin:14px 0 24px;padding-left:20px;color:#334e68;font-size:15px;line-height:1.9;"><li>Keep your admission number safe.</li><li>Do not share your login credentials.</li><li>Use the official student portal.</li><li>Check the portal regularly for school updates.</li></ul>
+    <p style="margin:0;font-size:15px;line-height:1.7;">We warmly welcome ${escapeEmailHtml(fullName || 'the student')} to Crescent High School and look forward to supporting their academic journey.</p>
+    <p style="margin:28px 0 0;font-size:15px;line-height:1.7;">Kind regards,<br><strong>Admissions Office</strong><br>Crescent High School<br>Student Admissions &amp; Administration</p>`;
+  return emailShell({ title: 'Admission Application Approved', eyebrow: 'ADMISSION APPROVED', content, schoolEmailAddress });
+}
+
+function buildRejectionEmailHtml({ fullName, applicationReference, className, decisionDate, reason, schoolEmailAddress }) {
+  const safeReason = reason && String(reason).trim() ? String(reason).trim() : 'Please contact the school admissions office if you require further information regarding this decision.';
+  const content = `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Dear Parent/Guardian,</p>
+    <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Thank you for your interest in Crescent High School and for taking the time to submit an admission application.</p>
+    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">After reviewing the application, we regret to inform you that the application for <strong>${escapeEmailHtml(fullName || 'the student')}</strong> was not approved.</p>
+    <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT DETAILS</h2>
+    ${emailDetailTable([['Student Name', fullName || 'Student'], ['Application Reference', applicationReference || 'N/A'], ['Applying For', className || 'As submitted'], ['Decision Date', decisionDate || new Date().toISOString().slice(0, 10)]])}
+    ${statusBanner('NOT APPROVED', '#fff0f0', '#a33a3a')}
+    <p style="margin:0 0 8px;font-size:15px;font-weight:bold;color:#102a43;">Reason:</p><p style="margin:0 0 24px;padding:16px;background:#f8fafc;color:#526579;font-size:15px;line-height:1.7;">${escapeEmailHtml(safeReason)}</p>
+    <p style="margin:0 0 24px;font-size:15px;line-height:1.7;">We understand that this may be disappointing, and we sincerely appreciate your interest in Crescent High School.</p>
+    <p style="margin:0;font-size:15px;line-height:1.7;">If you require further clarification regarding this decision, please contact the school's admissions office using the official contact details below.</p>
+    <p style="margin:28px 0 0;font-size:15px;line-height:1.7;">Kind regards,<br><strong>Admissions Office</strong><br>Crescent High School<br>Student Admissions &amp; Administration</p>`;
+  return emailShell({ title: 'Admission Application Update', eyebrow: 'APPLICATION UPDATE', content, schoolEmailAddress });
 }
 
 async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, loginUsername, initialPassword, stream, className, academicYear, applicationReference, portalUrl, applicationId = null, triggeredBy = null }) {
-  const subject = 'Admission Application Approved – Cresent High School';
+  const subject = 'Crescent High School – Admission Application Approved';
   const loginText = String(initialPassword || '').trim();
   const initialPasswordDisplay = loginText && loginText !== 'undefined' ? loginText : 'Your admission number';
   const html = buildApprovalEmailHtml({
@@ -204,58 +210,73 @@ async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, login
     schoolEmailAddress: process.env.SMTP_FROM || 'info@cresenthighschool.com'
   });
   const text = [
-    `Dear ${fullName},`,
+    'Dear Parent/Guardian,',
     '',
     'Congratulations!',
-    'We are pleased to inform you that your application to Cresent High School has been APPROVED.',
+    `We are pleased to inform you that the admission application for ${fullName || 'the student'} has been APPROVED.`,
     '',
-    'APPLICATION DETAILS',
+    'STUDENT DETAILS',
     `Student Name: ${fullName}`,
     `Admission Number: ${admissionNumber || 'N/A'}`,
-    `Form/Class: ${className || 'Assigned by administration'}`,
+    `Form: ${className || 'Assigned by administration'}`,
     `Stream: ${stream || 'Assigned by administration'}`,
     `Academic Year: ${academicYear || 'N/A'}`,
-    `Application Reference: ${applicationReference || 'N/A'}`,
     '',
-    'PORTAL LOGIN DETAILS',
-    `Portal: ${process.env.APP_URL || 'https://cresenthighschool.onrender.com'}/login.html`,
+    'STUDENT PORTAL LOGIN DETAILS',
+    `Portal: ${portalUrl || `${process.env.APP_URL || 'https://cresenthighschool.onrender.com'}/login.html`}`,
     `Username: ${loginUsername || admissionNumber || 'Student'}`,
-    `Initial Password: ${initialPasswordDisplay}`,
+    `Password: ${initialPasswordDisplay}`,
     '',
-    'Please log in and follow the school instructions.',
+    'IMPORTANT INFORMATION',
+    '- Keep your admission number safe.',
+    '- Do not share your login credentials.',
+    '- Use the official student portal.',
+    '- Check the portal regularly for school updates.',
     '',
-    'Regards,',
-    'CRESENT HIGH SCHOOL',
-    'Student Admissions Office'
+    `We warmly welcome ${fullName || 'the student'} to Crescent High School and look forward to supporting their academic journey.`,
+    '',
+    'Kind regards,',
+    'Admissions Office',
+    'Crescent High School',
+    'Student Admissions & Administration'
   ].join('\n');
   return deliverMail({ to, subject, text, html, applicationId, emailType: 'APPLICATION_APPROVED', triggeredBy });
 }
 
-async function sendApplicationRejectionEmail({ to, fullName, applicationReference, decisionDate, reason, applicationId = null, triggeredBy = null }) {
-  const subject = 'Admission Application Update – Cresent High School';
+async function sendApplicationRejectionEmail({ to, fullName, applicationReference, className, decisionDate, reason, applicationId = null, triggeredBy = null }) {
+  const subject = 'Crescent High School – Admission Application Update';
   const html = buildRejectionEmailHtml({
     fullName,
     applicationReference,
+    className: className || 'As submitted',
     decisionDate,
     reason,
     schoolEmailAddress: process.env.SMTP_FROM || 'info@cresenthighschool.com'
   });
   const text = [
-    `Dear ${fullName},`,
+    'Dear Parent/Guardian,',
     '',
-    'Thank you for applying to Cresent High School.',
-    'After careful consideration of your application, we regret to inform you that your application has not been successful at this time.',
+    'Thank you for your interest in Crescent High School and for taking the time to submit an admission application.',
+    `After reviewing the application, we regret to inform you that the application for ${fullName || 'the student'} was not approved.`,
     '',
-    'APPLICATION DETAILS',
+    'STUDENT DETAILS',
     `Student Name: ${fullName}`,
     `Application Reference: ${applicationReference || 'N/A'}`,
-    'Application Status: NOT APPROVED',
+    `Applying For: ${className || 'As submitted'}`,
     `Decision Date: ${decisionDate || new Date().toISOString().slice(0, 10)}`,
-    reason ? `Reason: ${reason}` : 'Please contact the school administration if you require further information regarding this decision.',
     '',
-    'Regards,',
-    'CRESENT HIGH SCHOOL',
-    'Admissions Office'
+    'APPLICATION STATUS',
+    'NOT APPROVED',
+    '',
+    `Reason: ${reason || 'Please contact the school admissions office if you require further information regarding this decision.'}`,
+    '',
+    'We understand that this may be disappointing, and we sincerely appreciate your interest in Crescent High School.',
+    'If you require further clarification regarding this decision, please contact the school admissions office using the official contact details below.',
+    '',
+    'Kind regards,',
+    'Admissions Office',
+    'Crescent High School',
+    'Student Admissions & Administration'
   ].join('\n');
   return deliverMail({ to, subject, text, html, applicationId, emailType: 'APPLICATION_REJECTED', triggeredBy });
 }
@@ -276,18 +297,41 @@ async function sendPasswordResetEmail({ to, otp, temporaryPassword }) {
 }
 
 async function sendApplicationConfirmationEmail({ to, fullName, applicationId = null, triggeredBy = null }) {
-  const subject = 'Application Submitted - Crescent High School';
+  const subject = 'Crescent High School – Application Received Successfully';
+  const submittedDate = new Date().toISOString().slice(0, 10);
+  const html = buildReceivedEmailHtml({
+    fullName,
+    applicationReference: applicationId ? String(applicationId).padStart(4, '0') : 'N/A',
+    submittedDate,
+    schoolEmailAddress: process.env.SMTP_FROM || 'info@cresenthighschool.com'
+  });
   const text = [
-    `Dear ${fullName || 'Applicant'},`,
+    'Dear Parent/Guardian,',
     '',
-    'Thank you for applying!',
-    'Your application has been submitted successfully and is now pending approval.',
+    'Thank you for choosing Crescent High School.',
+    'We are pleased to confirm that the admission application for the following student has been successfully received:',
+    '',
+    'STUDENT DETAILS',
+    `Student Name: ${fullName || 'Applicant'}`,
+    `Application Reference: ${applicationId ? String(applicationId).padStart(4, '0') : 'N/A'}`,
+    `Date Submitted: ${submittedDate}`,
+    '',
+    'APPLICATION STATUS',
+    'PENDING REVIEW',
+    '',
+    'Your application has been successfully submitted and is now awaiting review by our admissions team.',
+    'Please note that this email confirms receipt of your application and does not constitute admission to Crescent High School.',
+    'Once the application has been reviewed, you will receive another email informing you whether the application has been approved or rejected.',
+    '',
+    'Thank you for your interest in Crescent High School.',
     '',
     'Kind regards,',
-    'Crescent High School Administration'
+    'Admissions Office',
+    'Crescent High School',
+    'Student Admissions & Administration'
   ].join('\n');
 
-  const result = await deliverMail({ to, subject, text, applicationId, emailType: 'APPLICATION_SUBMITTED', triggeredBy });
+  const result = await deliverMail({ to, subject, text, html, applicationId, emailType: 'APPLICATION_SUBMITTED', triggeredBy });
   if (result.delivered) {
     await logActivity(triggeredBy, 'application_confirmation_email_sent', `Application confirmation email sent to ${to}`, null);
   }

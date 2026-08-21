@@ -35,7 +35,7 @@ async function createApplication(req, res) {
       return res.status(400).json({ success: false, message: 'Student full name is required' });
     }
 
-    const recipientEmail = String(body.email || '').trim();
+    const recipientEmail = String(body.parentEmail || body.parent_email || '').trim();
     if (!isValidRecipientEmail(recipientEmail)) {
       return res.status(400).json({ success: false, message: 'A valid recipient email address is required' });
     }
@@ -46,10 +46,11 @@ async function createApplication(req, res) {
 
     const result = await query(
       `INSERT INTO applications
-       (full_name, email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (full_name, email, parent_email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
       [
         fullName,
+        body.email || null,
         recipientEmail,
         body.phone || body.phoneNumber || null,
         body.dateOfBirth || body.date_of_birth || body.dob || null,
@@ -104,6 +105,53 @@ async function listApplications(req, res) {
   res.json(rows);
 }
 
+async function sendPendingApplicationConfirmations(req, res) {
+  try {
+    const rows = await query(
+      `SELECT a.id, a.full_name, a.email, a.parent_email
+       FROM applications a
+       WHERE LOWER(COALESCE(a.status, 'pending')) = 'pending'
+         AND NOT EXISTS (
+           SELECT 1 FROM email_logs e
+           WHERE e.application_id = a.id
+             AND e.email_type = 'APPLICATION_SUBMITTED'
+             AND e.status = 'SENT'
+         )
+       ORDER BY a.created_at ASC`
+    );
+
+    const results = { selected: rows.length, sent: 0, failed: 0, skipped: 0, details: [] };
+    for (const application of rows) {
+      const recipientEmail = String(application.parent_email || application.email || '').trim();
+      if (!isValidRecipientEmail(recipientEmail)) {
+        results.skipped += 1;
+        results.details.push({ id: application.id, status: 'SKIPPED', reason: 'INVALID_RECIPIENT' });
+        continue;
+      }
+
+      const emailResult = await sendApplicationConfirmationEmail({
+        to: recipientEmail,
+        fullName: application.full_name || 'Applicant',
+        applicationId: application.id,
+        triggeredBy: req.user?.id || null
+      });
+      if (emailResult.delivered) {
+        results.sent += 1;
+        results.details.push({ id: application.id, status: 'SENT' });
+      } else {
+        results.failed += 1;
+        results.details.push({ id: application.id, status: 'FAILED', reason: emailResult.failureReason || 'DELIVERY_FAILED' });
+      }
+    }
+
+    await logActivity(req.user?.id || null, 'pending_application_confirmation_batch', `Processed ${results.selected} pending application confirmation emails: ${results.sent} sent, ${results.failed} failed, ${results.skipped} skipped`, req.ip);
+    res.json({ success: true, ...results, message: `Processed ${results.selected} pending application confirmation(s).` });
+  } catch (error) {
+    console.error('Pending application confirmation error:', error);
+    res.status(500).json({ success: false, message: 'Could not send pending application confirmations' });
+  }
+}
+
 async function approveApplication(req, res) {
   let connection;
   try {
@@ -139,18 +187,15 @@ async function approveApplication(req, res) {
 
     const [existingStudentRows] = await connection.query(
       'SELECT id, username, email, admission_number FROM students WHERE admission_number = ? OR email = ? LIMIT 1',
-      [admissionNumber, app.email || null]
+      [admissionNumber, app.parent_email || app.email || null]
     );
 
     let studentAccount = existingStudentRows[0] || null;
+    let initialPasswordForEmail = String(admissionNumber || '').trim();
     if (!studentAccount) {
-      const emailValue = app.email ? schoolEmail(app.email, admissionNumber || app.full_name) : null;
-      const baseUsername = String(app.full_name || app.fullName || 'student')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '')
-        .slice(0, 12) || 'student';
-      const username = `${baseUsername}${String(admissionNumber || '').replace(/[^0-9]/g, '').slice(-4) || Math.floor(1000 + Math.random() * 9000)}`;
-      const loginPassword = String(app.email || emailValue || admissionNumber || '').trim();
+      const emailValue = app.parent_email || app.email ? schoolEmail(app.parent_email || app.email, admissionNumber || app.full_name) : null;
+      const username = String(app.full_name || app.fullName || 'Student').trim();
+      const loginPassword = String(admissionNumber || '').trim();
       const passwordHash = await bcrypt.hash(loginPassword, 10);
       const [insertResult] = await connection.query(
         `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
@@ -171,6 +216,14 @@ async function approveApplication(req, res) {
       );
       studentAccount = { id: insertResult.insertId, username, email: emailValue || app.email || null, admission_number: admissionNumber };
       await logActivity(reviewerId, 'student_created_from_application', `Created student record ${admissionNumber}`, req.ip);
+    } else {
+      const username = String(app.full_name || app.fullName || studentAccount.username || 'Student').trim();
+      const passwordHash = await bcrypt.hash(String(admissionNumber || '').trim(), 10);
+      await connection.query(
+        'UPDATE students SET username = ?, password_hash = ? WHERE id = ?',
+        [username, passwordHash, studentAccount.id]
+      );
+      studentAccount.username = username;
     }
 
     await connection.query(
@@ -183,15 +236,15 @@ async function approveApplication(req, res) {
     await connection.commit();
     await logActivity(reviewerId, 'application_approved', `Approved application #${id}`, req.ip);
 
-    const recipientEmail = String(app.email || studentAccount?.email || '').trim();
+    const recipientEmail = String(app.parent_email || app.email || studentAccount?.email || '').trim();
     const safeStudentName = app.full_name || app.fullName || 'Student';
     const emailResult = recipientEmail
       ? await sendAdmissionApprovalEmail({
           to: recipientEmail,
           fullName: safeStudentName,
           admissionNumber,
-          loginUsername: studentAccount?.username || app.full_name || 'student',
-          initialPassword: studentAccount?.admission_number || admissionNumber || recipientEmail,
+          loginUsername: safeStudentName,
+          initialPassword: initialPasswordForEmail,
           stream,
           className: app.class_name || app.className || 'Assigned by administration',
           academicYear: new Date().getFullYear(),
@@ -277,13 +330,14 @@ async function rejectApplication(req, res) {
     await connection.commit();
     await logActivity(req.user.id, 'application_rejected', `Rejected application #${id}`, req.ip);
 
-    const recipientEmail = String(app.email || '').trim();
+    const recipientEmail = String(app.parent_email || app.email || '').trim();
     let emailResult = { delivered: false, failureReason: 'MISSING_RECIPIENT' };
     if (recipientEmail) {
       emailResult = await sendApplicationRejectionEmail({
         to: recipientEmail,
         fullName: app.full_name || 'Student',
         applicationReference: String(app.id || '').padStart(4, '0'),
+        className: app.class_name || app.className || 'As submitted',
         decisionDate: new Date().toISOString().slice(0, 10),
         reason: rejectionReason || '',
         applicationId: id,
@@ -313,6 +367,7 @@ async function rejectApplication(req, res) {
 module.exports = {
   createApplication,
   listApplications,
+  sendPendingApplicationConfirmations,
   approveApplication,
   rejectApplication,
   setIO
