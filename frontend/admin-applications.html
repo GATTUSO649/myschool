@@ -185,16 +185,22 @@
             const action = btn.dataset.action;
             const confirmMsg = action === 'approve' ? 'Approve this application?' : 'Reject this application?';
             if (!confirm(confirmMsg)) return;
+            const rowButtons = btn.closest('tr')?.querySelectorAll('button[data-action]') || [];
+            rowButtons.forEach((rowButton) => { rowButton.disabled = true; });
+            btn.textContent = action === 'approve' ? 'Approving...' : 'Rejecting...';
             try {
               const endpoint = `/applications/${id}/${action}`;
               const response = await fetchWithAuth(endpoint, { method: 'POST' });
-              const result = await response.json();
-              if (!response.ok) throw new Error(result.message || 'Action failed');
-              showAlert(result.message || 'Action completed', 'success');
+              const result = await response.json().catch(() => ({}));
+              if (!response.ok || !result.success) throw new Error(result.message || result.reason || `Could not ${action} application`);
+              const emailNote = result.email === 'FAILED' ? ' The decision was saved, but the email could not be delivered.' : '';
+              showAlert(`${result.message || 'Action completed'}${emailNote}`, result.email === 'FAILED' ? 'warn' : 'success');
               await loadApplications(applicationFilter);
               await loadApplicationSummary();
             } catch (err) {
               console.error('Application action error', err);
+              rowButtons.forEach((rowButton) => { rowButton.disabled = false; });
+              btn.textContent = action === 'approve' ? 'Approve' : 'Reject';
               showAlert(err.message || 'Unable to perform action', 'error');
             }
           });

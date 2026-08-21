@@ -214,8 +214,17 @@
     document.getElementById('applicationForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       const form = event.target;
+      if (form.dataset.submitting === 'true' || form.dataset.submitted === 'true') return;
+      form.dataset.submitting = 'true';
+      const submitButton = form.querySelector('button[type="submit"]');
+      const originalSubmitLabel = submitButton?.textContent || 'Submit Application';
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting application...';
+      }
       const formData = new FormData(form);
       const submissionCard = document.getElementById('submissionCard');
+      setStatus('Submitting your application...', 'pending');
 
       try {
         const { response, data } = await fetchWithAuth('/api/applications', {
@@ -223,7 +232,9 @@
           body: formData
         });
         if (response.ok && data?.success) {
+          form.dataset.submitted = 'true';
           form.reset();
+          setStatus('', '');
           submissionCard.classList.remove('hidden');
           const emailMessage = data.email === 'SENT'
             ? 'A thank-you confirmation has been sent to the email address you provided.'
@@ -236,9 +247,19 @@
           return;
         }
 
+        form.dataset.submitting = 'false';
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalSubmitLabel;
+        }
         setStatus(data?.message || 'Application could not be submitted.', 'error');
       } catch (error) {
         console.error('Application error:', error);
+        form.dataset.submitting = 'false';
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalSubmitLabel;
+        }
         setStatus('Could not submit application. Check that the backend server is running.', 'error');
       }
     });
