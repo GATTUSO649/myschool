@@ -1,5 +1,5 @@
 const { query } = require('../config/db');
-const { deliverMail, verifyMailTransport, getSmtpConfiguration, isValidRecipientEmail } = require('./emailUtils');
+const { deliverMail, verifyMailTransport, getEmailConfiguration, isValidRecipientEmail } = require('./emailUtils');
 
 function cleanRecipients(value) {
   const values = Array.isArray(value) ? value : String(value || '').split(/[,;\n]/);
@@ -41,7 +41,7 @@ async function send(req, res) {
 
 async function test(req, res) {
   const recipient = String(req.body?.to || '').trim().toLowerCase();
-  const configuration = getSmtpConfiguration();
+  const configuration = getEmailConfiguration();
   const authorizedRecipients = new Set([
     configuration.user.toLowerCase(),
     configuration.fromAddress.toLowerCase(),

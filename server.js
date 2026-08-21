@@ -27,7 +27,7 @@ const transcriptRoutes = require('./routes/transcript');
 const courseRoutes = require('./routes/courses');
 const classRoutes = require('./routes/classes');
 const adminRoutes = require('./routes/admin');
-const { getSafeSmtpStatus, verifyMailTransport } = require('./controllers/emailUtils');
+const { getSafeSmtpStatus, getEmailConfiguration, verifyMailTransport } = require('./controllers/emailUtils');
 
 const app = express();
 // Determine production early
@@ -374,7 +374,9 @@ async function start() {
   const host = process.env.HOST || '0.0.0.0';
   const appUrl = process.env.APP_URL || (isProduction ? 'https://cresenthighschool.onrender.com' : 'http://localhost:3000');
   const smtpStatus = getSafeSmtpStatus();
-  console.log('SMTP configuration detected:', {
+  const emailConfiguration = getEmailConfiguration();
+  console.log('Email provider initialized:', emailConfiguration.provider);
+  console.log('Email configuration detected:', {
     SMTP_HOST: smtpStatus.hostConfigured,
     SMTP_PORT: smtpStatus.portConfigured,
     SMTP_SECURE: smtpStatus.secureConfigured,
