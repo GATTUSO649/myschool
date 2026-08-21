@@ -193,7 +193,9 @@
               const response = await fetchWithAuth(endpoint, { method: 'POST' });
               const result = await response.json().catch(() => ({}));
               if (!response.ok || !result.success) throw new Error(result.message || result.reason || `Could not ${action} application`);
-              const emailNote = result.email === 'FAILED' ? ' The decision was saved, but the email could not be delivered.' : '';
+              const emailNote = result.email === 'FAILED'
+                ? ` The decision was saved, but the email to ${result.recipient || 'the parent email'} could not be delivered${result.reason ? ` (${result.reason})` : ''}.`
+                : '';
               showAlert(`${result.message || 'Action completed'}${emailNote}`, result.email === 'FAILED' ? 'warn' : 'success');
               await loadApplications(applicationFilter);
               await loadApplicationSummary();

@@ -4,6 +4,14 @@ const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
 const { schoolEmail, isValidRecipientEmail, sendAdmissionApprovalEmail, sendApplicationRejectionEmail, sendApplicationConfirmationEmail } = require('./emailUtils');
 
+function getApplicationRecipientEmail(application) {
+  const parentEmail = String(application?.parent_email || '').trim();
+  if (isValidRecipientEmail(parentEmail)) return parentEmail;
+  const legacyEmail = String(application?.email || '').trim();
+  if (isValidRecipientEmail(legacyEmail)) return legacyEmail;
+  return parentEmail || legacyEmail;
+}
+
 function getDocumentValue(req, fieldName, fallbackValue) {
   const uploaded = req.files?.[fieldName]?.[0];
   if (uploaded) {
@@ -122,7 +130,7 @@ async function sendPendingApplicationConfirmations(req, res) {
 
     const results = { selected: rows.length, sent: 0, failed: 0, skipped: 0, details: [] };
     for (const application of rows) {
-      const recipientEmail = String(application.parent_email || application.email || '').trim();
+      const recipientEmail = getApplicationRecipientEmail(application);
       if (!isValidRecipientEmail(recipientEmail)) {
         results.skipped += 1;
         results.details.push({ id: application.id, status: 'SKIPPED', reason: 'INVALID_RECIPIENT' });
@@ -236,7 +244,7 @@ async function approveApplication(req, res) {
     await connection.commit();
     await logActivity(reviewerId, 'application_approved', `Approved application #${id}`, req.ip);
 
-    const recipientEmail = String(app.parent_email || app.email || studentAccount?.email || '').trim();
+    const recipientEmail = getApplicationRecipientEmail(app) || String(studentAccount?.email || '').trim();
     const safeStudentName = app.full_name || app.fullName || 'Student';
     const emailResult = recipientEmail
       ? await sendAdmissionApprovalEmail({
@@ -263,6 +271,7 @@ async function approveApplication(req, res) {
         admissionNumber,
         stream,
         email: 'FAILED',
+        recipient: recipientEmail || null,
         reason,
         message: 'Application approved successfully, but the notification email could not be delivered.'
       });
@@ -330,7 +339,7 @@ async function rejectApplication(req, res) {
     await connection.commit();
     await logActivity(req.user.id, 'application_rejected', `Rejected application #${id}`, req.ip);
 
-    const recipientEmail = String(app.parent_email || app.email || '').trim();
+    const recipientEmail = getApplicationRecipientEmail(app);
     let emailResult = { delivered: false, failureReason: 'MISSING_RECIPIENT' };
     if (recipientEmail) {
       emailResult = await sendApplicationRejectionEmail({
@@ -349,6 +358,7 @@ async function rejectApplication(req, res) {
       return res.json({
         success: true,
         email: 'FAILED',
+        recipient: recipientEmail || null,
         reason: emailResult.failureReason || 'Unable to deliver notification email.',
         message: 'Application rejected successfully, but the notification email could not be delivered.'
       });
