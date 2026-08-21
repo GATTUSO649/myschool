@@ -60,7 +60,7 @@ const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
 const allowedOrigins = new Set([
   'https://cresenthighschool.onrender.com',
   'https://www.cresenthighschool.onrender.com',
-  ...(isProduction ? [] : ['http://localhost:3000', 'http://localhost:5001', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5001']),
+  ...(isProduction ? [] : ['http://localhost:3000', 'http://localhost:5001', 'http://localhost:8000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5001', 'http://127.0.0.1:8000']),
   ...configuredCorsOrigins
 ]);
 
