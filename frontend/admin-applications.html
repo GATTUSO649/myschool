@@ -209,7 +209,7 @@
         updateApplicationSummary();
       } catch (err) {
         console.error('Load applications error', err);
-        tbody.innerHTML = '<tr><td colspan="9">Unable to load applications.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="9">${err.message || 'Unable to load applications.'}</td></tr>`;
       }
     }
 

@@ -22,6 +22,7 @@ const CONFIG = {
     'finance.html',
     'transcript.html',
     'admin-dashboard.html',
+    'admin-applications.html',
     'lecturer-dashboard.html'
   ]
 };

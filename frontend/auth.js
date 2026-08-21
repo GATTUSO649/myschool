@@ -227,6 +227,7 @@ function checkAuth() {
     'academic.html': ['teacher', 'admin', 'student'],
     'admissions.html': ['admin'],
     'admin-dashboard.html': ['admin'],
+    'admin-applications.html': ['admin'],
     'admin-roles.html': ['admin'],
     'admin-finance.html': ['finance', 'admin'],
     'admin-finance-balances.html': ['finance', 'admin'],
