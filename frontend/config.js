@@ -3,9 +3,15 @@
  * Values are environment-aware so the app works in development and production.
  */
 
-const fallbackApiUrl = (typeof window !== 'undefined' && window.location)
-  ? `${window.location.origin}/api`
-  : 'https://cresenthighschool.onrender.com/api';
+const isLocalFrontendServer = typeof window !== 'undefined'
+  && window.location
+  && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  && window.location.port === '8000';
+const fallbackApiUrl = isLocalFrontendServer
+  ? `${window.location.protocol}//${window.location.hostname}:5001/api`
+  : (typeof window !== 'undefined' && window.location)
+    ? `${window.location.origin}/api`
+    : 'https://cresenthighschool.onrender.com/api';
 const fallbackWsUrl = (typeof window !== 'undefined' && window.location)
   ? window.location.origin
   : 'https://cresenthighschool.onrender.com';
