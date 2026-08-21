@@ -151,6 +151,9 @@ function classifyEmailError(error) {
 
 function classifyProviderError(error) {
   const code = String(error?.code || '').toUpperCase();
+  const name = String(error?.name || '').toLowerCase();
+  const message = String(error?.message || '').toLowerCase();
+  if (name === 'validation_error' && message.includes('domain is not verified')) return 'EMAIL_SENDER_NOT_VERIFIED';
   if (code === 'ETIMEDOUT') return 'EMAIL_API_TIMEOUT';
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'EMAIL_API_DNS_FAILED';
   if (code === 'HTTP_401' || code === 'HTTP_403' || code === 'INVALID_API_KEY') return 'EMAIL_API_AUTHENTICATION_FAILED';
@@ -178,8 +181,11 @@ async function verifyMailTransport() {
     if (!status.configured) return { ...status, message: 'EMAIL_API_REQUIRED_VARIABLES_MISSING' };
     try {
       const resend = new Resend(email.apiKey);
-      const { error } = await resend.domains.list();
+      const { data, error } = await resend.domains.list();
       if (error) return { ...status, failureReason: classifyProviderError(error), message: 'EMAIL_API_VERIFICATION_FAILED' };
+      const senderDomain = email.fromAddress.split('@')[1];
+      const verifiedDomain = Array.isArray(data) && data.some((domain) => String(domain.name || domain.domain || '').toLowerCase() === senderDomain);
+      if (!verifiedDomain) return { ...status, failureReason: 'EMAIL_SENDER_NOT_VERIFIED', message: 'EMAIL_SENDER_NOT_VERIFIED' };
       return { ...status, reachable: true };
     } catch (error) {
       const failureReason = classifyProviderError(error);
