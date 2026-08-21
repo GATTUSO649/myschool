@@ -78,23 +78,20 @@ async function createApplication(req, res) {
 
     await logActivity(null, 'application_created', `Application #${result.insertId} submitted`, req.ip);
 
-    const emailResult = await sendApplicationConfirmationEmail({
+    void sendApplicationConfirmationEmail({
       to: recipientEmail,
       fullName: fullName || body.full_name || body.name || 'Applicant',
       applicationId: result.insertId
+    }).catch((error) => {
+      console.error('Application confirmation email queue error:', error.message || error);
     });
 
-    if (!emailResult.delivered) {
-      return res.status(201).json({
-        success: true,
-        id: result.insertId,
-        email: 'FAILED',
-        reason: emailResult.failureReason || 'Unable to deliver confirmation email.',
-        message: 'Application submitted successfully, but the confirmation email could not be delivered.'
-      });
-    }
-
-    res.status(201).json({ success: true, id: result.insertId, email: 'SENT', message: 'Application submitted successfully and a confirmation email was sent.' });
+    res.status(201).json({
+      success: true,
+      id: result.insertId,
+      email: 'PENDING',
+      message: 'Application submitted successfully. Your confirmation email is being processed.'
+    });
   } catch (error) {
     console.error('Application create error:', error);
     res.status(500).json({ success: false, message: 'Could not submit application' });

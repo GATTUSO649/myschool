@@ -238,7 +238,9 @@
           submissionCard.classList.remove('hidden');
           const emailMessage = data.email === 'SENT'
             ? 'A thank-you confirmation has been sent to the email address you provided.'
-            : 'Your application was received, but the thank-you email could not be delivered. Please verify your email address or contact the school administration.';
+            : data.email === 'PENDING'
+              ? 'Your thank-you confirmation is being sent to the parent email address you provided.'
+              : 'Your application was received, but the thank-you email could not be delivered. Please verify your email address or contact the school administration.';
           submissionCard.innerHTML = `
               <h3>Thank you for applying!</h3>
               <p>Your application has been submitted successfully and is now pending approval.</p>
