@@ -27,7 +27,7 @@ const transcriptRoutes = require('./routes/transcript');
 const courseRoutes = require('./routes/courses');
 const classRoutes = require('./routes/classes');
 const adminRoutes = require('./routes/admin');
-const { getSafeSmtpStatus, getEmailConfiguration, verifyMailTransport } = require('./controllers/emailUtils');
+const { getEmailConfiguration, verifyMailTransport } = require('./controllers/emailUtils');
 
 const app = express();
 // Determine production early
@@ -373,22 +373,21 @@ async function start() {
   const port = Number(process.env.PORT || 5001);
   const host = process.env.HOST || '0.0.0.0';
   const appUrl = process.env.APP_URL || (isProduction ? 'https://cresenthighschool.onrender.com' : 'http://localhost:3000');
-  const smtpStatus = getSafeSmtpStatus();
   const emailConfiguration = getEmailConfiguration();
-  console.log('Email provider initialized:', emailConfiguration.provider);
-  console.log('Email configuration detected:', {
-    SMTP_HOST: smtpStatus.hostConfigured,
-    SMTP_PORT: smtpStatus.portConfigured,
-    SMTP_SECURE: smtpStatus.secureConfigured,
-    SMTP_USER: smtpStatus.userConfigured,
-    SMTP_PASS: smtpStatus.passwordConfigured,
-    SMTP_FROM: smtpStatus.fromConfigured
-  });
-  verifyMailTransport().then((verification) => {
-    console.log('SMTP verification:', verification.reachable ? 'passed' : `failed (${verification.failureReason || verification.message})`);
-  }).catch((error) => {
-    console.warn('SMTP verification failed:', 'SMTP_VERIFICATION_ERROR');
-  });
+  if (emailConfiguration.provider === 'resend') {
+    console.log('Email provider: Resend API');
+    console.log('Resend API key configured:', Boolean(emailConfiguration.apiKey));
+    console.log('Email sender configured:', Boolean(emailConfiguration.from));
+  } else if (emailConfiguration.provider === 'smtp') {
+    console.log('Email provider: SMTP');
+    verifyMailTransport().then((verification) => {
+      console.log('SMTP verification:', verification.reachable ? 'passed' : `failed (${verification.failureReason || verification.message})`);
+    }).catch(() => {
+      console.warn('SMTP verification failed: SMTP_VERIFICATION_ERROR');
+    });
+  } else {
+    console.warn('Email provider configuration missing');
+  }
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
       console.error(`Port ${port} is already in use. Stop the old Node server before starting a new one.`);

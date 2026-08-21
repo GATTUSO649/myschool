@@ -1,5 +1,4 @@
-const nodemailer = require('nodemailer');
-const https = require('https');
+const { Resend } = require('resend');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
 
@@ -61,8 +60,20 @@ function getSmtpConfiguration() {
 }
 
 function getEmailConfiguration() {
-  const smtp = getSmtpConfiguration();
   const provider = String(process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : 'smtp')).trim().toLowerCase();
+  if (provider === 'resend') {
+    const from = String(process.env.EMAIL_FROM || '').trim();
+    const fromMatch = from.match(/<([^<>\s]+@[^<>\s]+)>/);
+    const fromAddress = (fromMatch ? fromMatch[1] : from).trim().toLowerCase();
+    return {
+      provider,
+      apiKey: String(process.env.RESEND_API_KEY || ''),
+      from: isValidRecipientEmail(fromAddress) ? from : '',
+      fromAddress: isValidRecipientEmail(fromAddress) ? fromAddress : ''
+    };
+  }
+
+  const smtp = getSmtpConfiguration();
   const from = String(process.env.EMAIL_FROM || smtp.from || '').trim();
   const fromMatch = from.match(/<([^<>\s]+@[^<>\s]+)>/);
   const fromAddress = (fromMatch ? fromMatch[1] : from).trim().toLowerCase();
@@ -75,8 +86,24 @@ function getEmailConfiguration() {
 }
 
 function getSafeSmtpStatus() {
-  const configuration = getSmtpConfiguration();
   const email = getEmailConfiguration();
+  if (email.provider === 'resend') {
+    return {
+      provider: 'resend',
+      apiConfigured: Boolean(email.apiKey),
+      emailFromConfigured: Boolean(email.from),
+      hostConfigured: false,
+      portConfigured: false,
+      secureConfigured: false,
+      userConfigured: false,
+      passwordConfigured: false,
+      fromConfigured: Boolean(email.from),
+      host: null,
+      port: null,
+      secure: null
+    };
+  }
+  const configuration = getSmtpConfiguration();
   return {
     provider: email.provider,
     apiConfigured: Boolean(email.apiKey),
@@ -96,6 +123,7 @@ function getSafeSmtpStatus() {
 function createTransport() {
   const configuration = getSmtpConfiguration();
   if (!configuration.host || !configuration.user || !configuration.password) return null;
+  const nodemailer = require('nodemailer');
   return nodemailer.createTransport({
     host: configuration.host,
     port: configuration.port,
@@ -121,44 +149,11 @@ function classifyEmailError(error) {
   return 'SMTP_DELIVERY_FAILED';
 }
 
-function requestResendEmail({ to, subject, text, html, from, apiKey }) {
-  return new Promise((resolve, reject) => {
-    const payload = JSON.stringify({ from, to: [to], subject, text, html });
-    const request = https.request({
-      hostname: 'api.resend.com',
-      path: '/emails',
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
-      },
-      timeout: 10000
-    }, (response) => {
-      let body = '';
-      response.setEncoding('utf8');
-      response.on('data', (chunk) => { body += chunk; });
-      response.on('end', () => {
-        let data = {};
-        try { data = body ? JSON.parse(body) : {}; } catch (error) { data = {}; }
-        if (response.statusCode >= 200 && response.statusCode < 300) return resolve(data);
-        const error = new Error(data.message || data.name || `Email API returned HTTP ${response.statusCode}`);
-        error.code = `HTTP_${response.statusCode}`;
-        reject(error);
-      });
-    });
-    request.on('timeout', () => request.destroy(Object.assign(new Error('Email API request timed out'), { code: 'ETIMEDOUT' })));
-    request.on('error', reject);
-    request.write(payload);
-    request.end();
-  });
-}
-
 function classifyProviderError(error) {
   const code = String(error?.code || '').toUpperCase();
   if (code === 'ETIMEDOUT') return 'EMAIL_API_TIMEOUT';
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'EMAIL_API_DNS_FAILED';
-  if (code === 'HTTP_401' || code === 'HTTP_403') return 'EMAIL_API_AUTHENTICATION_FAILED';
+  if (code === 'HTTP_401' || code === 'HTTP_403' || code === 'INVALID_API_KEY') return 'EMAIL_API_AUTHENTICATION_FAILED';
   if (code.startsWith('HTTP_')) return 'EMAIL_API_REJECTED';
   return 'EMAIL_API_DELIVERY_FAILED';
 }
@@ -182,16 +177,9 @@ async function verifyMailTransport() {
     const status = { ...getSafeSmtpStatus(), configured: Boolean(email.apiKey && email.from), reachable: false };
     if (!status.configured) return { ...status, message: 'EMAIL_API_REQUIRED_VARIABLES_MISSING' };
     try {
-      const response = await new Promise((resolve, reject) => {
-        const request = https.request({ hostname: 'api.resend.com', path: '/domains', method: 'GET', headers: { Authorization: `Bearer ${email.apiKey}` }, timeout: 10000 }, (result) => {
-          result.resume();
-          result.on('end', () => resolve(result.statusCode));
-        });
-        request.on('timeout', () => request.destroy(Object.assign(new Error('Email API request timed out'), { code: 'ETIMEDOUT' })));
-        request.on('error', reject);
-        request.end();
-      });
-      if (response < 200 || response >= 300) return { ...status, failureReason: response === 401 ? 'EMAIL_API_AUTHENTICATION_FAILED' : 'EMAIL_API_REJECTED', message: 'EMAIL_API_VERIFICATION_FAILED' };
+      const resend = new Resend(email.apiKey);
+      const { error } = await resend.domains.list();
+      if (error) return { ...status, failureReason: classifyProviderError(error), message: 'EMAIL_API_VERIFICATION_FAILED' };
       return { ...status, reachable: true };
     } catch (error) {
       const failureReason = classifyProviderError(error);
@@ -199,7 +187,6 @@ async function verifyMailTransport() {
       return { ...status, failureReason, message: 'EMAIL_API_VERIFICATION_FAILED' };
     }
   }
-  const configuration = getSmtpConfiguration();
   const transport = createTransport();
   if (!transport) return { ...getSafeSmtpStatus(), configured: false, reachable: false, message: 'SMTP_REQUIRED_VARIABLES_MISSING' };
   try {
@@ -234,10 +221,18 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
       return { delivered: false, messageId: null, failureReason };
     }
     try {
-      const result = await requestResendEmail({ to: destination, subject: safeSubject, text, html: html || '<p>Portal notification</p>', from: email.from, apiKey: email.apiKey });
+      const resend = new Resend(email.apiKey);
+      const result = await resend.emails.send({
+        from: email.from,
+        to: [destination],
+        subject: safeSubject,
+        text: String(text || '').trim() || 'Portal notification',
+        html: html || '<p>Portal notification</p>'
+      });
+      if (result.error) throw result.error;
       await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'SENT', triggeredBy });
       console.log('Email sent successfully. provider: resend');
-      return { delivered: true, messageId: result.id || null };
+      return { delivered: true, messageId: result.data?.id || null };
     } catch (error) {
       const failureReason = classifyProviderError(error);
       console.warn('Email delivery failed:', failureReason);
