@@ -333,7 +333,7 @@ const protectedPageRoleMap = {
 };
 
 app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
-  const pathname = req.path.toLowerCase();
+  const pathname = decodeURIComponent(req.path).toLowerCase();
   const allowedRoles = protectedPageRoleMap[pathname];
   if (!allowedRoles) {
     return res.redirect('/login.html');
@@ -353,8 +353,16 @@ app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
 
 const publicFrontendPagePaths = Object.keys(frontendPageTargets).filter((pathname) => !protectedPagePatterns.includes(pathname));
 app.get(publicFrontendPagePaths, (req, res, next) => {
-  const pagePath = path.join(__dirname, 'frontend', frontendPageTargets[req.path.toLowerCase()]);
+  const pagePath = path.join(__dirname, 'frontend', frontendPageTargets[decodeURIComponent(req.path).toLowerCase()]);
   res.sendFile(pagePath, (error) => {
+    if (error) next(error);
+  });
+});
+
+app.get(/^\/(.+\.html)$/i, (req, res, next) => {
+  const pathname = `/${decodeURIComponent(req.params[0]).toLowerCase()}`;
+  if (!publicFrontendPagePaths.includes(pathname)) return next();
+  return res.sendFile(path.join(__dirname, 'frontend', frontendPageTargets[pathname]), (error) => {
     if (error) next(error);
   });
 });
