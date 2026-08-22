@@ -1,4 +1,3 @@
-const { Resend } = require('resend');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
 
@@ -38,79 +37,44 @@ function schoolEmail(value, fallback) {
 }
 
 function getSmtpConfiguration() {
-  const smtpPort = Number(process.env.SMTP_PORT || 587);
-  const smtpSecure = String(process.env.SMTP_SECURE || '').trim().toLowerCase() === 'true';
+  const smtpHost = String(process.env.SMTP_HOST || '').trim();
+  const smtpPort = Number(process.env.SMTP_PORT || 0);
+  const smtpSecure = normalizeSmtpSecure(process.env.SMTP_SECURE, false);
   const smtpFrom = String(process.env.SMTP_FROM || '').trim();
   const fromMatch = smtpFrom.match(/<([^<>\s]+@[^<>\s]+)>/);
   const configuredFromAddress = (fromMatch ? fromMatch[1] : smtpFrom).trim().toLowerCase();
-  const fromAddress = isValidRecipientEmail(configuredFromAddress)
-    ? configuredFromAddress
-    : String(process.env.SMTP_USER || '').trim().toLowerCase();
   return {
-    host: String(process.env.SMTP_HOST || '').trim(),
+    host: smtpHost,
     port: smtpPort,
     secure: smtpSecure,
     user: String(process.env.SMTP_USER || '').trim(),
     password: String(process.env.SMTP_PASS || ''),
     from: isValidRecipientEmail(configuredFromAddress)
       ? smtpFrom
-      : (process.env.SMTP_USER ? `Crescent High School <${process.env.SMTP_USER}>` : ''),
-    fromAddress
+      : '',
+    fromAddress: isValidRecipientEmail(configuredFromAddress) ? configuredFromAddress : ''
   };
 }
 
 function getEmailConfiguration() {
-  const provider = String(process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : 'smtp')).trim().toLowerCase();
-  if (provider === 'resend') {
-    const from = String(process.env.EMAIL_FROM || '').trim();
-    const fromMatch = from.match(/<([^<>\s]+@[^<>\s]+)>/);
-    const fromAddress = (fromMatch ? fromMatch[1] : from).trim().toLowerCase();
-    return {
-      provider,
-      apiKey: String(process.env.RESEND_API_KEY || ''),
-      from: isValidRecipientEmail(fromAddress) ? from : '',
-      fromAddress: isValidRecipientEmail(fromAddress) ? fromAddress : ''
-    };
-  }
-
+  const provider = String(process.env.EMAIL_PROVIDER || 'SMTP').trim().toUpperCase() || 'SMTP';
   const smtp = getSmtpConfiguration();
-  const from = String(process.env.EMAIL_FROM || smtp.from || '').trim();
-  const fromMatch = from.match(/<([^<>\s]+@[^<>\s]+)>/);
-  const fromAddress = (fromMatch ? fromMatch[1] : from).trim().toLowerCase();
   return {
     provider,
-    apiKey: String(process.env.RESEND_API_KEY || ''),
-    from: isValidRecipientEmail(fromAddress) ? from : smtp.from,
-    fromAddress: isValidRecipientEmail(fromAddress) ? fromAddress : smtp.fromAddress
+    from: smtp.from,
+    fromAddress: smtp.fromAddress,
+    ...smtp
   };
 }
 
 function getSafeSmtpStatus() {
   const email = getEmailConfiguration();
-  if (email.provider === 'resend') {
-    return {
-      provider: 'resend',
-      apiConfigured: Boolean(email.apiKey),
-      emailFromConfigured: Boolean(email.from),
-      hostConfigured: false,
-      portConfigured: false,
-      secureConfigured: false,
-      userConfigured: false,
-      passwordConfigured: false,
-      fromConfigured: Boolean(email.from),
-      host: null,
-      port: null,
-      secure: null
-    };
-  }
   const configuration = getSmtpConfiguration();
   return {
     provider: email.provider,
-    apiConfigured: Boolean(email.apiKey),
-    emailFromConfigured: Boolean(email.from),
     hostConfigured: Boolean(configuration.host),
-    portConfigured: Boolean(process.env.SMTP_PORT),
-    secureConfigured: Boolean(process.env.SMTP_SECURE),
+    portConfigured: Number.isInteger(configuration.port) && configuration.port > 0,
+    secureConfigured: typeof process.env.SMTP_SECURE !== 'undefined',
     userConfigured: Boolean(configuration.user),
     passwordConfigured: Boolean(configuration.password),
     fromConfigured: Boolean(configuration.from),
@@ -122,7 +86,7 @@ function getSafeSmtpStatus() {
 
 function createTransport() {
   const configuration = getSmtpConfiguration();
-  if (!configuration.host || !configuration.user || !configuration.password) return null;
+  if (!configuration.host || !configuration.port || !configuration.user || !configuration.password) return null;
   const nodemailer = require('nodemailer');
   return nodemailer.createTransport({
     host: configuration.host,
@@ -149,18 +113,6 @@ function classifyEmailError(error) {
   return 'SMTP_DELIVERY_FAILED';
 }
 
-function classifyProviderError(error) {
-  const code = String(error?.code || '').toUpperCase();
-  const name = String(error?.name || '').toLowerCase();
-  const message = String(error?.message || '').toLowerCase();
-  if (name === 'validation_error' && message.includes('domain is not verified')) return 'EMAIL_SENDER_NOT_VERIFIED';
-  if (code === 'ETIMEDOUT') return 'EMAIL_API_TIMEOUT';
-  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'EMAIL_API_DNS_FAILED';
-  if (code === 'HTTP_401' || code === 'HTTP_403' || code === 'INVALID_API_KEY') return 'EMAIL_API_AUTHENTICATION_FAILED';
-  if (code.startsWith('HTTP_')) return 'EMAIL_API_REJECTED';
-  return 'EMAIL_API_DELIVERY_FAILED';
-}
-
 async function recordEmailLog({ applicationId = null, recipient, emailType, subject, status = 'PENDING', failureReason = null, triggeredBy = null }) {
   const safeRecipient = sanitizeRecipientEmail(recipient) || 'unknown@missing.invalid';
   try {
@@ -176,38 +128,26 @@ async function recordEmailLog({ applicationId = null, recipient, emailType, subj
 
 async function verifyMailTransport() {
   const email = getEmailConfiguration();
-  if (email.provider === 'resend') {
-    const status = { ...getSafeSmtpStatus(), configured: Boolean(email.apiKey && email.from), reachable: false };
-    if (!status.configured) return { ...status, message: 'EMAIL_API_REQUIRED_VARIABLES_MISSING' };
-    try {
-      const resend = new Resend(email.apiKey);
-      const { data, error } = await resend.domains.list();
-      if (error) return { ...status, failureReason: classifyProviderError(error), message: 'EMAIL_API_VERIFICATION_FAILED' };
-      const senderDomain = email.fromAddress.split('@')[1];
-      const verifiedDomain = Array.isArray(data) && data.some((domain) => String(domain.name || domain.domain || '').toLowerCase() === senderDomain);
-      if (!verifiedDomain) return { ...status, failureReason: 'EMAIL_SENDER_NOT_VERIFIED', message: 'EMAIL_SENDER_NOT_VERIFIED' };
-      return { ...status, reachable: true };
-    } catch (error) {
-      const failureReason = classifyProviderError(error);
-      console.warn('Email provider verification failed:', failureReason);
-      return { ...status, failureReason, message: 'EMAIL_API_VERIFICATION_FAILED' };
-    }
+  const status = { ...getSafeSmtpStatus(), configured: false, reachable: false };
+  if (email.provider !== 'SMTP') return { ...status, message: 'SMTP_PROVIDER_REQUIRED' };
+  if (!email.host || !email.port || !email.user || !email.password || !email.from) {
+    return { ...status, message: 'SMTP_REQUIRED_VARIABLES_MISSING' };
   }
   const transport = createTransport();
-  if (!transport) return { ...getSafeSmtpStatus(), configured: false, reachable: false, message: 'SMTP_REQUIRED_VARIABLES_MISSING' };
+  if (!transport) return { ...status, message: 'SMTP_REQUIRED_VARIABLES_MISSING' };
   try {
     await transport.verify();
-    return { ...getSafeSmtpStatus(), configured: true, reachable: true };
+    return { ...status, configured: true, reachable: true };
   } catch (error) {
     const failureReason = classifyEmailError(error);
     console.warn('SMTP verification failed:', failureReason);
-    return { ...getSafeSmtpStatus(), configured: true, reachable: false, failureReason, message: 'SMTP_VERIFICATION_FAILED' };
+    return { ...status, configured: true, reachable: false, failureReason, message: 'SMTP_VERIFICATION_FAILED' };
   }
 }
 
 async function deliverMail({ to, subject, text, html, applicationId = null, emailType = 'GENERAL', triggeredBy = null }) {
   const email = getEmailConfiguration();
-  const transport = email.provider === 'smtp' ? createTransport() : null;
+  const transport = email.provider === 'SMTP' ? createTransport() : null;
   const destination = sanitizeRecipientEmail(to);
   const safeSubject = String(subject || 'Portal Notification').trim() || 'Portal Notification';
   if (!destination) {
@@ -220,35 +160,8 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
     return { delivered: false, messageId: null, failureReason: 'INVALID_RECIPIENT' };
   }
 
-  if (email.provider === 'resend') {
-    if (!email.apiKey || !email.from) {
-      const failureReason = 'EMAIL_API_REQUIRED_VARIABLES_MISSING';
-      await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason, triggeredBy });
-      return { delivered: false, messageId: null, failureReason };
-    }
-    try {
-      const resend = new Resend(email.apiKey);
-      const result = await resend.emails.send({
-        from: email.from,
-        to: [destination],
-        subject: safeSubject,
-        text: String(text || '').trim() || 'Portal notification',
-        html: html || '<p>Portal notification</p>'
-      });
-      if (result.error) throw result.error;
-      await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'SENT', triggeredBy });
-      console.log('Email sent successfully. provider: resend');
-      return { delivered: true, messageId: result.data?.id || null };
-    } catch (error) {
-      const failureReason = classifyProviderError(error);
-      console.warn('Email delivery failed:', failureReason);
-      await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason, triggeredBy });
-      return { delivered: false, messageId: null, failureReason };
-    }
-  }
-
-  if (!transport) {
-    const failureReason = 'SMTP_REQUIRED_VARIABLES_MISSING';
+  if (email.provider !== 'SMTP' || !transport || !email.from) {
+    const failureReason = email.provider !== 'SMTP' ? 'SMTP_PROVIDER_REQUIRED' : 'SMTP_REQUIRED_VARIABLES_MISSING';
     await recordEmailLog({ applicationId, recipient: destination, emailType, subject: safeSubject, status: 'FAILED', failureReason, triggeredBy });
     console.warn('SMTP is not configured. Email not delivered to:', destination);
     return { delivered: false, messageId: null, failureReason };
@@ -256,7 +169,7 @@ async function deliverMail({ to, subject, text, html, applicationId = null, emai
 
   try {
     const info = await transport.sendMail({
-      from: getSmtpConfiguration().from,
+      from: email.from,
       to: destination,
       subject: safeSubject,
       text: String(text || '').trim() || 'Portal notification',

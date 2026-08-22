@@ -374,12 +374,9 @@ async function start() {
   const host = process.env.HOST || '0.0.0.0';
   const appUrl = process.env.APP_URL || (isProduction ? 'https://cresenthighschool.onrender.com' : 'http://localhost:3000');
   const emailConfiguration = getEmailConfiguration();
-  if (emailConfiguration.provider === 'resend') {
-    console.log('Email provider: Resend API');
-    console.log('Resend API key configured:', Boolean(emailConfiguration.apiKey));
-    console.log('Email sender configured:', Boolean(emailConfiguration.from));
-  } else if (emailConfiguration.provider === 'smtp') {
+  if (emailConfiguration.provider === 'SMTP') {
     console.log('Email provider: SMTP');
+    console.log(`SMTP endpoint: ${emailConfiguration.host || '(not configured)'}:${emailConfiguration.port || '(not configured)'}`);
     verifyMailTransport().then((verification) => {
       console.log('SMTP verification:', verification.reachable ? 'passed' : `failed (${verification.failureReason || verification.message})`);
     }).catch(() => {
