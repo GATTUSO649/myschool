@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Revision - CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <style>
+    .student-main { padding-top: 122px !important; min-height: calc(100vh - 180px); }
+    .student-main-content { padding: 24px; min-height: calc(100vh - 220px); }
+    .revision-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0;
+      flex-wrap: wrap;
+    }
+    .revision-search {
+      min-width: 240px;
+      flex: 1;
+      max-width: 420px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 11px 12px;
+      font-size: 0.95rem;
+    }
+    .revision-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .revision-select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.95rem;
+    }
+    .subject-tiles { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:16px; }
+    .subject-tile {
+      background:#fff;
+      padding:18px;
+      border-radius:8px;
+      border:1px solid #e2e8f0;
+      box-shadow:0 6px 18px rgba(2,6,23,0.06);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:150px;
+    }
+    .subject-tile h3 { margin:0; color:#102033; }
+    .subject-tile p { margin:0; color:#526173; line-height:1.5; }
+    .subject-count { font-size:0.85rem; color:#0f766e; font-weight:700; }
+    .subject-button {
+      align-self:flex-start;
+      display:inline-block;
+      margin-top:auto;
+      padding:8px 12px;
+      background:#0b67ff;
+      color:#fff;
+      border-radius:6px;
+      text-decoration:none;
+    }
+    .empty-card {
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:8px;
+      padding:24px;
+      color:#526173;
+      text-align:center;
+    }
+    .notes-page-header { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+    .notes-page-header h1 { margin: 0 0 8px !important; }
+  </style>
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+      <div class="header-actions">
+        <span class="header-pill">Student Portal</span>
+        <button class="logout-button" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="student-main">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link active" href="transcript.html">Transcript</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="help.html">Help</a>
+      </div>
+    </aside>
+
+    <section class="student-main-content">
+      <div class="notes-page-shell">
+        <div class="notes-page-header">
+          <div>
+            <p class="eyebrow">Student portal</p>
+            <h1>Revision Materials</h1>
+            <p>Browse uploaded revision resources by subject.</p>
+          </div>
+        </div>
+
+        <div class="revision-toolbar">
+          <input id="revisionSearch" class="revision-search" type="search" placeholder="Search subject">
+          <span id="revisionStatus" class="header-pill">Loading materials</span>
+        </div>
+
+        <div class="revision-filters">
+          <div class="filter-group">
+            <label for="revisionClass">Class</label>
+            <select id="revisionClass" class="revision-select">
+              <option value="">All classes</option>
+              <option value="Form 1">Form 1</option>
+              <option value="Form 2">Form 2</option>
+              <option value="Form 3">Form 3</option>
+              <option value="Form 4">Form 4</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="revisionCategory">Revision category</label>
+            <select id="revisionCategory" class="revision-select">
+              <option value="">All categories</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="subjectTiles" class="subject-tiles"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/scripts/shared/config.js"></script>
+  <script src="/scripts/auth/auth.js"></script>
+  <script src="/scripts/shared/site-common.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const subjects = [
+      'Mathematics', 'English', 'Kiswahili', 'Biology', 'Physics', 'Chemistry',
+      'History', 'Geography', 'CRE', 'Business', 'Computer', 'Agriculture'
+    ];
+    let revisionCounts = {};
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderSubjectTiles() {
+      const container = document.getElementById('subjectTiles');
+      const search = document.getElementById('revisionSearch')?.value.trim().toLowerCase() || '';
+      const classFilter = document.getElementById('revisionClass')?.value.trim().toLowerCase() || '';
+      const categoryFilter = document.getElementById('revisionCategory')?.value.trim().toLowerCase() || '';
+      if (!container) return;
+
+      const visible = subjects.filter((subject) => {
+        const matchesSearch = !search || subject.toLowerCase().includes(search);
+        const matchesClass = !classFilter || revisionCounts[subject.toLowerCase()]?.classes?.includes(classFilter);
+        const matchesCategory = !categoryFilter || revisionCounts[subject.toLowerCase()]?.categories?.includes(categoryFilter);
+        return matchesSearch && matchesClass && matchesCategory;
+      });
+      if (!visible.length) {
+        container.innerHTML = '<div class="empty-card">No matching subjects found.</div>';
+        return;
+      }
+
+      container.innerHTML = visible.map((subject) => {
+        const count = revisionCounts[subject.toLowerCase()]?.count || 0;
+        return `
+          <article class="subject-tile">
+            <h3>${escapeHtml(subject)}</h3>
+            <p>Open revision materials for ${escapeHtml(subject.toLowerCase())}.</p>
+            <span class="subject-count">${count} uploaded file${count === 1 ? '' : 's'}</span>
+            <a class="subject-button" href="subject.html?subject=${encodeURIComponent(subject)}&type=revision">Open</a>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadRevisionCounts() {
+      const status = document.getElementById('revisionStatus');
+      try {
+        const student = getStudentInfo() || {};
+        const className = student.class_name || student.className || '';
+        const response = await fetchWithAuth(`/revision-materials${className ? `?className=${encodeURIComponent(className)}` : ''}`);
+        if (!response.ok) throw new Error('Could not load revision materials');
+        const materials = await response.json();
+        revisionCounts = {};
+        const categories = new Set();
+        materials.forEach((item) => {
+          const subjectKey = String(item.subject || '').trim().toLowerCase();
+          const classNameKey = String(item.class_name || item.className || '').trim().toLowerCase();
+          const categoryKey = String(item.category || item.type || '').trim().toLowerCase();
+          if (!subjectKey) return;
+
+          if (!revisionCounts[subjectKey]) {
+            revisionCounts[subjectKey] = { count: 0, classes: new Set(), categories: new Set() };
+          }
+          revisionCounts[subjectKey].count += 1;
+          if (classNameKey) revisionCounts[subjectKey].classes.add(classNameKey);
+          if (categoryKey) revisionCounts[subjectKey].categories.add(categoryKey);
+          if (categoryKey) categories.add(categoryKey);
+        });
+
+        Object.keys(revisionCounts).forEach((subject) => {
+          revisionCounts[subject].classes = Array.from(revisionCounts[subject].classes);
+          revisionCounts[subject].categories = Array.from(revisionCounts[subject].categories);
+        });
+
+        const total = materials.length;
+        status.textContent = `${total} material${total === 1 ? '' : 's'}`;
+
+        const categorySelect = document.getElementById('revisionCategory');
+        if (categorySelect) {
+          categorySelect.innerHTML = '<option value="">All categories</option>' + Array.from(categories).sort().map((category) => `
+            <option value="${escapeHtml(category)}">${escapeHtml(category.charAt(0).toUpperCase() + category.slice(1))}</option>`).join('');
+        }
+      } catch (error) {
+        console.error('Revision materials failed:', error);
+        status.textContent = 'Unavailable';
+      }
+      renderSubjectTiles();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      renderSubjectTiles();
+      loadRevisionCounts();
+      document.getElementById('revisionSearch')?.addEventListener('input', renderSubjectTiles);
+      document.getElementById('revisionClass')?.addEventListener('change', renderSubjectTiles);
+      document.getElementById('revisionCategory')?.addEventListener('change', renderSubjectTiles);
+
+      try {
+        const socket = io();
+        socket.on('new_portal_note', loadRevisionCounts);
+        socket.on('new_academic_doc', (doc) => {
+          if (doc?.type === 'revision') loadRevisionCounts();
+        });
+        socket.on('new_portal_revision', loadRevisionCounts);
+      } catch (error) {
+        console.warn('Socket connection unavailable:', error);
+      }
+    });
+  </script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>

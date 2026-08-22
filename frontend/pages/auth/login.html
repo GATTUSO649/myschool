@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Login | Student Portal</title>
+    <link rel="stylesheet" href="//styles/shared/style.css">
+    <link rel="stylesheet" href="//styles/shared/site-common.css">
+    <script src="//scripts/shared/config.js"></script>
+        <style>
+            /* Login page with background image and card positioned left. */
+            .auth-shell { min-height: 100vh; display:flex; align-items:center; justify-content:flex-start; padding:2rem 2rem 2rem 5rem; box-sizing:border-box; background-image: url('/assets/images/login-bg.jpg'); background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed; }
+            .auth-container { display:flex; width:100%; max-width:420px; background:white; border-radius:8px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+            .auth-image { display:none; }
+            .auth-card { flex:1; padding:2rem; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; }
+            .brand-block { margin-bottom:1.25rem; }
+            @media (max-width:900px) {
+                .auth-shell { justify-content:center; padding:2rem; }
+                .auth-container { max-width:100%; }
+                .auth-card { padding:1.25rem; }
+            }
+        </style>
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body>
+        <main class="auth-shell">
+            <div class="auth-container">
+                <div class="auth-image" aria-hidden="true"></div>
+                <section class="auth-card" aria-labelledby="loginTitle">
+            <div class="brand-block">
+                <div class="brand-mark">C</div>
+                <h1 id="loginTitle"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</h1>
+                <p>Student Portal</p>
+            </div>
+            <form class="auth-form" id="loginForm">
+                <div class="form-field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username">
+                </div>
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your admission number">
+                </div>
+                <div class="form-field">
+                    <label><input type="checkbox" id="rememberMe" name="remember"> Remember me</label>
+                </div>
+                <button type="submit" class="auth-button">Login</button>
+            </form>
+            <div class="auth-links">
+                <a href="application.html">Apply for admission</a>
+                <a href="signup.html">Create account</a>
+            </div>
+        </section>
+      </div>
+    </main>
+    <footer class="auth-footer">&copy; 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+    <script src="//scripts/auth/auth.js"></script>
+    <script src="//scripts/shared/site-common.js"></script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>

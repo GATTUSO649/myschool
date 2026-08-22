@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CRESENT HIGH SCHOOL - Admin Portal</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">`n<link rel="stylesheet" href="/styles/student/dashboard.css">`n<link rel="stylesheet" href="/styles/admin/admin-dashboard.css">
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header">
+    <button class="sidebar-toggle-btn" id="sidebarCollapseBtn" aria-label="Toggle sidebar" title="Toggle sidebar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name">
+          <span class="cresent-brand">CRESENT</span> HIGH SCHOOL
+        </div>
+        <div class="header-note">Administrator portal</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="adminNamePill">Administrator</span>
+        <button class="logout-button" data-admin-logout>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">Admin Control</div>
+      <div class="sidebar-section">
+        <h3>Core</h3>
+        <a class="sidebar-link active" href="admin-dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
+            <polyline points="12 12 20 7.5"></polyline>
+            <polyline points="12 12 12 21"></polyline>
+            <polyline points="12 12 4 7.5"></polyline>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a class="sidebar-link" href="admin-applications.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+          <span>Applications</span>
+        </a>
+        <a class="sidebar-link" href="admin-students.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>Students</span>
+        </a>
+        <a class="sidebar-link" href="admin-roles.html">
+          <span>Roles & staff</span>
+        </a>
+        <a class="sidebar-link" href="admin-academics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <span>Academics</span>
+        </a>
+        <a class="sidebar-link" href="admin-uploads.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>Uploads</span>
+        </a>
+        <a class="sidebar-link" href="admin-finance.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <path d="M12 1v6m0 6v6"></path>
+            <path d="M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24"></path>
+          </svg>
+          <span>Finance</span>
+        </a>
+        <a class="sidebar-link" href="admin-settings.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+        <a class="sidebar-link" href="admin-security.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Security</span>
+        </a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Quick access</h3>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 4 12 14.01 9 11.01 2 17.99 22 4"></polyline>
+            <path d="M22 4h-7v7"></path>
+          </svg>
+          <span>Student portal</span>
+        </a>
+        <a class="sidebar-link" href="#" data-admin-logout>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section id="dashboard" class="admin-section">
+        <section class="stats-grid">
+          <article class="stat-card accent-teal">
+            <span class="stat-label">Pending applications</span>
+            <strong id="totalApplications">0</strong>
+            <small>Admissions awaiting review</small>
+          </article>
+          <article class="stat-card accent-blue">
+            <span class="stat-label">Approved applications</span>
+            <strong id="approvedApplications">0</strong>
+            <small>Admissions accepted</small>
+          </article>
+          <article class="stat-card accent-green">
+            <span class="stat-label">Rejected applications</span>
+            <strong id="rejectedApplications">0</strong>
+            <small>Admissions declined</small>
+          </article>
+          <article class="stat-card accent-rose">
+            <span class="stat-label">Active students</span>
+            <strong id="totalStudents">0</strong>
+            <small>Registered learners</small>
+          </article>
+          <article class="stat-card accent-indigo">
+            <span class="stat-label">Total billed</span>
+            <strong id="totalCharged">KSh 0</strong>
+            <small>Fees issued this term</small>
+          </article>
+          <article class="stat-card accent-lime">
+            <span class="stat-label">Collected</span>
+            <strong id="totalPaid">KSh 0</strong>
+            <small>Payments received</small>
+          </article>
+        </section>
+
+        <section class="module-grid">
+          <article class="module-card accent-teal">
+            <h3>Applications</h3>
+            <p>Review admissions, approve or reject requests, and manage documents.</p>
+            <a href="admin-applications.html">Open applications</a>
+          </article>
+          <article class="module-card accent-blue">
+            <h3>Students</h3>
+            <p>Register learners, manage access, and monitor student records.</p>
+            <a href="admin-students.html">Open students</a>
+          </article>
+          <article class="module-card accent-gold">
+            <h3>Academics</h3>
+            <p>Track notes, revision papers, results, and transcripts.</p>
+            <a href="admin-academics.html">Open academics</a>
+          </article>
+          <article class="module-card accent-rose">
+            <h3>Uploads</h3>
+            <p>Manage documents, notices, and academic files for the school.</p>
+            <a href="admin-uploads.html">Open uploads</a>
+          </article>
+        </section>
+
+        <section class="section-grid analytics-grid">
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Finance overview</h3>
+              <span class="panel-pill">Paid vs balance</span>
+            </div>
+            <div id="financeOverviewChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Academic performance</h3>
+              <span class="panel-pill">Average by class</span>
+            </div>
+            <div id="academicPerformanceChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Payment trend</h3>
+              <span class="panel-pill">Fee collections by form</span>
+            </div>
+            <div id="paymentTrendChart" class="analytics-chart-shell"></div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+
+  <script src="/scripts/shared/config.js"></script>
+  <script src="/scripts/auth/auth.js"></script>
+  <script src="/scripts/admin/admin-dashboard.js"></script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>
+

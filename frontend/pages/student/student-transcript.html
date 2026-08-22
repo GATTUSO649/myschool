@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CRESENT HIGH SCHOOL - Transcript</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/student/dashboard.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, 'Segoe UI', sans-serif;
+    }
+    body.student-portal {
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+    }
+    body.student-portal,
+    body.student-portal .student-shell,
+    body.student-portal .dashboard-main,
+    body.student-portal .student-main-content,
+    body.student-portal .transcript-print-shell,
+    body.student-portal .transcript-print-container {
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+    }
+    body.student-portal .student-main-content {
+      overflow: visible !important;
+      overflow-x: hidden !important;
+    }
+    .student-shell {
+      display: grid !important;
+      grid-template-columns: 280px minmax(0, 1fr) !important;
+      min-height: 0 !important;
+      height: auto !important;
+      gap: 0 !important;
+      width: min(1600px, calc(100% - 64px)) !important;
+      margin: 0 auto !important;
+      padding-top: 104px !important;
+    }
+    .student-sidebar {
+      position: sticky !important;
+      top: 96px !important;
+      align-self: start !important;
+      width: 280px !important;
+      min-width: 280px !important;
+      max-width: 280px !important;
+      height: auto !important;
+      max-height: calc(100vh - 96px) !important;
+      overflow: visible !important;
+      overflow-y: auto !important;
+      background: linear-gradient(180deg, #031127 0%, #0a2a4f 100%) !important;
+      padding: 22px 18px !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    body.student-portal .dashboard-main {
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: visible !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    body.student-portal .student-main-content {
+      display: block !important;
+      flex: 1 1 0 !important;
+      min-height: 0 !important;
+      overflow: visible !important;
+      overflow-x: hidden !important;
+      padding: 0 0 24px !important;
+    }
+    .transcript-print-shell {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 100%;
+      padding: 0 0 32px;
+      overflow: visible;
+    }
+    .transcript-print-container {
+      width: min(100%, 1000px);
+      max-width: 1000px;
+      background: #ffffff;
+      border: 1px solid #dbe3ee;
+      border-radius: 28px;
+      padding: 34px 36px;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+      overflow: visible;
+      min-width: 0;
+      box-sizing: border-box;
+      max-height: none !important;
+    }
+    .transcript-header-sheet {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      border-bottom: 2px solid #19335a;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .transcript-contact,
+    .transcript-actions,
+    .transcript-branding {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .transcript-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .download-button {
+      border: 0;
+      background: #0b2f63;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.2s ease, background 0.2s ease;
+      white-space: nowrap;
+    }
+    .download-button:hover {
+      background: #142f66;
+      transform: translateY(-1px);
+    }
+    .transcript-print-container table {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      table-layout: fixed;
+    }
+    .details-card,
+    .performance-card,
+    .summary-card,
+    .attendance-card,
+    .discipline-card {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .performance-card {
+      overflow: hidden;
+    }
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 0;
+      table-layout: fixed;
+    }
+    .performance-table th,
+    .performance-table td {
+      border: 1px solid #dbe4f2;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.94rem;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .performance-table-wrap {
+      overflow-x: auto;
+      width: 100%;
+      min-width: 0;
+    }
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 0;
+      table-layout: fixed;
+    }
+    .performance-table th,
+    .performance-table td {
+      border: 1px solid #dbe4f2;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.94rem;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .performance-table th:nth-child(1),
+    .performance-table td:nth-child(1) {
+      width: 40%;
+    }
+    .performance-table th:nth-child(2),
+    .performance-table td:nth-child(2),
+    .performance-table th:nth-child(3),
+    .performance-table td:nth-child(3),
+    .performance-table th:nth-child(4),
+    .performance-table td:nth-child(4) {
+      width: 20%;
+    }
+    @media print {
+      .download-button {
+        display: none !important;
+      }
+    }
+    .transcript-print-container h1,
+    .transcript-print-container h3,
+    .transcript-print-container h4 {
+      margin: 0;
+    }
+    .transcript-section {
+      margin-top: 24px;
+      page-break-inside: avoid;
+    }
+    .transcript-details-grid,
+    .summary-grid {
+      display: grid;
+      gap: 22px;
+    }
+    .transcript-details-grid {
+      grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.7fr);
+    }
+    .summary-grid {
+      grid-template-columns: minmax(260px, 1fr) minmax(320px, 1fr);
+    }
+    .transcript-print-container table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .transcript-print-container th,
+    .transcript-print-container td {
+      border: 1px solid #dbe4f2;
+      padding: 12px 14px;
+      vertical-align: middle;
+    }
+    .transcript-print-container th {
+      background: #f1f5f9;
+      color: #0f2f63;
+      font-weight: 700;
+    }
+    .transcript-print-container .performance-table-wrap {
+      overflow-x: auto;
+    }
+    @media (max-width: 980px) {
+      .transcript-details-grid,
+      .summary-grid,
+      .transcript-footer {
+        grid-template-columns: 1fr;
+      }
+      .transcript-header-sheet {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .transcript-contact {
+        text-align: left;
+      }
+    }
+    @media print {
+      body {
+        background: #fff;
+      }
+      .dashboard-header,
+      .dashboard-footer,
+      .logout-button,
+      .header-actions {
+        display: none !important;
+      }
+      body.student-portal .student-shell {
+        padding: 0 !important;
+      }
+      .transcript-print-container {
+        box-shadow: none;
+        border-color: #bbb;
+        border-radius: 0;
+        padding: 24px;
+      }
+      .transcript-print-container {
+        width: auto;
+        max-width: 100%;
+      }
+    }
+    .transcript-branding {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .crest-badge {
+      width: 92px;
+      height: 92px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #0b2955 0%, #1c4ca6 100%);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 2.75rem;
+      font-weight: 700;
+      box-shadow: 0 12px 28px rgba(11, 35, 72, 0.22);
+    }
+    .transcript-title {
+      font-size: 2.05rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: #14284f;
+      margin-bottom: 6px;
+    }
+    .transcript-subtitle {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1d3a6c;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .transcript-contact {
+      color: #2a3f5f;
+      display: grid;
+      gap: 4px;
+      text-align: right;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .transcript-section { margin-top: 24px; }
+    .transcript-details-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 22px;
+    }
+    .details-card,
+    .performance-card,
+    .summary-card,
+    .attendance-card,
+    .discipline-card {
+      background: #fff;
+      border: 1px solid #d7e2f3;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 14px 40px rgba(11, 35, 72, 0.08);
+    }
+    .details-card h3,
+    .performance-card h3,
+    .summary-card h4,
+    .attendance-card h4,
+    .discipline-card h4 {
+      margin: 0 0 16px;
+      color: #14284f;
+      font-size: 1.1rem;
+      letter-spacing: 0.03em;
+    }
+    .details-card dl { display: grid; grid-template-columns: minmax(160px, auto) 1fr; row-gap: 10px; column-gap: 16px; }
+    .details-card dt { font-weight: 700; color: #1f3a61; }
+    .details-card dd { margin: 0; color: #3b4f6f; }
+    .performance-table-wrap {
+      overflow-x: auto;
+      width: 100%;
+      min-width: 0;
+    }
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 0;
+      table-layout: fixed;
+    }
+    .performance-table th,
+    .performance-table td {
+      border: 1px solid #dbe4f2;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.94rem;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .performance-table th:nth-child(1),
+    .performance-table td:nth-child(1) {
+      width: 40%;
+    }
+    .performance-table th:nth-child(2),
+    .performance-table td:nth-child(2),
+    .performance-table th:nth-child(3),
+    .performance-table td:nth-child(3),
+    .performance-table th:nth-child(4),
+    .performance-table td:nth-child(4) {
+      width: 20%;
+    }
+    .performance-table th {
+      background: #0f2f63;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .empty-row { text-align: center; color: #64748b; padding: 24px 0; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 22px;
+      margin-top: 26px;
+    }
+    .summary-large { grid-column: 1 / -1; }
+    .summary-large dl { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr); gap: 12px 24px; }
+    .summary-large dt { font-weight: 700; color: #1f3a61; }
+    .summary-large dd { margin: 0; color: #3b4f6f; }
+    .grade-key-card .grade-key-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      color: #1f3a61;
+      font-size: 0.9rem;
+    }
+    .grade-key-grid div { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f7f9ff; border-radius: 12px; }
+    .grade-key-grid strong { color: #0f2f63; }
+    .attendance-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .attendance-table th,
+    .attendance-table td {
+      border: 1px solid #dbe4f2;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      color: #2f4a6b;
+    }
+    .attendance-table th { background: #f1f5fb; color: #1f3a61; }
+    .discipline-card p { margin: 0; color: #3b4f6f; line-height: 1.6; }
+    .discipline-status { font-weight: 700; color: #0f5d31; margin-bottom: 8px; }
+    .signatory-section { display: grid; gap: 20px; margin-top: 32px; }
+    .signatory-line { display: flex; justify-content: space-between; border-top: 1px solid #dbe4f2; padding-top: 16px; color: #475569; }
+    .transcript-footer {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 22px;
+      margin-top: 32px;
+      align-items: start;
+    }
+    .verification-box { background: #fff; border: 1px solid #d7e2f3; border-radius: 18px; padding: 20px; }
+    .verification-box h4 { margin-top: 0; }
+    .verification-box p { margin: 10px 0; color: #3a4e6a; line-height: 1.6; font-size: 0.95rem; }
+    .verification-link { font-weight: 700; color: #0d3b7d; word-break: break-all; }
+    .transcript-qr-block { display: grid; gap: 10px; justify-items: center; text-align: center; }
+    .transcript-qr { width: 160px; height: 160px; border-radius: 18px; background: #fff; display: grid; place-items: center; border: 1px solid #d7e2f3; }
+    .transcript-qr img { width: 140px; height: 140px; object-fit: contain; }
+    .transcript-qr-label { margin: 0; color: #0f2f63; font-size: 0.95rem; font-weight: 700; }
+    .transcript-print-shell {
+      background: #f1f5f9;
+      padding: 16px 0 28px;
+    }
+    .transcript-print-container {
+      width: 100%;
+      max-width: 840px;
+      margin: 10px auto 0;
+      border-radius: 20px;
+      padding: 28px 30px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    }
+    @media (max-width: 980px) {
+      .transcript-details-grid,
+      .summary-grid,
+      .transcript-footer {
+        grid-template-columns: 1fr;
+      }
+      .transcript-header-sheet {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .transcript-contact { text-align: left; }
+    }
+    @media print {
+      body {
+        background: #fff;
+      }
+      body.student-portal .student-shell,
+      body.student-portal .dashboard-main {
+        padding: 0 !important;
+      }
+      .transcript-print-shell {
+        background: transparent;
+        padding: 0;
+      }
+      .transcript-print-container {
+        box-shadow: none;
+        border-color: #bbb;
+        border-radius: 0;
+        padding: 24px;
+        width: auto;
+        max-width: 100%;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Student Portal</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="pageNamePill">Transcript</span>
+        <button class="logout-button" data-admin-logout>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link active" href="student-transcript.html">Transcript</a>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="transcript.html">Exams</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Fee Balance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <section class="student-main-content">
+        <section class="admin-section">
+          <div class="section-heading">
+          <div>
+            <p class="eyebrow">Academics</p>
+            <h2>My Transcript</h2>
+          </div>
+
+            <span class="card-subtitle">A clean transcript layout for your student portal view.</span>
+          </div>
+          <div class="transcript-print-shell">
+            <div class="transcript-print-container">
+              <div class="transcript-header-sheet">
+                <div class="transcript-branding">
+                  <div class="crest-badge">C</div>
+                  <div>
+                    <div class="transcript-title">CRESCENT HIGH SCHOOL</div>
+                    <div class="transcript-subtitle">OFFICIAL ACADEMIC TRANSCRIPT</div>
+                  </div>
+                </div>
+                <div class="transcript-contact">
+                  <div>P.O. Box 123-90100</div>
+                  <div>Machakos, Kenya</div>
+                  <div>+254 700 000 000</div>
+                  <div>info@cresenthigh.ac.ke</div>
+                  <div>www.cresenthigh.ac.ke</div>
+                </div>
+                <div class="transcript-actions">
+                  <button class="download-button" type="button" onclick="downloadTranscript()">Download Transcript</button>
+                </div>
+              </div>
+
+              <div class="transcript-section transcript-details-grid">
+                <div class="details-card">
+                  <h3>Student Details</h3>
+                  <dl>
+                    <dt>Admission Number</dt><dd id="detailAdmission">-</dd>
+                    <dt>Student Name</dt><dd id="detailName">-</dd>
+                    <dt>Gender</dt><dd id="detailGender">-</dd>
+                    <dt>Date of Birth</dt><dd id="detailDob">-</dd>
+                    <dt>Form</dt><dd id="detailForm">-</dd>
+                    <dt>Stream</dt><dd id="detailStream">-</dd>
+                    <dt>KCPE Index</dt><dd id="detailKcpe">-</dd>
+                    <dt>Admission Date</dt><dd id="detailAdmissionDate">-</dd>
+                    <dt>Graduation Year</dt><dd id="detailGraduationYear">-</dd>
+                  </dl>
+                </div>
+
+                <div class="performance-card">
+                  <h3>Academic Performance</h3>
+                  <div class="performance-table-wrap">
+                    <table class="performance-table">
+                      <thead>
+                        <tr>
+                          <th>Subject</th>
+                          <th>Score</th>
+                          <th>Grade</th>
+                          <th>Points</th>
+                        </tr>
+                      </thead>
+                      <tbody id="subjectTableBody">
+                        <tr><td colspan="4" class="empty-row">Loading transcript data...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="transcript-section summary-grid">
+                <div class="summary-card summary-large">
+                  <h4>Summary</h4>
+                  <dl>
+                    <dt>Total Marks</dt><dd id="summaryTotal">-</dd>
+                    <dt>Average</dt><dd id="summaryAverage">-</dd>
+                    <dt>Mean Grade</dt><dd id="summaryGrade">-</dd>
+                    <dt>KCSE Points</dt><dd id="summaryPoints">-</dd>
+                    <dt>Class Position</dt><dd id="summaryClassPosition">-</dd>
+                    <dt>Stream Position</dt><dd id="summaryStreamPosition">-</dd>
+                    <dt>Overall Remark</dt><dd id="summaryRemark">-</dd>
+                  </dl>
+                </div>
+                <div class="summary-card grade-key-card">
+                  <h4>Grade Key</h4>
+                  <div class="grade-key-grid">
+                    <div><strong>80 - 100</strong><span>A</span><span>12</span></div>
+                    <div><strong>75 - 79</strong><span>A-</span><span>11</span></div>
+                    <div><strong>70 - 74</strong><span>B+</span><span>10</span></div>
+                    <div><strong>65 - 69</strong><span>B</span><span>9</span></div>
+                    <div><strong>60 - 64</strong><span>B-</span><span>8</span></div>
+                    <div><strong>50 - 59</strong><span>C</span><span>6</span></div>
+                    <div><strong>45 - 49</strong><span>C-</span><span>5</span></div>
+                    <div><strong>35 - 44</strong><span>D</span><span>3</span></div>
+                    <div><strong>0 - 34</strong><span>E</span><span>1</span></div>
+                  </div>
+                </div>
+                <div class="summary-card attendance-card">
+                  <h4>Attendance</h4>
+                  <table class="attendance-table">
+                    <thead><tr><th>Term</th><th>Days Present</th><th>Days Absent</th><th>Attendance %</th></tr></thead>
+                    <tbody>
+                      <tr><td>1</td><td id="attTerm1Present">-</td><td id="attTerm1Absent">-</td><td id="attTerm1Percent">-</td></tr>
+                      <tr><td>2</td><td id="attTerm2Present">-</td><td id="attTerm2Absent">-</td><td id="attTerm2Percent">-</td></tr>
+                      <tr><td>3</td><td id="attTerm3Present">-</td><td id="attTerm3Absent">-</td><td id="attTerm3Percent">-</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="summary-card discipline-card">
+                  <h4>Discipline Record</h4>
+                  <p class="discipline-status">Excellent conduct</p>
+                  <p class="discipline-note">No disciplinary cases recorded.</p>
+                </div>
+              </div>
+
+              <div class="transcript-section signatory-section">
+                <div class="signatory-line"><span>Class Teacher</span><span>Date</span></div>
+                <div class="signatory-line"><span>Director of Studies</span><span>Date</span></div>
+                <div class="signatory-line"><span>Principal</span><span>Date</span></div>
+              </div>
+
+              <div class="transcript-footer">
+                <div class="verification-box">
+                  <h4>Verification</h4>
+                  <p>This transcript is electronically generated and can be verified for authenticity using the QR code or by visiting:</p>
+                  <a class="verification-link" id="verificationLink" href="#" target="_blank" rel="noreferrer noopener">-</a>
+                </div>
+                <div class="verification-qr transcript-qr-block">
+                  <div class="transcript-qr">
+                    <img id="transcriptQrImage" alt="Transcript QR code" src="" />
+                  </div>
+                  <p class="transcript-qr-label">Scan to verify transcript details</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="/scripts/auth/auth.js"></script>
+  <script>
+    const SUBJECT_LABELS = {
+      eng: 'English',
+      kisw: 'Kiswahili',
+      mat: 'Mathematics',
+      bio: 'Biology',
+      che: 'Chemistry',
+      phy: 'Physics',
+      cre: 'CRE',
+      his: 'History',
+      geo: 'Geography',
+      comp: 'Computer Studies',
+      bus: 'Business Studies',
+      agr: 'Agriculture'
+    };
+
+    const SUBJECT_FIELDS = Object.keys(SUBJECT_LABELS);
+    const GRADE_POINTS = {
+      'A': 12,
+      'A-': 11,
+      'B+': 10,
+      'B': 9,
+      'B-': 8,
+      'C+': 7,
+      'C': 6,
+      'C-': 5,
+      'D+': 4,
+      'D': 3,
+      'D-': 2,
+      'E': 1,
+      'F': 0
+    };
+
+    function gradeFromScore(score) {
+      if (!Number.isFinite(score)) return '-';
+      if (score >= 80) return 'A';
+      if (score >= 75) return 'A-';
+      if (score >= 70) return 'B+';
+      if (score >= 65) return 'B';
+      if (score >= 60) return 'B-';
+      if (score >= 50) return 'C';
+      if (score >= 45) return 'C-';
+      if (score >= 35) return 'D';
+      return 'E';
+    }
+
+    function remarkFromAverage(avg) {
+      if (!Number.isFinite(avg)) return 'No remarks available';
+      if (avg >= 80) return 'EXCELLENT PERFORMANCE';
+      if (avg >= 70) return 'VERY GOOD PERFORMANCE';
+      if (avg >= 60) return 'GOOD PERFORMANCE';
+      if (avg >= 50) return 'FAIR PERFORMANCE';
+      return 'IMPROVEMENT REQUIRED';
+    }
+
+    function getQueryParam(key) { return new URLSearchParams(window.location.search).get(key); }
+
+    function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value || '-'; }
+
+    function populateTranscript(student, transcript) {
+      setText('detailAdmission', transcript.adm || student.adm || '-');
+      setText('detailName', student.name || transcript.name || '-');
+      setText('detailForm', student.class || transcript.class || student.className || transcript.class_name || '-');
+      setText('detailStream', student.stream || transcript.stream || '-');
+      setText('detailGender', transcript.gender || '-');
+      setText('detailDob', transcript.date_of_birth || transcript.dob || '-');
+      setText('detailKcpe', transcript.kcpe_index || transcript.kcpe || '-');
+      setText('detailAdmissionDate', transcript.admission_date || transcript.admissionDate || '-');
+      setText('detailGraduationYear', transcript.academic_year || transcript.year || '-');
+      setText('verificationLink', `${window.location.origin}/verify/${encodeURIComponent(transcript.adm || student.adm || '')}`);
+
+      const rows = SUBJECT_FIELDS.map((key) => {
+        const score = Number(transcript[key]);
+        if (!Number.isFinite(score)) return null;
+        const grade = gradeFromScore(score);
+        return { subject: SUBJECT_LABELS[key], score, grade, points: GRADE_POINTS[grade] != null ? GRADE_POINTS[grade] : '-' };
+      }).filter(Boolean);
+
+      const tbody = document.getElementById('subjectTableBody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No academic performance records available.</td></tr>';
+      } else {
+        tbody.innerHTML = rows.map((row) => `
+          <tr>
+            <td>${row.subject}</td>
+            <td>${row.score}</td>
+            <td>${row.grade}</td>
+            <td>${row.points}</td>
+          </tr>
+        `).join('');
+      }
+
+      const total = rows.reduce((sum, row) => sum + row.score, 0);
+      const avg = rows.length ? total / rows.length : null;
+      setText('summaryTotal', rows.length ? total : '-');
+      setText('summaryAverage', Number.isFinite(avg) ? `${avg.toFixed(2)}` : '-');
+      setText('summaryGrade', transcript.grade || gradeFromScore(avg));
+      setText('summaryPoints', transcript.grade ? GRADE_POINTS[transcript.grade] : (rows.length ? GRADE_POINTS[gradeFromScore(avg)] : '-'));
+      setText('summaryClassPosition', transcript.class_position || transcript.classPosition || '-');
+      setText('summaryStreamPosition', transcript.stream_position || transcript.streamPosition || '-');
+      setText('summaryRemark', transcript.remark || remarkFromAverage(avg));
+
+      const verificationUrl = `${window.location.origin}/verify/${encodeURIComponent(transcript.adm || student.adm || '')}`;
+      const qrData = JSON.stringify({
+        admission: transcript.adm || student.adm || '',
+        name: student.name || transcript.name || '-',
+        year: transcript.academic_year || transcript.year || '-',
+        average: Number.isFinite(avg) ? avg.toFixed(2) : '-',
+        total: rows.length ? total : '-'
+      });
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}`;
+
+      const linkEl = document.getElementById('verificationLink');
+      const qrImg = document.getElementById('transcriptQrImage');
+      if (linkEl) {
+        linkEl.href = verificationUrl;
+        linkEl.textContent = verificationUrl;
+      }
+      if (qrImg) {
+        qrImg.src = qrSrc;
+      }
+    }
+
+    function downloadTranscript() {
+      const container = document.querySelector('.transcript-print-container');
+      if (!container) { window.print(); return; }
+      const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map((l) => `<link rel="stylesheet" href="${l.href}">`).join('\n') + '\n' + Array.from(document.querySelectorAll('style')).map(s => `<style>${s.innerHTML}</style>`).join('\n');
+      const newWin = window.open('', '_blank');
+      if (!newWin) { window.print(); return; }
+      const content = container.outerHTML;
+      newWin.document.open();
+      newWin.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">${styles}
+</head><body>${content}  <script src="/scripts/shared/shared-bindings.js"></script>
+</body></html>`);
+      newWin.document.close();
+      // remove download button in print window if present
+      newWin.onload = () => {
+        const btn = newWin.document.querySelector('.download-button');
+        if (btn) btn.remove();
+        setTimeout(() => { newWin.print(); newWin.close(); }, 250);
+      };
+    }
+
+    async function loadTranscriptPage() {
+      if (!checkAuth()) { window.location.replace('login.html'); return; }
+      const admParam = getQueryParam('adm');
+      const studentData = getStudentInfo() || {};
+      const admission = admParam || studentData.admission_number || studentData.adm || studentData.admissionNumber;
+      if (!admission) {
+        document.getElementById('subjectTableBody').innerHTML = '<tr><td colspan="4" class="empty-row">Admission number is required. Use ?adm=CHS2026/001.</td></tr>';
+        return;
+      }
+      try {
+        const response = await fetchWithAuth(`/transcript/${encodeURIComponent(admission)}`);
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Could not load transcript');
+        populateTranscript(result.data.student || {}, result.data.transcript || {});
+      } catch (err) {
+        document.getElementById('subjectTableBody').innerHTML = `<tr><td colspan="4" class="empty-row">${err.message}</td></tr>`;
+        console.error('Transcript load error:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTranscriptPage);
+  </script>
+  <script src="/scripts/shared/site-common.js"></script>
+</body>
+</html>

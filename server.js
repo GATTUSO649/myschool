@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -99,6 +100,12 @@ app.use((req, res, next) => {
     if (!['ict', 'super_admin'].includes(rawRole)) return res.redirect('/ict-login.html');
     return next();
   });
+});
+app.use('/pages', (req, res, next) => {
+  if (!req.path.toLowerCase().endsWith('.html')) return next();
+  const pageName = path.basename(req.path);
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  return res.redirect(`/${pageName}${query}`);
 });
 app.use(express.static(path.join(__dirname, 'frontend'), { index: false }));
 app.use((req, res, next) => {
@@ -207,6 +214,19 @@ app.use('/api/admin', wrapAsyncRoutes(adminRoutes));
 app.use('/api', wrapAsyncRoutes(portalRoutes));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+function collectFrontendPageTargets(relativeDirectory) {
+  const directory = path.join(__dirname, 'frontend', relativeDirectory);
+  if (!fs.existsSync(directory)) return {};
+  return Object.fromEntries(fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = path.join(relativeDirectory, entry.name);
+    if (entry.isDirectory()) return Object.entries(collectFrontendPageTargets(relativePath));
+    if (!entry.name.toLowerCase().endsWith('.html')) return [];
+    return [[`/${entry.name.toLowerCase()}`, relativePath]];
+  }));
+}
+
+const frontendPageTargets = collectFrontendPageTargets('pages');
 
 const protectedPagePatterns = [
   '/dashboard.html',
@@ -323,11 +343,19 @@ app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
     const loginPage = pathname.startsWith('/ict-') ? '/ict-login.html' : pathname.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
     return res.status(403).redirect(loginPage);
   }
-  const pagePath = path.join(__dirname, 'frontend', pathname.replace(/^\//, ''));
+  const pagePath = path.join(__dirname, 'frontend', frontendPageTargets[pathname] || pathname.replace(/^\//, ''));
   res.sendFile(pagePath, (error) => {
     if (error) {
       next(error);
     }
+  });
+});
+
+const publicFrontendPagePaths = Object.keys(frontendPageTargets).filter((pathname) => !protectedPagePatterns.includes(pathname));
+app.get(publicFrontendPagePaths, (req, res, next) => {
+  const pagePath = path.join(__dirname, 'frontend', frontendPageTargets[req.path.toLowerCase()]);
+  res.sendFile(pagePath, (error) => {
+    if (error) next(error);
   });
 });
 

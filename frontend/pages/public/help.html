@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Help & Support - CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/student/dashboard.css">
+  <style>
+    body { background: #f6f8fb; font-family: Inter, system-ui, Arial, sans-serif; }
+    .dashboard-header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background: #0f2f63; color:#fff }
+    .dashboard-header .school-name { font-weight:700 }
+    .help-shell { max-width:1100px; margin:0 auto; padding:140px 18px 40px; width:100%; }
+    .help-grid { display:grid; grid-template-columns: 1fr 320px; gap:20px; }
+    .help-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 8px 24px rgba(15,23,42,0.06) }
+    .help-card h1 { margin:0 0 8px; font-size:1.3rem }
+    .help-actions { display:flex; gap:10px; margin:12px 0 }
+    .btn { padding:8px 12px; border-radius:8px; border:0; cursor:pointer }
+    .btn-primary { background:#2563eb; color:#fff }
+    .btn-outline { background:transparent; border:1px solid #dbe6fb; color:#0f2f63 }
+    .quick-links { display:flex; flex-wrap:wrap; gap:8px }
+    .quick-link { background:#f1f6ff; padding:10px 12px; border-radius:8px; color:#0f2f63; font-weight:600 }
+    .support-list { display:grid; gap:10px; }
+    .support-item { display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:#fbfdff; border:1px solid #eef4ff }
+    .right-column .contact { margin-bottom:12px }
+    .empty-state { padding:28px; text-align:center; color:#64748b }
+    .support-topics-heading { margin-top:18px }
+    .topic-content { margin-top:18px }
+    .feedback-label { display:block; margin-bottom:6px; color:#334e68; font-weight:600 }
+    #feedbackText { width:100%; padding:8px; border-radius:8px; border:1px solid #e6eefc; font:inherit; resize:vertical }
+    .feedback-actions { margin-top:10px; text-align:right }
+  </style>
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="header-brand">
+        <div class="school-name">CRESENT HIGH SCHOOL</div>
+        <div class="header-tagline">Student Portal</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="help-shell">
+    <div class="help-grid">
+      <section class="help-card">
+        <h1>Help & Support</h1>
+        <p class="muted">Quick, focused guides to help you use the portal. If you need personalized help, use the contact options on the right.</p>
+
+        <div class="help-actions">
+          <button class="btn btn-primary" id="getStartedBtn">Getting started</button>
+          <button class="btn btn-outline" id="financeGuideBtn">Finance guide</button>
+          <button class="btn btn-outline" id="academicsGuideBtn">Academics guide</button>
+        </div>
+
+        <h3>Quick links</h3>
+        <div class="quick-links" id="quickLinks">
+          <a class="quick-link" href="login.html">Login / Signup</a>
+          <a class="quick-link" href="transcript.html">My transcript</a>
+          <a class="quick-link" href="finance.html">View fees</a>
+          <a class="quick-link" href="admin-academics.html">Admin academics</a>
+          <a class="quick-link" href="mailto:support@cresenthigh.ac.ke">Contact Us</a>
+        </div>
+
+        <h3 class="support-topics-heading">Top support topics</h3>
+        <div class="support-list" id="supportList">
+          <div class="support-item"><div>Reset password</div><div><a href="#" data-open-topic="reset-password">Open</a></div></div>
+          <div class="support-item"><div>Make a payment</div><div><a href="#" data-open-topic="payments">Open</a></div></div>
+          <div class="support-item"><div>Download transcript</div><div><a href="#" data-open-topic="transcript">Open</a></div></div>
+          <div class="support-item"><div>Contact Us</div><div><a href="#" data-open-topic="contact-us">Open</a></div></div>
+        </div>
+
+        <div id="topicContent" class="topic-content">
+          <div class="empty-state">Select a topic to view a short guide.</div>
+        </div>
+      </section>
+
+      <aside class="right-column">
+        <div class="help-card contact">
+          <h3>Contact support</h3>
+          <p class="muted">Email or call our support team for one-on-one help.</p>
+          <p><strong>Email</strong><br><a href="mailto:support@cresenthigh.ac.ke">support@cresenthigh.ac.ke</a></p>
+          <p><strong>Phone</strong><br><a href="tel:+254700000000">+254 700 000 000</a></p>
+          <p><strong>Hours</strong><br>Mon–Fri, 08:00–17:00</p>
+        </div>
+
+        <div class="help-card">
+          <h3>Feedback</h3>
+          <p class="muted">Help us improve — send quick feedback.</p>
+          <label class="feedback-label" for="feedbackText">Your feedback</label>
+          <textarea id="feedbackText" rows="4" placeholder="Tell us how we can improve"></textarea>
+          <div class="feedback-actions"><button class="btn btn-primary" id="sendFeedback">Send</button></div>
+        </div>
+
+        <div class="help-card">
+          <h3>System status</h3>
+          <div class="support-list">
+            <div class="support-item"><div>Portal</div><div class="status">Online</div></div>
+            <div class="support-item"><div>Payments</div><div class="status">Online</div></div>
+            <div class="support-item"><div>Uploads</div><div class="status">Online</div></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    function openTopic(key) {
+      const content = document.getElementById('topicContent');
+      const snippets = {
+        'reset-password': '<h4>Reset password</h4><p>Use "Forgot password" on the login page to receive reset instructions by email.</p>',
+        'payments': '<h4>Make a payment</h4><p>Open the Finance page and follow the payments section. You can download receipts from Receipts.</p>',
+        'transcript': '<h4>Download transcript</h4><p>Open your transcript and use the Download button — it exports a printable document.</p>',
+        'fee-structure': '<h4>Upload fee structure</h4><p>Admins can create fee structures in the Admin → Academics → Fee structure panel. After upload, the structure is available on the Finance page.</p>',
+        'contact-us': '<h4>Contact Us</h4><p>If you need one-on-one assistance, email <a href="mailto:support@cresenthigh.ac.ke">support@cresenthigh.ac.ke</a> or call <a href="tel:+254700000000">+254 700 000 000</a>. Support hours: Mon–Fri, 08:00–17:00.</p>'
+      };
+      content.innerHTML = snippets[key] || '<div class="empty-state">No guide available.</div>';
+    }
+
+    document.getElementById('getStartedBtn').addEventListener('click', () => openTopic('reset-password'));
+    document.getElementById('financeGuideBtn').addEventListener('click', () => openTopic('payments'));
+    document.getElementById('academicsGuideBtn').addEventListener('click', () => openTopic('transcript'));
+
+    document.getElementById('sendFeedback').addEventListener('click', async () => {
+      const text = document.getElementById('feedbackText').value.trim();
+      if (!text) { alert('Please enter feedback'); return; }
+      try {
+        // store feedback locally; backend integration can be added later
+        const existing = JSON.parse(localStorage.getItem('portalFeedback') || '[]');
+        existing.unshift({ text, created_at: Date.now() });
+        localStorage.setItem('portalFeedback', JSON.stringify(existing.slice(0,50)));
+        alert('Thanks — feedback saved.');
+        document.getElementById('feedbackText').value = '';
+      } catch (e) { console.error(e); alert('Could not save feedback'); }
+    });
+  </script>
+
+  <script src="/scripts/shared/site-common.js"></script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>

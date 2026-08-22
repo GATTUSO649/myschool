@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CRESENT HIGH SCHOOL - Transcript</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/student/dashboard.css">
+  <link rel="stylesheet" href="/styles/student/transcript.css">
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="student-portal transcript-page">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="brand-bar">
+        <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+        <div class="header-note">Student transcript</div>
+      </div>
+      <div class="header-actions">
+        <span class="header-pill" id="studentNamePill">Student</span>
+        <button class="logout-button" data-admin-logout>Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-brand">My Portal</div>
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+        <a class="sidebar-link" href="academic.html">Academics</a>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link active" href="transcript.html">Transcript</a>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="transcript.html">Exams</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Fee Balance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main transcript-page">
+      <section class="admin-section transcript-doc-shell">
+        <div class="document-toolbar">
+          <div>
+            <p class="eyebrow">Academics</p>
+            <h2>Official Transcript</h2>
+          </div>
+          <div class="document-toolbar-actions">
+            <button class="primary-button" type="button" id="downloadTranscriptButton">Download / Print</button>
+          </div>
+        </div>
+
+        <section class="transcript-filter-panel dashboard-panel document-filter-panel">
+          <div class="transcript-filter-header">
+            <div>
+              <p class="eyebrow">Transcript search</p>
+              <h3>Filter by year and term</h3>
+            </div>
+            <p id="transcriptFilterStatus" class="transcript-filter-status">Choose a year and term, then click Search to filter transcript records.</p>
+          </div>
+          <div class="transcript-filters">
+            <label for="transcriptYearFilter">
+              <span>Academic year</span>
+              <select id="transcriptYearFilter">
+                <option value="">All years</option>
+              </select>
+            </label>
+            <label for="transcriptTermFilter">
+              <span>Term</span>
+              <select id="transcriptTermFilter">
+                <option value="">All terms</option>
+                <option value="Term 1">Term 1</option>
+                <option value="Term 2">Term 2</option>
+                <option value="Term 3">Term 3</option>
+              </select>
+            </label>
+            <button type="button" class="primary-button" id="transcriptSearchButton">Search</button>
+          </div>
+        </section>
+
+        <div class="transcript-empty-state" id="transcriptEmptyState">Search for transcript records to view the document.</div>
+        <div class="transcript-print-shell" id="transcriptPrintShell" hidden>
+          <div class="transcript-print-container">
+            <div class="transcript-header-sheet">
+              <div class="transcript-branding">
+                <div class="crest-badge">C</div>
+                <div>
+                  <div class="transcript-title">CRESCENT HIGH SCHOOL</div>
+                  <div class="transcript-subtitle">OFFICIAL ACADEMIC TRANSCRIPT</div>
+                </div>
+              </div>
+              <div class="transcript-contact">
+                <div>P.O. Box 123-90100</div>
+                <div>Machakos, Kenya</div>
+                <div>+254 700 000 000</div>
+                <div>support@cresenthigh.ac.ke</div>
+              </div>
+            </div>
+
+            <div class="transcript-section transcript-details-grid">
+              <div class="details-card">
+                <h3>Student Details</h3>
+                <dl>
+                  <dt>Admission Number</dt><dd id="detailAdmission">-</dd>
+                  <dt>Student Name</dt><dd id="detailName">-</dd>
+                  <dt>Form</dt><dd id="detailForm">-</dd>
+                  <dt>Stream</dt><dd id="detailStream">-</dd>
+                  <dt>Graduation Year</dt><dd id="detailGraduationYear">-</dd>
+                </dl>
+              </div>
+
+              <div class="performance-card">
+                <h3>Academic Performance</h3>
+                <div class="performance-table-wrap">
+                  <table class="performance-table">
+                    <thead>
+                      <tr>
+                        <th>Subject</th>
+                        <th>Score</th>
+                        <th>Grade</th>
+                        <th>Points</th>
+                      </tr>
+                    </thead>
+                    <tbody id="subjectTableBody">
+                      <tr><td colspan="4" class="empty-row">Loading transcript data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="transcript-section summary-grid">
+              <div class="summary-card summary-large">
+                <h4>Summary</h4>
+                <dl>
+                  <dt>Total Marks</dt><dd id="summaryTotal">-</dd>
+                  <dt>Average</dt><dd id="summaryAverage">-</dd>
+                  <dt>Mean Grade</dt><dd id="summaryGrade">-</dd>
+                  <dt>KCSE Points</dt><dd id="summaryPoints">-</dd>
+                  <dt>Term</dt><dd id="summaryTerm">-</dd>
+                  <dt>Academic Year</dt><dd id="summaryYear">-</dd>
+                </dl>
+              </div>
+
+              <div class="summary-card grade-key-card">
+                <h4>Grade Key</h4>
+                <div class="grade-key-grid">
+                  <div><strong>80 - 100</strong><span>A</span><span>12</span></div>
+                  <div><strong>75 - 79</strong><span>A-</span><span>11</span></div>
+                  <div><strong>70 - 74</strong><span>B+</span><span>10</span></div>
+                  <div><strong>65 - 69</strong><span>B</span><span>9</span></div>
+                  <div><strong>60 - 64</strong><span>B-</span><span>8</span></div>
+                  <div><strong>50 - 59</strong><span>C</span><span>6</span></div>
+                  <div><strong>45 - 49</strong><span>C-</span><span>5</span></div>
+                  <div><strong>35 - 44</strong><span>D</span><span>3</span></div>
+                  <div><strong>0 - 34</strong><span>E</span><span>1</span></div>
+                </div>
+              </div>
+              <div class="summary-card grade-key-qr-panel" id="gradeKeyQrPanel">
+                <div class="grade-key-qr-box" id="gradeKeyQrCode" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            <div class="transcript-section signatory-section">
+              <div class="signatory-line"><span>Class Teacher</span><span>Date</span></div>
+              <div class="signatory-line"><span>Director of Studies</span><span>Date</span></div>
+              <div class="signatory-line"><span>Principal</span><span>Date</span></div>
+            </div>
+            <div class="transcript-print-actions" aria-hidden="false">
+              <button type="button" class="download-cta" id="downloadTranscriptCta">Download / Save Transcript</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/scripts/shared/config.js"></script>
+  <script src="/scripts/auth/auth.js"></script>
+  <script>
+    const SUBJECT_LABELS = {
+      eng: 'English',
+      kisw: 'Kiswahili',
+      mat: 'Mathematics',
+      bio: 'Biology',
+      che: 'Chemistry',
+      phy: 'Physics',
+      cre: 'CRE',
+      his: 'History',
+      geo: 'Geography',
+      comp: 'Computer Studies',
+      bus: 'Business Studies',
+      agr: 'Agriculture'
+    };
+
+    function money(amount) {
+      return `KSh ${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    function gradeFromScore(score) {
+      if (!Number.isFinite(Number(score))) return 'E';
+      const value = Number(score);
+      if (value >= 80) return 'A';
+      if (value >= 75) return 'A-';
+      if (value >= 70) return 'B+';
+      if (value >= 65) return 'B';
+      if (value >= 60) return 'B-';
+      if (value >= 50) return 'C';
+      if (value >= 45) return 'C-';
+      if (value >= 35) return 'D';
+      return 'E';
+    }
+
+    const GRADE_POINTS = { A: 12, 'A-': 11, 'B+': 10, B: 9, 'B-': 8, C: 6, 'C-': 5, D: 3, E: 1 };
+
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+
+    function setHtml(id, html) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.innerHTML = html;
+      }
+    }
+
+    function setTranscriptVisibility(hasContent, message) {
+      const shell = document.getElementById('transcriptPrintShell');
+      const emptyState = document.getElementById('transcriptEmptyState');
+      if (shell) shell.hidden = !hasContent;
+      if (emptyState) {
+        emptyState.hidden = hasContent;
+        emptyState.textContent = message || 'Search for transcript records to view the document.';
+      }
+    }
+
+    function renderTranscript(rows) {
+      const student = getStudentInfo() || {};
+      const studentId = Number(student.id ?? 0);
+
+      const safeRows = Array.isArray(rows)
+        ? rows.filter((row) => {
+            if (!studentId) return true;
+            const rowStudentId = Number(row.student_id ?? row.studentId ?? 0);
+            if (rowStudentId && rowStudentId !== studentId) return false;
+            return true;
+          })
+        : [];
+
+      const selected = safeRows.length ? safeRows[0] : {};
+      const hasTranscriptData = safeRows.length > 0;
+      const displayRows = Object.entries(SUBJECT_LABELS)
+        .map(([key, label]) => {
+          const score = Number(selected[key]);
+          if (!Number.isFinite(score)) return null;
+          const grade = gradeFromScore(score);
+          return { subject: label, score, grade, points: GRADE_POINTS[grade] ?? '-' };
+        })
+        .filter(Boolean);
+
+      setText('detailAdmission', selected.admission_number || selected.adm || student.admissionNumber || student.admission_number || student.adm || '-');
+      setText('detailName', student.name || selected.student_name || selected.name || '-');
+      setText('detailForm', student.className || student.class_name || selected.class_name || selected.class || '-');
+      setText('detailStream', student.stream || selected.stream || '-');
+      setText('detailGender', selected.gender || '-');
+      setText('detailDob', selected.date_of_birth || selected.dob || '-');
+      setText('detailAdmissionDate', selected.admission_date || selected.admissionDate || '-');
+      setText('detailGraduationYear', selected.academic_year || selected.year || '-');
+
+      const tbody = document.getElementById('subjectTableBody');
+      if (!displayRows.length) {
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No academic performance records available.</td></tr>';
+        }
+      } else if (tbody) {
+        tbody.innerHTML = displayRows.map((row) => `
+          <tr>
+            <td>${row.subject}</td>
+            <td>${row.score}</td>
+            <td>${row.grade}</td>
+            <td>${row.points}</td>
+          </tr>
+        `).join('');
+      }
+
+      if (!hasTranscriptData || !displayRows.length) {
+        setTranscriptVisibility(false, 'No transcript records found for the selected filters.');
+        return;
+      }
+
+      setTranscriptVisibility(true);
+
+      const total = displayRows.reduce((sum, row) => sum + row.score, 0);
+      const avg = displayRows.length ? total / displayRows.length : null;
+      const meanGrade = avg !== null ? gradeFromScore(avg) : '-';
+
+      setText('summaryTotal', displayRows.length ? total : '-');
+      setText('summaryAverage', avg !== null ? avg.toFixed(2) : '-');
+      setText('summaryGrade', meanGrade);
+      setText('summaryPoints', displayRows.length ? (GRADE_POINTS[meanGrade] ?? '-') : '-');
+      setText('summaryTerm', selected.term || '-');
+      setText('summaryYear', selected.year || selected.academic_year || '-');
+
+      const detailAdmissionText = document.getElementById('detailAdmission')?.textContent || '-';
+      const detailFormText = document.getElementById('detailForm')?.textContent || '-';
+      const detailStreamText = document.getElementById('detailStream')?.textContent || '-';
+      setText('transcriptName', student.name || '-');
+      setText('transcriptAdmNo', detailAdmissionText);
+      setText('transcriptForm', `${detailFormText} ${detailStreamText}`.trim());
+
+      const status = document.getElementById('transcriptFilterStatus');
+      if (status && safeRows.length) {
+        status.textContent = `${safeRows.length} record${safeRows.length === 1 ? '' : 's'} found for the current student.`;
+      }
+    }
+
+    async function renderGradeKeyQrCode() {
+      const qrTarget = document.getElementById('gradeKeyQrCode');
+      if (!qrTarget) return;
+      // Include current filter parameters so the print view shows the same grades
+      const shareUrl = new URL(window.location.href);
+      shareUrl.searchParams.set('print', '1');
+      const year = document.getElementById('transcriptYearFilter')?.value;
+      const term = document.getElementById('transcriptTermFilter')?.value;
+      const admission = document.getElementById('detailAdmission')?.textContent;
+      if (year) shareUrl.searchParams.set('year', year);
+      if (term) shareUrl.searchParams.set('term', term);
+      if (admission) shareUrl.searchParams.set('admission', admission.trim());
+
+      // Use a larger QR for easier scanning
+      const qrSize = 220;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(shareUrl.toString())}`;
+
+      qrTarget.innerHTML = '';
+      const image = document.createElement('img');
+      image.alt = 'QR code for this transcript';
+      image.src = qrUrl;
+      image.style.width = '160px';
+      image.style.height = '160px';
+      image.style.objectFit = 'contain';
+      image.style.display = 'block';
+      image.style.margin = '0 auto';
+      image.onerror = () => {
+        qrTarget.innerHTML = '<div style="font-size:0.7rem;color:#64748b;text-align:center;">QR unavailable</div>';
+      };
+      qrTarget.appendChild(image);
+    }
+
+    async function loadTranscriptOverview() {
+      const student = getStudentInfo();
+      setText('studentNamePill', student?.name || 'Student');
+      setText('transcriptName', student?.name || '-');
+      setText('transcriptAdmNo', formatAdmissionNumber(student?.admissionNumber || student?.admission_number || student?.adm) || '-');
+      setText('transcriptForm', `${student?.className || student?.class_name || '-'} ${student?.stream || ''}`.trim());
+
+      const status = document.getElementById('transcriptFilterStatus');
+      if (status) {
+        status.textContent = 'Loading transcript filter options...';
+      }
+
+      try {
+        const response = await fetchWithAuth('/transcript');
+        if (!response.ok) {
+          throw new Error(response.status === 401 ? 'Please sign in again to view your transcript.' : 'Transcript records could not be loaded');
+        }
+        const json = await response.json();
+        const rows = Array.isArray(json) ? json : [];
+        populateTranscriptFilters(rows);
+        if (status) {
+          status.textContent = 'Choose a year and term, then click Search to filter transcript records.';
+        }
+      } catch (error) {
+        if (status) {
+          status.textContent = error.message || 'Unable to load transcript filters.';
+        }
+        console.error('Transcript overview load error:', error);
+      }
+    }
+
+    function initializeTranscriptFilters() {
+      const searchButton = document.getElementById('transcriptSearchButton');
+      if (!searchButton) return;
+      searchButton.addEventListener('click', searchTranscriptRecords);
+    }
+
+    function populateTranscriptFilters(rows) {
+      const yearFilter = document.getElementById('transcriptYearFilter');
+      if (!yearFilter || !Array.isArray(rows)) return;
+
+      const years = Array.from(new Set(rows
+        .map((row) => row.academic_year || row.year)
+        .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+        .map((year) => String(year))
+      )).sort((a, b) => Number(b) - Number(a));
+
+      yearFilter.innerHTML = '<option value="">All years</option>' + years.map((year) => `<option value="${year}">${year}</option>`).join('');
+    }
+
+    async function searchTranscriptRecords() {
+      const year = document.getElementById('transcriptYearFilter')?.value || '';
+      const term = document.getElementById('transcriptTermFilter')?.value || '';
+      const status = document.getElementById('transcriptFilterStatus');
+      const button = document.getElementById('transcriptSearchButton');
+
+      const params = new URLSearchParams();
+      if (year) params.set('year', year);
+      if (term) params.set('term', term);
+
+      button.disabled = true;
+      button.textContent = 'Searching...';
+      if (status) {
+        status.textContent = 'Filtering transcript records...';
+      }
+
+      try {
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetchWithAuth(`/transcript${queryString}`);
+        if (!response.ok) {
+          throw new Error(response.status === 401 ? 'Please sign in again to view your transcript.' : 'Transcript filter request failed');
+        }
+        const rows = await response.json();
+        const filtered = Array.isArray(rows) ? rows : [];
+        renderTranscript(filtered);
+        if (status) {
+          const yearText = year || 'all years';
+          const termText = term || 'all terms';
+          status.textContent = filtered.length
+            ? `${filtered.length} record${filtered.length === 1 ? '' : 's'} found for ${termText}, ${yearText}.`
+            : `No transcript records found for ${termText}, ${yearText}.`;
+        }
+      } catch (error) {
+        if (status) status.textContent = error.message || 'Could not load transcript records.';
+        console.error('Transcript search error:', error);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Search';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      initializeTranscriptFilters();
+      setTranscriptVisibility(false, 'Search for transcript records to view the document.');
+
+      const downloadButton = document.getElementById('downloadTranscriptButton');
+      if (downloadButton) {
+        downloadButton.addEventListener('click', () => {
+          document.body.classList.add('transcript-printing');
+          window.setTimeout(() => {
+            window.print();
+            window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+          }, 120);
+        });
+      }
+
+      const downloadCta = document.getElementById('downloadTranscriptCta');
+      if (downloadCta) {
+        downloadCta.addEventListener('click', () => {
+          document.body.classList.add('transcript-printing');
+          window.setTimeout(() => {
+            window.print();
+            window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+          }, 120);
+        });
+      }
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const shouldAutoPrint = searchParams.get('print') === '1';
+      if (shouldAutoPrint) {
+        // If the print URL includes filters, set them and run the search so the print view matches
+        const yearParam = searchParams.get('year');
+        const termParam = searchParams.get('term');
+        const admissionParam = searchParams.get('admission');
+        if (yearParam) document.getElementById('transcriptYearFilter').value = yearParam;
+        if (termParam) document.getElementById('transcriptTermFilter').value = termParam;
+
+        // Run a filtered fetch and render before printing
+        (async () => {
+          try {
+            await searchTranscriptRecords();
+            // Small delay to ensure DOM is updated
+            document.body.classList.add('transcript-printing');
+            window.setTimeout(() => {
+              window.print();
+              window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+            }, 300);
+          } catch (e) {
+            // fallback to immediate print
+            document.body.classList.add('transcript-printing');
+            window.setTimeout(() => {
+              window.print();
+              window.setTimeout(() => document.body.classList.remove('transcript-printing'), 800);
+            }, 400);
+          }
+        })();
+      }
+
+      try {
+        await Promise.all([loadTranscriptOverview(), renderGradeKeyQrCode()]);
+      } catch (error) {
+        setHtml('transcriptResults', `<p class="error">${error.message}</p>`);
+      }
+    });
+
+    function formatAdmissionNumber(raw) {
+      if (!raw) return '';
+      const s = String(raw).trim();
+      const re = /^CRES\/\d{3}\/\d{4}$/i;
+      if (re.test(s)) return s.toUpperCase();
+
+      // extract digits
+      const digits = (s.match(/(\d+)/) || [])[0];
+      const yearMatch = s.match(/(20\d{2})/);
+      const year = yearMatch ? yearMatch[1] : new Date().getFullYear();
+      if (digits) {
+        const n = String(digits).padStart(3, '0');
+        return `CRES/${n}/${year}`;
+      }
+      return s;
+    }
+  </script>
+  <style>
+    /* Larger centered QR box for transcript print panel */
+    .grade-key-qr-box {
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px auto;
+    }
+    .grade-key-qr-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+  <script src="/scripts/shared/site-common.js"></script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>

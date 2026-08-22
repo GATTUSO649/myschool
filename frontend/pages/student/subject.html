@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Subject Notes - CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <style>
+    .subject-main { padding-top: 0 !important; }
+    .subject-header { width: 100%; max-width: 1400px; padding: 6px 0 10px; margin-bottom: 6px; }
+    .subject-card {
+      width: 100%;
+      max-width: 1400px;
+      margin: 4px 0 24px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 18px 20px 22px;
+      box-shadow: 0 16px 40px rgba(16,32,51,0.08);
+      border: 1px solid #eef2f7;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+    }
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 16px;
+      align-items: stretch;
+    }
+    .subject-upload-header {
+      margin-bottom: 10px;
+    }
+    .subject-upload-header h3 {
+      margin: 0 0 4px;
+      color: #102033;
+    }
+    .subject-upload-header p {
+      margin: 0;
+      color: #556674;
+      font-size: 0.95rem;
+    }
+    .doc-tile {
+      border: 1px solid #e6eef6;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 180px;
+      background: linear-gradient(135deg, #ffffff 0%, #f6faff 100%);
+      box-shadow: 0 8px 20px rgba(16,32,51,0.04);
+    }
+    .doc-badge {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: #e2e8ff;
+      color: #0b2b66;
+    }
+    .doc-title { font-weight: 600; margin-bottom: 8px; }
+    .doc-meta { font-size: 0.9rem; color: #556674; margin-bottom: 12px; }
+    .doc-actions { text-align: right; }
+    .doc-button {
+      display: inline-block;
+      padding: 8px 12px;
+      background: #10b981;
+      color: #ffffff;
+      border-radius: 999px;
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      transition: background .2s ease, transform .2s ease;
+    }
+    .doc-button:hover {
+      background: #0f9e6e;
+      transform: translateY(-1px);
+    }
+    .doc-button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .placeholder-tile {
+      opacity: 0.9;
+      border-style: dashed;
+    }
+    .no-docs { text-align: center; padding: 18px 0 8px; color: #556674; }
+    .doc-viewer { margin-top: 18px; background: #f7fbff; border: 1px solid #e2ebf7; padding: 12px; border-radius: 8px; }
+    @media (max-width: 1280px) { .doc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .doc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .doc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 480px) { .doc-grid { grid-template-columns: 1fr; } }
+    .doc-viewer.hidden { display: none; }
+    .doc-viewer-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .doc-viewer .doc-title { font-weight:700; color:#102033; }
+    .doc-viewer .doc-button { background:#e2e8ff; color:#0b2b66; border-radius:6px; padding:6px 10px; border:0; cursor:pointer; }
+    .viewer-frame {
+      width: 100%;
+      height: 72vh;
+      border: 0;
+      border-radius: 6px;
+      background: #fff;
+    }
+    @media (max-width:820px) { .viewer-frame { height: 56vh; } }
+  </style>
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+</head>
+<body class="student-portal">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <button class="mobile-sidebar-toggle" type="button" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
+      <div class="header-actions">
+        <span class="header-pill">Student Portal</span>
+        <button class="logout-button" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="student-shell">
+    <aside class="student-sidebar">
+      <div class="sidebar-section">
+        <h3>Main</h3>
+        <a class="sidebar-link" href="dashboard.html">Dashboard</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Academics</h3>
+        <a class="sidebar-link" href="notes.html">Notes</a>
+        <a class="sidebar-link" href="transcript.html">Transcript</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Finance</h3>
+        <a class="sidebar-link" href="finance.html">Finance</a>
+        <a class="sidebar-link" href="paymentreceipts.html">Receipts</a>
+      </div>
+      <div class="sidebar-section">
+        <h3>Support</h3>
+        <a class="sidebar-link" href="help.html">Help</a>
+      </div>
+    </aside>
+
+    <main class="student-main subject-main">
+      <section class="student-main-content">
+      <div class="subject-header">
+        <p class="eyebrow">Student portal</p>
+        <h1 id="subjectTitle">Subject</h1>
+        <p id="subjectDesc">Browse uploaded notes for this subject.</p>
+      </div>
+
+      <div class="subject-card" id="subjectCard">
+        <div id="docsContainer">
+          <div class="no-docs">Loading notes…</div>
+        </div>
+
+        <div id="docViewer" class="doc-viewer hidden" aria-hidden="true">
+          <div class="doc-viewer-header">
+            <div id="viewerTitle" class="doc-title">Viewer</div>
+            <button id="closeViewer" class="doc-button">Close</button>
+          </div>
+          <div class="doc-viewer-body">
+            <iframe id="viewerFrame" class="viewer-frame" src=""></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/scripts/shared/config.js"></script>
+  <script src="/scripts/auth/auth.js"></script>
+  <script src="/scripts/shared/site-common.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Real-time updates: reload docs when new uploads occur
+    try {
+      const socket = io();
+      socket.on('connected', () => { /* connected */ });
+      socket.on('new_academic_doc', (doc) => {
+        const subject = getQueryParam('subject') || '';
+        if (!subject) return;
+        if (doc && doc.subject && String(doc.subject).toLowerCase() === String(subject).toLowerCase()) {
+          loadSubjectDocs(subject);
+          showToast(`New ${doc.subject} note uploaded: ${doc.title || doc.filename}`, 'success');
+        }
+      });
+      socket.on('new_portal_note', (doc) => {
+        const subject = getQueryParam('subject') || '';
+        if (!subject) return;
+        if (doc && doc.subject && String(doc.subject).toLowerCase() === String(subject).toLowerCase()) {
+          loadSubjectDocs(subject);
+          showToast(`New ${doc.subject} note uploaded: ${doc.title || doc.filename}`, 'success');
+        }
+      });
+      socket.on('new_portal_revision', (doc) => {
+        const subject = getQueryParam('subject') || '';
+        if (!subject) return;
+        if (doc && doc.subject && String(doc.subject).toLowerCase() === String(subject).toLowerCase()) {
+          loadSubjectDocs(subject);
+          showToast(`New ${doc.subject} revision uploaded: ${doc.title || doc.filename}`, 'success');
+        }
+      });
+      socket.on('new_finance_doc', (d) => {
+        // finance docs don't affect subject page; ignore
+      });
+    } catch (e) { console.warn('Realtime not available', e); }
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+
+    async function loadSubjectDocs(subject) {
+      const container = document.getElementById('docsContainer');
+      container.innerHTML = `
+        <div class="subject-upload-header">
+          <h3>${escapeHtml(subject || 'Subject')} uploads</h3>
+          <p>Study materials appear here as a clear catalog view.</p>
+        </div>
+        <div class="doc-grid">
+          ${Array.from({ length: 6 }, (_, index) => `
+            <div class="doc-tile placeholder-tile">
+              <div>
+                <span class="doc-badge">PDF</span>
+                <div class="doc-title">Preparing catalog ${index + 1}</div>
+                <div class="doc-meta">Loading subject files…</div>
+              </div>
+              <div class="doc-actions">
+                <button class="doc-button" disabled>Open</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      try {
+        const requestedType = (getQueryParam('type') || '').toLowerCase();
+        const student = getStudentInfo() || {};
+        const className = student.class_name || student.className || '';
+        const classSuffix = className ? `&className=${encodeURIComponent(className)}` : '';
+
+        const portalPaths = requestedType === 'revision'
+          ? [`/api/revision-materials?subject=${encodeURIComponent(subject)}${classSuffix}`]
+          : [
+              `/api/notes?subject=${encodeURIComponent(subject)}${classSuffix}`,
+              `/api/revision-materials?subject=${encodeURIComponent(subject)}${classSuffix}`
+            ];
+
+        const academicTypes = requestedType === 'revision' ? ['revision'] : ['notes', 'revision'];
+        const academicPaths = academicTypes.map((docType) => `/api/academics/docs?subject=${encodeURIComponent(subject)}&type=${encodeURIComponent(docType)}${classSuffix}`);
+
+        const portalResponses = await Promise.all(portalPaths.map((path) => fetchWithAuth(path)));
+        const academicResponses = await Promise.all(academicPaths.map((path) => fetchWithAuth(path)));
+
+        const merged = [];
+        const seen = new Set();
+        function addDocs(list, source, kind) {
+          if (!Array.isArray(list)) return;
+          list.forEach((doc) => {
+            const key = doc.id ? `id:${doc.id}:${kind}` : `fn:${doc.filename || doc.original_name || ''}:${kind}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            merged.push(Object.assign({ _source: source, _kind: kind }, doc));
+          });
+        }
+
+        const [portalPayloads, academicPayloads] = await Promise.all([
+          Promise.all(portalResponses.map((response) => (response.ok ? response.json() : []))),
+          Promise.all(academicResponses.map((response) => (response.ok ? response.json() : [])))
+        ]);
+
+        portalPayloads.forEach((docs, index) => addDocs(docs, 'portal', index === 0 ? 'note' : 'revision'));
+        academicPayloads.forEach((docs, index) => addDocs(docs, 'academic', academicTypes[index] || 'academic'));
+
+        if (!merged.length) {
+          const label = requestedType === 'revision' ? 'revision material' : 'notes and revision uploads';
+          container.innerHTML = `
+            <div class="subject-upload-header">
+              <h3>${escapeHtml(subject)} uploads</h3>
+              <p>Study materials appear here as a clear catalog view.</p>
+            </div>
+            <div class="doc-grid">
+              ${Array.from({ length: 6 }, (_, index) => `
+                <div class="doc-tile placeholder-tile">
+                  <div>
+                    <span class="doc-badge">PDF</span>
+                    <div class="doc-title">Preview item ${index + 1}</div>
+                    <div class="doc-meta">No matching upload yet</div>
+                  </div>
+                  <div class="doc-actions">
+                    <button class="doc-button" disabled>Open</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="no-docs">No ${escapeHtml(label)} uploaded yet for ${escapeHtml(subject)}.</div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="subject-upload-header">
+            <h3>${escapeHtml(subject)} uploads</h3>
+            <p>Study files for this subject appear here in a tiled view for quick access.</p>
+          </div>
+          <div class="doc-grid">
+            ${merged.map((doc) => {
+              const fileName = doc.filename || doc.original_name || '';
+              const extension = (fileName.split('.').pop() || '').toLowerCase();
+              const badge = extension === 'pdf' ? 'PDF' : (extension ? extension.toUpperCase() : 'FILE');
+              const kindLabel = doc._kind === 'revision' ? 'Revision' : (doc._kind === 'academic' ? 'Academic file' : 'Notes');
+              return `
+                <div class="doc-tile" data-id="${doc.id || ''}" data-filename="${escapeHtml(fileName)}">
+                  <div>
+                    <span class="doc-badge">${escapeHtml(badge)}</span>
+                    <div class="doc-title">${escapeHtml(doc.title || doc.original_name || doc.filename || 'Untitled')}</div>
+                    <div class="doc-meta">${escapeHtml(kindLabel)} • ${new Date(doc.created_at || doc.upload_date || doc.uploaded_at || Date.now()).toLocaleString()}</div>
+                  </div>
+                  <div class="doc-actions">
+                    <button class="doc-button open-inviewer" data-id="${doc.id || ''}" data-source="${doc._source}" data-filename="${escapeHtml(fileName)}">Open</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        document.querySelectorAll('.open-inviewer').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const source = btn.getAttribute('data-source');
+            const filename = btn.getAttribute('data-filename');
+            if (source === 'academic' && filename) {
+              openViewerAcademic(filename);
+            } else if (id) {
+              openViewer(id, requestedType === 'revision' ? 'revision' : 'notes');
+            } else if (filename) {
+              openFileByName(filename);
+            }
+          });
+        });
+      } catch (err) {
+        console.error('Failed to load docs', err);
+        container.innerHTML = '<div class="no-docs">Could not load uploads. Try again later.</div>';
+      }
+    }
+
+    function openViewer(id, type) {
+      const viewer = document.getElementById('docViewer');
+      const frame = document.getElementById('viewerFrame');
+      const title = document.getElementById('viewerTitle');
+      if (!viewer || !frame) return;
+      title.textContent = 'Loading...';
+      viewer.classList.remove('hidden');
+      viewer.setAttribute('aria-hidden', 'false');
+      frame.src = type === 'revision' ? `/api/revision-materials/${id}/download` : `/api/notes/${id}/download`;
+      // optionally set title after loaded
+      frame.onload = () => {
+        title.textContent = 'Document Viewer';
+      };
+    }
+
+    document.getElementById('closeViewer')?.addEventListener('click', () => {
+      const viewer = document.getElementById('docViewer');
+      const frame = document.getElementById('viewerFrame');
+      if (!viewer) return;
+      frame.src = '';
+      viewer.classList.add('hidden');
+      viewer.setAttribute('aria-hidden', 'true');
+    });
+
+    // Open academic doc by id (academics uses /api/academics/files/:filename or /api/academics/docs/:id?)
+    function openViewerAcademic(filename) {
+      openFileByName(filename);
+    }
+
+    function openFileByName(filename) {
+      const viewer = document.getElementById('docViewer');
+      const frame = document.getElementById('viewerFrame');
+      if (!viewer || !frame) return;
+      viewer.classList.remove('hidden');
+      viewer.setAttribute('aria-hidden', 'false');
+      frame.src = `/uploads/documents/${encodeURIComponent(filename)}`;
+    }
+
+    function escapeHtml(text) {
+      return String(text || '').replace(/[&"'<>]/g, function (s) {
+        return ({'&':'&amp;','"':'&quot;','\'':'&#39;','<':'&lt;','>':'&gt;'})[s];
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAuth()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      const subject = getQueryParam('subject') || '';
+      const type = (getQueryParam('type') || 'notes').toLowerCase();
+      document.getElementById('subjectTitle').textContent = subject ? subject : 'Subject';
+      document.getElementById('subjectDesc').textContent = subject ? `${type.charAt(0).toUpperCase()+type.slice(1)} for ${subject}` : `Browse uploaded ${type}`;
+      loadSubjectDocs(subject);
+
+      document.addEventListener('click', (event) => {
+        const sidebar = document.querySelector('.student-sidebar');
+        if (!sidebar || sidebar.classList.contains('is-open') === false) return;
+        if (!sidebar.contains(event.target) && !event.target.closest('.mobile-sidebar-toggle')) {
+          sidebar.classList.remove('is-open');
+        }
+      });
+    });
+  </script>
+  <script src="/scripts/shared/shared-bindings.js"></script>
+</body>
+</html>
