@@ -97,8 +97,12 @@ if (loginForm) {
               showAlert('Administrators must use the admin portal.', 'error');
               return;
             } else if (role === 'teacher' || role === 'lecturer' || role === 'ict') {
-              console.log('Redirecting staff to staff-portals.html');
-              window.location.href = role !== 'ict' && allowedRedirects.has(requestedRedirect) ? requestedRedirect : 'staff-portals.html';
+              const teacherLogin = loginPage.includes('teacher-login.html');
+              const staffDestination = teacherLogin ? 'teacher-portal.html' : 'staff-portals.html';
+              console.log(`Redirecting staff to ${staffDestination}`);
+              window.location.href = role !== 'ict' && (teacherLogin || allowedRedirects.has(requestedRedirect))
+                ? (teacherLogin ? 'teacher-portal.html' : requestedRedirect)
+                : staffDestination;
             } else {
               console.log('Redirecting student to dashboard.html');
               window.location.href = 'dashboard.html';
