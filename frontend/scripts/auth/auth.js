@@ -516,7 +516,7 @@ function showAlert(message, type = 'info') {
   if (!alertContainer) {
     alertContainer = document.createElement('div');
     alertContainer.id = 'alertContainer';
-    alertContainer./styles/shared/style.cssText = `
+    alertContainer.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
@@ -528,7 +528,7 @@ function showAlert(message, type = 'info') {
 
   // Create alert element
   const alert = document.createElement('div');
-  alert./styles/shared/style.cssText = `
+  alert.style.cssText = `
     padding: 15px 20px;
     margin-bottom: 10px;
     border-radius: 8px;

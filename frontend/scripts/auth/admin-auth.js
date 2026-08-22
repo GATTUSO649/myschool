@@ -191,7 +191,7 @@ function initializeSessionTimeoutWarning() {
  */
 function showAlert(message, type = 'error') {
   const alertDiv = document.createElement('div');
-  alertDiv./styles/shared/style.cssText = `
+  alertDiv.style.cssText = `
     position: fixed;
     top: 20px;
     right: 20px;
