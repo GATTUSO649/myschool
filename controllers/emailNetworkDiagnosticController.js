@@ -24,7 +24,7 @@ async function resolveDns(host) {
       success: false,
       addresses: [],
       errorCode: String(error?.code || 'DNS_RESOLUTION_FAILED'),
-       timeout: error?.code === 'ETIMEDOUT',
+      timeout: error?.code === 'ETIMEDOUT',
       elapsedMs: Number(process.hrtime.bigint() - startedAt) / 1e6
     };
   }

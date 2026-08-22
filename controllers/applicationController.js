@@ -243,8 +243,8 @@ async function approveApplication(req, res) {
 
     const recipientEmail = getApplicationRecipientEmail(app) || String(studentAccount?.email || '').trim();
     const safeStudentName = app.full_name || app.fullName || 'Student';
-    const emailResult = recipientEmail
-      ? await sendAdmissionApprovalEmail({
+    if (recipientEmail) {
+      void sendAdmissionApprovalEmail({
           to: recipientEmail,
           fullName: safeStudentName,
           admissionNumber,
@@ -258,20 +258,13 @@ async function approveApplication(req, res) {
           applicationId: id,
           triggeredBy: reviewerId
         })
-      : { delivered: false, failureReason: 'MISSING_RECIPIENT' };
-
-    if (!emailResult.delivered) {
-      const reason = emailResult.failureReason || 'Unable to deliver notification email.';
-      await logActivity(reviewerId, 'application_approval_email_failed', `Approval email failed for application #${id}: ${reason}`, req.ip);
-      return res.json({
-        success: true,
-        admissionNumber,
-        stream,
-        email: 'FAILED',
-        recipient: recipientEmail || null,
-        reason,
-        message: 'Application approved successfully, but the notification email could not be delivered.'
-      });
+        .then((emailResult) => {
+          if (!emailResult.delivered) {
+            return logActivity(reviewerId, 'application_approval_email_failed', `Approval email failed for application #${id}: ${emailResult.failureReason || 'DELIVERY_FAILED'}`, req.ip);
+          }
+          return null;
+        })
+        .catch((error) => console.error('Application approval email queue error:', error.message || error));
     }
 
     if (io) {
@@ -280,7 +273,7 @@ async function approveApplication(req, res) {
         admissionNumber: admissionNumber,
         className: app.class_name,
         stream: stream,
-        email: 'SENT',
+        email: 'PENDING',
         timestamp: new Date().toISOString()
       });
     }
@@ -289,8 +282,10 @@ async function approveApplication(req, res) {
       success: true,
       admissionNumber,
       stream,
-      email: 'SENT',
-      message: 'Application approved successfully.'
+      email: recipientEmail ? 'PENDING' : 'SKIPPED',
+      message: recipientEmail
+        ? 'Application approved successfully. The notification email is being processed.'
+        : 'Application approved successfully.'
     });
   } catch (error) {
     if (connection) await connection.rollback().catch(() => {});
@@ -337,9 +332,8 @@ async function rejectApplication(req, res) {
     await logActivity(req.user.id, 'application_rejected', `Rejected application #${id}`, req.ip);
 
     const recipientEmail = getApplicationRecipientEmail(app);
-    let emailResult = { delivered: false, failureReason: 'MISSING_RECIPIENT' };
     if (recipientEmail) {
-      emailResult = await sendApplicationRejectionEmail({
+      void sendApplicationRejectionEmail({
         to: recipientEmail,
         fullName: app.full_name || 'Student',
         applicationReference: String(app.id || '').padStart(4, '0'),
@@ -348,20 +342,21 @@ async function rejectApplication(req, res) {
         reason: rejectionReason || '',
         applicationId: id,
         triggeredBy: req.user.id
-      });
+      }).then((emailResult) => {
+        if (!emailResult.delivered) {
+          return logActivity(req.user.id, 'application_rejection_email_failed', `Rejection email failed for application #${id}: ${emailResult.failureReason || 'DELIVERY_FAILED'}`, req.ip);
+        }
+        return null;
+      }).catch((error) => console.error('Application rejection email queue error:', error.message || error));
     }
 
-    if (!emailResult.delivered) {
-      return res.json({
-        success: true,
-        email: 'FAILED',
-        recipient: recipientEmail || null,
-        reason: emailResult.failureReason || 'Unable to deliver notification email.',
-        message: 'Application rejected successfully, but the notification email could not be delivered.'
-      });
-    }
-
-    return res.json({ success: true, email: 'SENT', message: 'Application rejected successfully.' });
+    return res.json({
+      success: true,
+      email: recipientEmail ? 'PENDING' : 'SKIPPED',
+      message: recipientEmail
+        ? 'Application rejected successfully. The notification email is being processed.'
+        : 'Application rejected successfully.'
+    });
   } catch (error) {
     if (connection) await connection.rollback().catch(() => {});
     console.error('Reject application error:', error);

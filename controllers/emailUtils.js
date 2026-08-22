@@ -92,7 +92,7 @@ function createTransport() {
     host: configuration.host,
     port: configuration.port,
     secure: configuration.secure,
-    requireTLS: configuration.port === 587,
+    requireTLS: configuration.port === 587 || configuration.port === 2525,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
