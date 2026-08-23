@@ -39,13 +39,20 @@ function isHtmlRequest(req) {
   return !isApiRoute && req.method === 'GET' && (acceptsHtml || req.path.endsWith('.html'));
 }
 
+function getLoginPage(req) {
+  if (req.path.startsWith('/ict-')) return '/ict-login.html';
+  if (req.path.startsWith('/admin-finance')) return '/finance-login.html';
+  if (['/teacher.html', '/teacher-portal.html', '/lecturer-dashboard.html'].includes(req.path.toLowerCase())) return '/teacher-login.html';
+  return '/login.html';
+}
+
 async function authMiddleware(req, res, next) {
   try {
     const token = getTokenFromRequest(req);
     if (!token) {
       if (isHtmlRequest(req)) {
         const redirectTo = req.originalUrl && req.originalUrl !== '/' ? req.originalUrl : '/dashboard.html';
-        const loginPage = req.path.startsWith('/ict-') ? '/ict-login.html' : req.path.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
+        const loginPage = getLoginPage(req);
         return res.redirect(`${loginPage}?redirect=${encodeURIComponent(redirectTo)}`);
       }
       return res.status(401).json({ success: false, message: 'Authentication token required' });
@@ -63,7 +70,7 @@ async function authMiddleware(req, res, next) {
         console.warn('authMiddleware: token verification failed (could not print token snippet)', err.message || err);
       }
       if (isHtmlRequest(req)) {
-        const loginPage = req.path.startsWith('/ict-') ? '/ict-login.html' : req.path.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
+        const loginPage = getLoginPage(req);
         return res.redirect(loginPage);
       }
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
