@@ -265,6 +265,13 @@ async function login(req, res) {
     const refreshed = (await query('SELECT * FROM students WHERE id = ?', [student.id]))[0];
     const token = signToken(refreshed);
     await recordSession(token, refreshed, req);
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 10 * 60 * 1000,
+      path: '/'
+    });
     if (requestedPortal === 'ict' || requestedPortal === 'finance') {
       res.cookie(requestedPortal === 'ict' ? 'ictSessionToken' : 'financeSessionToken', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 10 * 60 * 1000, path: '/' });
     }
@@ -449,6 +456,13 @@ async function adminLogin(req, res) {
 
     const token = adminToken;
     await recordSession(token, refreshed, req);
+    res.cookie('adminSessionToken', adminToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 60 * 1000,
+      path: '/'
+    });
     return res.json({
       success: true,
       token: adminToken,

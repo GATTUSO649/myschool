@@ -28,6 +28,8 @@ function getTokenFromRequest(req) {
   }
   if (req.path.startsWith('/ict-') && req.cookies?.ictSessionToken) return req.cookies.ictSessionToken;
   if (req.path.startsWith('/admin-finance') && req.cookies?.financeSessionToken) return req.cookies.financeSessionToken;
+  if ((req.path.startsWith('/admin') || req.path.startsWith('/admissions')) && req.cookies?.adminSessionToken) return req.cookies.adminSessionToken;
+  if (req.cookies?.authToken) return req.cookies.authToken;
   return req.headers['x-auth-token'] || null;
 }
 

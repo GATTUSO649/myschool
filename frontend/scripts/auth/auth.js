@@ -595,10 +595,11 @@ document.head.appendChild(style);
 // Auto-login if rememberMe was enabled
 window.addEventListener('load', () => {
   const token = sessionStorage.getItem('authToken');
+  const rememberMe = sessionStorage.getItem('rememberMe') === 'true';
   const student = getStudentInfo();
   const page = window.location.pathname.split('/').pop().toLowerCase();
 
-  if (token && page.includes('login.html')) {
+  if (token && rememberMe && page.includes('login.html')) {
     const role = (student && student.role ? student.role : '').toLowerCase();
     const normalizedRole = role === 'rba' || role === 'admin' || role === 'super_admin' || role === 'superadmin' || role === 'school_admin' || role === 'schooladmin' ? 'admin' : role;
     if (normalizedRole === 'admin') {
