@@ -173,6 +173,7 @@ async function runMigrations() {
   await addColumnIfMissing('results', 'exam_type', 'VARCHAR(80) NULL');
   await addColumnIfMissing('students', 'date_of_birth', 'DATE NULL');
   await addColumnIfMissing('students', 'address', 'TEXT NULL');
+  await addColumnIfMissing('students', 'must_change_password', 'TINYINT(1) NOT NULL DEFAULT 0');
   await addColumnIfMissing('students', 'subject', 'VARCHAR(100) NULL');
   await addColumnIfMissing('students', 'staff_number', 'VARCHAR(30) NULL');
   await addColumnIfMissing('students', 'finance_working_area', 'VARCHAR(100) NULL');

@@ -103,7 +103,7 @@ async function authMiddleware(req, res, next) {
     }
 
     const rows = await query(
-      'SELECT id, name, username, email, admission_number, staff_number, finance_working_area, ict_working_area, role, class_name, stream, avatar, subject, active FROM students WHERE id = ? LIMIT 1',
+      'SELECT id, name, username, email, admission_number, staff_number, finance_working_area, ict_working_area, role, class_name, stream, avatar, subject, active, must_change_password FROM students WHERE id = ? LIMIT 1',
       [decoded.id]
     );
     const user = rows[0];
@@ -119,6 +119,9 @@ async function authMiddleware(req, res, next) {
       rawRole: String(user.role || '').toLowerCase(),
       role: normalizeRole(user.role)
     };
+    if (req.user.must_change_password && req.path !== '/auth/password/change') {
+      return res.status(403).json({ success: false, code: 'PASSWORD_CHANGE_REQUIRED', message: 'You must change your temporary password before continuing.' });
+    }
     next();
   } catch (error) {
     if (isHtmlRequest(req)) {

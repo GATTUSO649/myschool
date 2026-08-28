@@ -26,6 +26,7 @@ function publicStudent(row) {
     subject: row.subject || null,
     avatar: row.avatar,
     active: Boolean(row.active),
+    mustChangePassword: Boolean(row.must_change_password),
     last_login: row.last_login
   };
 }
@@ -253,8 +254,7 @@ async function login(req, res) {
     }
 
     const hashedMatch = student.password_hash ? await bcrypt.compare(password, student.password_hash) : false;
-    const admissionFallback = password.toUpperCase() === String(student.admission_number || '').toUpperCase();
-    if (!hashedMatch && !admissionFallback) {
+    if (!hashedMatch) {
       await logActivity(student.id, 'failed_login', 'Invalid password', req.ip);
       return res.status(401).json({ success: false, message: 'Invalid login details' });
     }
@@ -381,6 +381,31 @@ async function me(req, res) {
   res.json({ success: true, student: publicStudent(req.user) });
 }
 
+async function changePassword(req, res) {
+  try {
+    const currentPassword = String(req.body?.currentPassword || '').trim();
+    const newPassword = String(req.body?.newPassword || '').trim();
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current and new passwords are required' });
+    }
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.' });
+    }
+
+    const rows = await query('SELECT password_hash FROM students WHERE id = ? AND active = 1 LIMIT 1', [req.user.id]);
+    if (!rows[0] || !(await bcrypt.compare(currentPassword, rows[0].password_hash || ''))) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    await query('UPDATE students SET password_hash = ?, must_change_password = 0 WHERE id = ?', [await bcrypt.hash(newPassword, 12), req.user.id]);
+    await logActivity(req.user.id, 'password_changed', 'User changed their password', req.ip);
+    return res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ success: false, message: 'Password change failed' });
+  }
+}
+
 /**
  * Admin-specific login with enhanced security
  * Enforces admin role verification and enhanced logging
@@ -425,9 +450,7 @@ async function adminLogin(req, res) {
 
     // Password verification
     const hashedMatch = admin.password_hash ? await bcrypt.compare(password, admin.password_hash) : false;
-    const admissionFallback = password.toUpperCase() === String(admin.admission_number || '').toUpperCase();
-    
-    if (!hashedMatch && !admissionFallback) {
+    if (!hashedMatch) {
       await logActivity(admin.id, 'failed_admin_login', 'Invalid password', req.ip);
       return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
     }
@@ -482,6 +505,7 @@ module.exports = {
   adminLogin,
   requestPasswordReset,
   confirmPasswordReset,
+  changePassword,
   publicStudent,
   signToken,
   generateOtpCode,

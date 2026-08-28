@@ -160,7 +160,7 @@ async function createStudent(req, res) {
       ]
     );
 
-    res.status(201).json({ success: true, message: `${role === 'lecturer' ? 'Lecturer' : 'Student'} registered successfully`, studentId: result.insertId, admissionNumber, password });
+    res.status(201).json({ success: true, message: `${role === 'lecturer' ? 'Lecturer' : 'Student'} registered successfully`, studentId: result.insertId, admissionNumber });
   } catch (error) {
     console.error('Create student error:', error);
     res.status(500).json({ success: false, message: 'Could not create student' });
@@ -467,8 +467,8 @@ async function createTeacherWithAssignments(req, res) {
     const passwordHash = await bcrypt.hash(staffNumber, 10);
     const primarySubject = subjects[0];
     const result = await query(
-      `INSERT INTO students (name, username, email, password_hash, role, subject, staff_number, active)
-       VALUES (?, ?, ?, ?, 'lecturer', ?, ?, 1)`,
+      `INSERT INTO students (name, username, email, password_hash, role, subject, staff_number, active, must_change_password)
+       VALUES (?, ?, ?, ?, 'lecturer', ?, ?, 1, 1)`,
       [name, staffNumber, email, passwordHash, primarySubject, staffNumber]
     );
     for (const subject of subjects) {
@@ -480,7 +480,7 @@ async function createTeacherWithAssignments(req, res) {
         );
       }
     }
-    res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, initialPassword: staffNumber, subject: primarySubject, subjects, classes } });
+    res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, subject: primarySubject, subjects, classes } });
   } catch (error) {
     console.error('Error creating teacher:', error);
     res.status(500).json({ success: false, message: 'Could not create teacher role' });
@@ -543,12 +543,12 @@ async function createFinanceAccount(req, res) {
     const staffNumber = `FC/${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}/${year}`;
     const passwordHash = await bcrypt.hash(staffNumber, 12);
     const result = await query(
-      `INSERT INTO students (name, username, email, password_hash, role, staff_number, finance_working_area, active)
-       VALUES (?, ?, ?, ?, 'finance', ?, ?, 1)`,
+      `INSERT INTO students (name, username, email, password_hash, role, staff_number, finance_working_area, active, must_change_password)
+       VALUES (?, ?, ?, ?, 'finance', ?, ?, 1, 1)`,
       [name, staffNumber, email, passwordHash, staffNumber, workingArea]
     );
     await logActivity(req.user.id, 'finance_account_created', `Created finance account ${staffNumber} for ${workingArea}`);
-    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea, initialPassword: staffNumber } });
+    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea } });
   } catch (error) {
     console.error('Error creating finance account:', error);
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Username or email is already in use' });
@@ -586,12 +586,12 @@ async function createICTAccount(req, res) {
     const staffNumber = `ict-${String(nextRows[0]?.nextNumber || 1).padStart(3, '0')}-${year}`;
     const passwordHash = await bcrypt.hash(staffNumber, 12);
     const result = await query(
-      `INSERT INTO students (name, username, email, password_hash, role, staff_number, ict_working_area, active)
-       VALUES (?, ?, ?, ?, 'ict', ?, ?, 1)`,
+      `INSERT INTO students (name, username, email, password_hash, role, staff_number, ict_working_area, active, must_change_password)
+       VALUES (?, ?, ?, ?, 'ict', ?, ?, 1, 1)`,
       [name, staffNumber, email, passwordHash, staffNumber, workingArea]
     );
     await logActivity(req.user.id, 'ict_account_created', `Created ICT account ${staffNumber} for ${workingArea}`);
-    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea, initialPassword: staffNumber } });
+    res.status(201).json({ success: true, account: { id: result.insertId, name, email, username: staffNumber, staffNumber, workingArea } });
   } catch (error) {
     console.error('Error creating ICT account:', error);
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Generated ICT staff number or email is already in use' });

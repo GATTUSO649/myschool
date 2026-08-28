@@ -1,5 +1,6 @@
 const { query } = require('../config/db');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
 const { schoolEmail, isValidRecipientEmail, sendAdmissionApprovalEmail, sendApplicationRejectionEmail, sendApplicationConfirmationEmail } = require('./emailUtils');
@@ -10,6 +11,10 @@ function getApplicationRecipientEmail(application) {
   const legacyEmail = String(application?.email || '').trim();
   if (isValidRecipientEmail(legacyEmail)) return legacyEmail;
   return parentEmail || legacyEmail;
+}
+
+function generateTemporaryPassword() {
+  return `Cres${crypto.randomBytes(6).toString('base64url')}!`;
 }
 
 function getDocumentValue(req, fieldName, fallbackValue) {
@@ -196,15 +201,14 @@ async function approveApplication(req, res) {
     );
 
     let studentAccount = existingStudentRows[0] || null;
-    let initialPasswordForEmail = String(admissionNumber || '').trim();
+    const initialPasswordForEmail = generateTemporaryPassword();
     if (!studentAccount) {
       const emailValue = app.parent_email || app.email ? schoolEmail(app.parent_email || app.email, admissionNumber || app.full_name) : null;
       const username = String(app.full_name || app.fullName || 'Student').trim();
-      const loginPassword = String(admissionNumber || '').trim();
-      const passwordHash = await bcrypt.hash(loginPassword, 10);
+      const passwordHash = await bcrypt.hash(initialPasswordForEmail, 12);
       const [insertResult] = await connection.query(
-        `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active, must_change_password)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)`,
         [
           app.full_name || app.fullName || null,
           username,
@@ -223,9 +227,9 @@ async function approveApplication(req, res) {
       await logActivity(reviewerId, 'student_created_from_application', `Created student record ${admissionNumber}`, req.ip);
     } else {
       const username = String(app.full_name || app.fullName || studentAccount.username || 'Student').trim();
-      const passwordHash = await bcrypt.hash(String(admissionNumber || '').trim(), 10);
+      const passwordHash = await bcrypt.hash(initialPasswordForEmail, 12);
       await connection.query(
-        'UPDATE students SET username = ?, password_hash = ? WHERE id = ?',
+        'UPDATE students SET username = ?, password_hash = ?, must_change_password = 1 WHERE id = ?',
         [username, passwordHash, studentAccount.id]
       );
       studentAccount.username = username;

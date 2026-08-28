@@ -23,6 +23,7 @@ router.post('/login', auth.login);
 router.post('/admin-login', auth.adminLogin);
 router.post('/password-reset/request', auth.requestPasswordReset);
 router.post('/password-reset/confirm', auth.confirmPasswordReset);
+router.post('/password/change', authMiddleware, auth.changePassword);
 router.get('/me', authMiddleware, auth.me);
 
 module.exports = router;
