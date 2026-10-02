@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Department Portal | CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/admin/admin-dashboard.css">
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+  <style>
+    .department-portal { max-width: 1220px; width: 100%; margin: 0 auto; }
+    .department-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; padding:24px; color:#fff; background:#08224f; border-radius:8px; }
+    .department-hero h1 { margin:6px 0; font-size:clamp(1.7rem,4vw,2.8rem); }
+    .department-hero p { margin:0; color:#dbe7ff; }
+    .department-code { padding:8px 12px; border:1px solid rgba(255,255,255,.35); border-radius:6px; font-weight:800; }
+    .portal-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:18px 0; }
+    .portal-kpi { padding:18px; border:1px solid #d8e2ef; border-radius:7px; background:#fff; }
+    .portal-kpi span { display:block; color:#64748b; font-size:.72rem; }
+    .portal-kpi strong { display:block; margin-top:7px; color:#08224f; font-size:1.7rem; }
+    .portal-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .portal-panel { min-width:0; border:1px solid #d8e2ef; border-radius:7px; background:#fff; box-shadow:0 5px 15px rgba(16,40,83,.04); }
+    .portal-panel.wide { grid-column:1/-1; }
+    .portal-panel-head { padding:16px 18px; border-bottom:1px solid #e5ebf3; }
+    .portal-panel-head h2 { margin:0; color:#08224f; font-size:1rem; }
+    .portal-panel-head p { margin:5px 0 0; color:#64748b; font-size:.75rem; }
+    .portal-panel-body { padding:16px 18px; }
+    .portal-table-wrap { overflow:auto; }
+    .portal-table { width:100%; min-width:500px; border-collapse:collapse; }
+    .portal-table th,.portal-table td { padding:10px 8px; text-align:left; border-bottom:1px solid #edf1f6; font-size:.75rem; }
+    .portal-table th { color:#64748b; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; }
+    .portal-empty,.portal-error { padding:18px; color:#64748b; text-align:center; font-size:.8rem; }
+    .portal-error { color:#b42318; }
+    .performance-row { display:grid; grid-template-columns:160px 1fr 60px; align-items:center; gap:12px; margin:10px 0; color:#243b64; font-size:.75rem; }
+    .performance-track { height:10px; overflow:hidden; border-radius:99px; background:#e6eefb; }
+    .performance-track span { display:block; height:100%; background:#2261c9; }
+    .activity-list { display:grid; gap:10px; }
+    .activity-item { padding:11px 12px; border-left:3px solid #2261c9; background:#f6f9fe; }
+    .activity-item strong { display:block; color:#08224f; font-size:.76rem; }
+    .activity-item small { display:block; margin-top:3px; color:#64748b; }
+    @media (max-width:800px) { .department-hero { display:block; } .department-code { display:inline-block; margin-top:15px; } .portal-kpis { grid-template-columns:repeat(2,1fr); } .portal-grid { grid-template-columns:1fr; } .portal-panel.wide { grid-column:auto; } }
+    @media (max-width:480px) { .portal-kpis { grid-template-columns:1fr 1fr; gap:8px; } .portal-kpi { padding:13px; } .portal-kpi strong { font-size:1.35rem; } .performance-row { grid-template-columns:100px 1fr 48px; gap:7px; } }
+  </style>
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header"><div class="header-content"><div class="brand-bar"><div class="school-name">CRESENT HIGH SCHOOL</div><div class="header-note">Department portal</div></div><div class="header-actions"><span class="header-pill" id="portalUser">Loading...</span><button class="logout-button" data-admin-logout>Logout</button></div></div></header>
+  <div class="student-shell"><aside class="student-sidebar"><div class="sidebar-brand">Department Portal</div><div class="sidebar-section"><h3>Workspace</h3><a class="sidebar-link" href="admin-dashboard.html">Admin dashboard</a><a class="sidebar-link" href="admin-departments.html">Departments</a><a class="sidebar-link active" href="department-portal.html">Portal home</a></div><div class="sidebar-section"><h3>Operations</h3><a class="sidebar-link" href="#teachers">Teachers</a><a class="sidebar-link" href="#subjects">Subjects</a><a class="sidebar-link" href="#students">Students</a><a class="sidebar-link" href="#results">Results</a><a class="sidebar-link" href="#resources">Resources</a><a class="sidebar-link" href="#activity">Activity</a></div><div class="sidebar-section"><a class="sidebar-link" href="#" data-admin-logout>Logout</a></div></aside>
+    <main class="dashboard-main"><section class="department-portal"><div class="department-hero"><div><p id="portalEyebrow">Department workspace</p><h1 id="departmentName">Loading department...</h1><p id="departmentDescription">Loading department profile...</p></div><div class="department-code" id="departmentCode">...</div></div><div id="portalStatus" class="portal-empty">Loading department portal...</div><section class="portal-kpis"><article class="portal-kpi"><span>Teachers</span><strong id="teacherCount">0</strong></article><article class="portal-kpi"><span>Subjects</span><strong id="subjectCount">0</strong></article><article class="portal-kpi"><span>Classes</span><strong id="classCount">0</strong></article><article class="portal-kpi"><span>Students</span><strong id="studentCount">0</strong></article></section><div class="portal-grid"><section class="portal-panel" id="hod"><div class="portal-panel-head"><h2>Department profile</h2><p>Current HOD and department identity.</p></div><div class="portal-panel-body" id="profileBody"></div></section><section class="portal-panel" id="performance"><div class="portal-panel-head"><h2>Academic performance</h2><p>Average results for subjects assigned to this department.</p></div><div class="portal-panel-body" id="performanceBody"></div></section><section class="portal-panel" id="teachers"><div class="portal-panel-head"><h2>Teachers</h2><p>Teachers assigned to this department's subjects and staff membership.</p></div><div class="portal-panel-body portal-table-wrap"><table class="portal-table"><thead><tr><th>Name</th><th>Staff number</th><th>Email</th></tr></thead><tbody id="teacherRows"></tbody></table></div></section><section class="portal-panel" id="subjects"><div class="portal-panel-head"><h2>Subjects</h2><p>Department-owned subject catalogue.</p></div><div class="portal-panel-body portal-table-wrap"><table class="portal-table"><thead><tr><th>Subject</th><th>Code</th><th>Status</th></tr></thead><tbody id="subjectRows"></tbody></table></div></section><section class="portal-panel" id="classes"><div class="portal-panel-head"><h2>Classes</h2><p>Classes covered by department teaching assignments.</p></div><div class="portal-panel-body portal-table-wrap"><table class="portal-table"><thead><tr><th>Class</th><th>Active students</th></tr></thead><tbody id="classRows"></tbody></table></div></section><section class="portal-panel" id="students"><div class="portal-panel-head"><h2>Students</h2><p>Students in department-assigned classes.</p></div><div class="portal-panel-body portal-table-wrap"><table class="portal-table"><thead><tr><th>Name</th><th>Admission</th><th>Class</th><th>Stream</th></tr></thead><tbody id="studentRows"></tbody></table></div></section><section class="portal-panel wide" id="results"><div class="portal-panel-head"><h2>Examinations and results</h2><p>Recent result coverage by department subject.</p></div><div class="portal-panel-body portal-table-wrap"><table class="portal-table"><thead><tr><th>Subject</th><th>Results recorded</th><th>Average</th></tr></thead><tbody id="resultRows"></tbody></table></div></section><section class="portal-panel" id="resources"><div class="portal-panel-head"><h2>Teaching resources</h2><p>Use the shared academic workspace for notes and learning materials.</p></div><div class="portal-panel-body"><a class="primary-button" href="admin-academics.html">Open academic resources</a><p class="portal-empty">Department resource filtering follows the subject assignments above.</p></div></section><section class="portal-panel" id="reports"><div class="portal-panel-head"><h2>Reports</h2><p>Review department performance and student records.</p></div><div class="portal-panel-body"><a class="secondary-button" href="admin-reports.html">Open reports</a></div></section><section class="portal-panel wide" id="activity"><div class="portal-panel-head"><h2>Department activity</h2><p>Recent recorded actions relevant to this workspace.</p></div><div class="portal-panel-body"><div class="activity-list" id="activityList"></div></div></section></div></section></main>
+  </div><footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+  <script src="/scripts/shared/config.js"></script><script src="/scripts/auth/auth.js"></script><script src="/scripts/admin/department-portal.js"></script>
+</body>
+</html>

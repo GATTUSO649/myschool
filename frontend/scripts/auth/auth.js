@@ -91,6 +91,10 @@ if (loginForm) {
           try {
             const role = (data.student && data.student.role ? data.student.role : '').toLowerCase();
             const username = data.student && data.student.username;
+            if (data.student?.mustChangePassword) {
+              window.location.href = 'settings.html';
+              return;
+            }
             const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
             const allowedRedirects = new Set(['academic.html', 'teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html']);
             if (role === 'admin' || role === 'rba' || role === 'school_admin' || role === 'super_admin' || username === 'admin') {
@@ -187,11 +191,13 @@ if (registerForm) {
 // Check if user is authenticated (call this on protected pages like dashboard)
 function checkAuth() {
   const path = window.location.pathname.toLowerCase();
-  const adminPage = path.includes('admin-');
+  const adminPage = path.includes('admin-') || path.includes('department-portal') || path.includes('department-roles');
   const financePage = path.includes('admin-finance');
-  const token = adminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
+  const token = adminPage
+    ? sessionStorage.getItem('adminAuthToken') || sessionStorage.getItem('authToken')
+    : sessionStorage.getItem('authToken');
   const student = adminPage
-    ? JSON.parse(sessionStorage.getItem('adminUser') || 'null')
+    ? JSON.parse(sessionStorage.getItem('adminUser') || 'null') || getStudentInfo()
     : getStudentInfo();
   const page = path.split('/').pop();
 
@@ -231,6 +237,8 @@ function checkAuth() {
     'academic.html': ['teacher', 'admin', 'student'],
     'admissions.html': ['admin'],
     'admin-dashboard.html': ['admin'],
+    'department-portal.html': ['admin', 'teacher'],
+    'department-roles.html': ['admin'],
     'admin-applications.html': ['admin'],
     'admin-roles.html': ['admin'],
     'admin-finance.html': ['finance', 'admin'],
@@ -322,17 +330,17 @@ function getStudentInfo() {
 // Get authentication token
 function getAuthToken() {
   const page = window.location.pathname.toLowerCase();
-  return page.includes('admin-')
-    ? sessionStorage.getItem('adminAuthToken')
+  return page.includes('admin-') || page.includes('department-portal') || page.includes('department-roles')
+    ? sessionStorage.getItem('adminAuthToken') || sessionStorage.getItem('authToken')
     : sessionStorage.getItem('authToken');
 }
 
 function startInactivityLogout() {
   const page = window.location.pathname.toLowerCase().split('/').pop();
-  const isAdminPage = page.startsWith('admin-');
+  const isAdminPage = page.startsWith('admin-') || page === 'department-portal.html' || page === 'department-roles.html';
   const isTeacherPage = ['teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html'].includes(page);
   const isICTPage = page === 'ict-portal.html';
-  const token = isAdminPage ? sessionStorage.getItem('adminAuthToken') : sessionStorage.getItem('authToken');
+  const token = isAdminPage ? sessionStorage.getItem('adminAuthToken') || sessionStorage.getItem('authToken') : sessionStorage.getItem('authToken');
   if (!token || window.__inactivityLogoutStarted) return;
 
   window.__inactivityLogoutStarted = true;

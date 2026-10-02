@@ -41,6 +41,8 @@ function isHtmlRequest(req) {
 
 function getLoginPage(req) {
   if (req.path.startsWith('/ict-')) return '/ict-login.html';
+  if (req.path.startsWith('/department-portal')) return '/department-login.html';
+  if (req.path.startsWith('/department-roles')) return '/admin-login.html';
   if (req.path.startsWith('/admin-finance')) return '/finance-login.html';
   if (['/teacher.html', '/teacher-portal.html', '/lecturer-dashboard.html'].includes(req.path.toLowerCase())) return '/teacher-login.html';
   return '/login.html';
@@ -119,7 +121,7 @@ async function authMiddleware(req, res, next) {
       rawRole: String(user.role || '').toLowerCase(),
       role: normalizeRole(user.role)
     };
-    if (req.user.must_change_password && req.path !== '/auth/password/change') {
+    if (req.user.must_change_password && !req.path.endsWith('/password/change')) {
       return res.status(403).json({ success: false, code: 'PASSWORD_CHANGE_REQUIRED', message: 'You must change your temporary password before continuing.' });
     }
     next();

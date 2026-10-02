@@ -65,6 +65,9 @@
         <a class="sidebar-link" href="admin-roles.html">
           <span>Roles & staff</span>
         </a>
+        <a class="sidebar-link" href="department-roles.html">
+          <span>Department roles</span>
+        </a>
         <a class="sidebar-link" href="admin-academics.html">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -126,24 +129,34 @@
       <section id="dashboard" class="admin-section">
         <section class="stats-grid">
           <article class="stat-card accent-teal">
-            <span class="stat-label">Pending applications</span>
+            <span class="stat-label">Total applications</span>
             <strong id="totalApplications">0</strong>
-            <small>Admissions awaiting review</small>
+            <small>All submitted admissions</small>
           </article>
           <article class="stat-card accent-blue">
+            <span class="stat-label">Pending applications</span>
+            <strong id="pendingApplications">0</strong>
+            <small>Admissions awaiting review</small>
+          </article>
+          <article class="stat-card accent-green">
             <span class="stat-label">Approved applications</span>
             <strong id="approvedApplications">0</strong>
             <small>Admissions accepted</small>
-          </article>
-          <article class="stat-card accent-green">
-            <span class="stat-label">Rejected applications</span>
-            <strong id="rejectedApplications">0</strong>
-            <small>Admissions declined</small>
           </article>
           <article class="stat-card accent-rose">
             <span class="stat-label">Active students</span>
             <strong id="totalStudents">0</strong>
             <small>Registered learners</small>
+          </article>
+          <article class="stat-card accent-indigo">
+            <span class="stat-label">Teachers</span>
+            <strong id="totalTeachers">0</strong>
+            <small>Active teaching staff</small>
+          </article>
+          <article class="stat-card accent-gold">
+            <span class="stat-label">Total staff</span>
+            <strong id="totalStaff">0</strong>
+            <small>Active school accounts</small>
           </article>
           <article class="stat-card accent-indigo">
             <span class="stat-label">Total billed</span>
@@ -177,6 +190,11 @@
             <h3>Uploads</h3>
             <p>Manage documents, notices, and academic files for the school.</p>
             <a href="admin-uploads.html">Open uploads</a>
+          </article>
+          <article class="module-card accent-blue">
+            <h3>Department roles</h3>
+            <p>Create department portal accounts and assign Science, Technical, Maths, Languages, or Humanities.</p>
+            <a href="/department-roles.html">Assign department roles</a>
           </article>
         </section>
 

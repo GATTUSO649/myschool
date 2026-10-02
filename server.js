@@ -157,9 +157,13 @@ const publicApiPaths = new Set([
 app.use('/api', (req, res, next) => {
   const isPublicHealth = req.path === '/health';
   const isPublicAuthRoute = req.path.startsWith('/auth/login')
+    || req.path.startsWith('/auth/department-login')
     || req.path.startsWith('/auth/signup')
     || req.path.startsWith('/auth/admin-login')
-    || req.path.startsWith('/auth/csrf-token');
+    || req.path.startsWith('/auth/csrf-token')
+    || req.path.startsWith('/auth/password-reset/request')
+    || req.path.startsWith('/auth/password-reset/confirm')
+    || req.path.startsWith('/auth/password/change');
   const isPublicMaintenanceSettings = req.method === 'GET' && req.path === '/admin/settings/public';
   const isPublicApplicationCreate = req.method === 'POST' && req.path === '/applications';
 
@@ -238,6 +242,9 @@ const protectedPagePatterns = [
   '/admin-dashboard.html',
   '/admin-applications.html',
   '/admin-roles.html',
+  '/admin-departments.html',
+  '/department-roles.html',
+  '/department-portal.html',
   '/admin-finance.html',
   '/admin-finance-balances.html',
   '/admin-finance-payments.html',
@@ -290,6 +297,7 @@ const protectedPageRoleMap = {
   '/admin-dashboard.html': ['admin'],
   '/admin-applications.html': ['admin'],
   '/admin-roles.html': ['admin'],
+  '/department-roles.html': ['admin'],
   '/admin-finance.html': ['finance', 'admin'],
   '/admin-finance-balances.html': ['finance', 'admin'],
   '/admin-finance-payments.html': ['finance', 'admin'],
@@ -351,6 +359,11 @@ const protectedPageRoleMap = {
   '/revision.html': ['student', 'teacher', 'admin'],
   
 };
+
+app.get('/departments-roles.html', (req, res) => {
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  res.redirect(`/department-roles.html${query}`);
+});
 
 app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
   const pathname = decodeURIComponent(req.path).toLowerCase();

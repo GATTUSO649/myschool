@@ -20,15 +20,17 @@ const EDITABLE_TABLES = new Set([
 
 async function getStats(req, res) {
   try {
-    const [studentsRows] = await query('SELECT COUNT(*) AS count FROM students WHERE active = 1');
-    const [classesRows] = await query('SELECT COUNT(*) AS count FROM classes WHERE active = 1');
-    const [applicationsRows] = await query('SELECT COUNT(*) AS count FROM applications');
-    const [pendingAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'pending'");
-    const [approvedAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'approved'");
-    const [rejectedAppsRows] = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'rejected'");
-    const [resultsRows] = await query('SELECT COUNT(*) AS count FROM results');
-    const [chargedRows] = await query('SELECT COALESCE(SUM(amount), 0) AS totalCharged FROM fee_charges');
-    const [paidRows] = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM fee_payments');
+    const studentsRows = await query('SELECT COUNT(*) AS count FROM students WHERE active = 1');
+    const teachersRows = await query("SELECT COUNT(*) AS count FROM students WHERE active = 1 AND role IN ('lecturer', 'teacher')");
+    const staffRows = await query("SELECT COUNT(*) AS count FROM students WHERE active = 1 AND role NOT IN ('student', 'parent')");
+    const classesRows = await query('SELECT COUNT(*) AS count FROM classes WHERE active = 1');
+    const applicationsRows = await query('SELECT COUNT(*) AS count FROM applications');
+    const pendingAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'pending'");
+    const approvedAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'approved'");
+    const rejectedAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'rejected'");
+    const resultsRows = await query('SELECT COUNT(*) AS count FROM results');
+    const chargedRows = await query('SELECT COALESCE(SUM(amount), 0) AS totalCharged FROM fee_charges');
+    const paidRows = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM fee_payments');
     const formPaymentRows = await query(`
       SELECT s.class_name AS className,
              COUNT(DISTINCT s.id) AS studentCount,
@@ -69,6 +71,8 @@ async function getStats(req, res) {
       success: true,
       stats: {
         totalStudents: Number(studentsRows[0]?.count || 0),
+        totalTeachers: Number(teachersRows[0]?.count || 0),
+        totalStaff: Number(staffRows[0]?.count || 0),
         totalClasses: Number(classesRows[0]?.count || 0),
         totalApplications: Number(applicationsRows[0]?.count || 0),
         totalResults: Number(resultsRows[0]?.count || 0),
@@ -480,6 +484,13 @@ async function createTeacherWithAssignments(req, res) {
         );
       }
     }
+    const subjectPlaceholders = subjects.map(() => '?').join(',');
+    await query(
+      `INSERT IGNORE INTO department_staff (department_id, staff_id)
+       SELECT DISTINCT department_id, ? FROM department_subjects
+       WHERE active = 1 AND LOWER(name) IN (${subjectPlaceholders})`,
+      [result.insertId, ...subjects.map((subject) => subject.toLowerCase())]
+    );
     res.status(201).json({ success: true, teacher: { id: result.insertId, name, staffNumber, username: staffNumber, subject: primarySubject, subjects, classes } });
   } catch (error) {
     console.error('Error creating teacher:', error);
@@ -505,6 +516,13 @@ async function updateTeacherAssignments(req, res) {
         );
       }
     }
+    const subjectPlaceholders = subjects.map(() => '?').join(',');
+    await query(
+      `INSERT IGNORE INTO department_staff (department_id, staff_id)
+       SELECT DISTINCT department_id, ? FROM department_subjects
+       WHERE active = 1 AND LOWER(name) IN (${subjectPlaceholders})`,
+      [teacherId, ...subjects.map((subject) => subject.toLowerCase())]
+    );
     await query('UPDATE students SET subject = ? WHERE id = ?', [subjects[0], teacherId]);
     res.json({ success: true, message: 'Teacher assignments updated' });
   } catch (error) {

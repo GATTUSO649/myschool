@@ -20,6 +20,8 @@ router.get('/csrf-token', csrfTokenProtection, (req, res) => {
 
 router.post('/signup', auth.signup);
 router.post('/login', auth.login);
+router.post('/department-login', auth.departmentLogin);
+router.get('/departments', auth.loginDepartments);
 router.post('/admin-login', auth.adminLogin);
 router.post('/password-reset/request', auth.requestPasswordReset);
 router.post('/password-reset/confirm', auth.confirmPasswordReset);

@@ -134,7 +134,7 @@ if (profileForm) {
 // Password form submission
 const passwordForm = document.getElementById('passwordForm');
 if (passwordForm) {
-    passwordForm.addEventListener('submit', function(e) {
+    passwordForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const currentPassword = document.getElementById('currentPassword').value;
@@ -152,16 +152,36 @@ if (passwordForm) {
             return;
         }
 
-        if (newPassword.length < 8) {
-            showNotification('Password must be at least 8 characters long', 'error');
+        if (newPassword.length < 12 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+            showNotification('Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.', 'error');
             return;
         }
 
-        // Simulate API call
-        showNotification('Password changed successfully!', 'success');
-        passwordForm.reset();
-        document.getElementById('strengthIndicator').className = 'strength-fill';
-        document.getElementById('strengthText').textContent = 'Password strength: Weak';
+        const submitButton = passwordForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        try {
+            const response = await fetchWithAuth('/auth/password/change', {
+                method: 'POST',
+                body: { currentPassword, newPassword }
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Password change failed');
+            }
+            const savedStudent = JSON.parse(sessionStorage.getItem('student') || 'null');
+            if (savedStudent) {
+                savedStudent.mustChangePassword = false;
+                sessionStorage.setItem('student', JSON.stringify(savedStudent));
+            }
+            showNotification(data.message || 'Password changed successfully!', 'success');
+            passwordForm.reset();
+            document.getElementById('strengthIndicator').className = 'strength-fill';
+            document.getElementById('strengthText').textContent = 'Password strength: Weak';
+        } catch (error) {
+            showNotification(error.message || 'Password change failed', 'error');
+        } finally {
+            if (submitButton) submitButton.disabled = false;
+        }
     });
 }
 

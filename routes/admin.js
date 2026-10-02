@@ -8,10 +8,18 @@ const { documentsUpload } = require('../middleware/uploadMiddleware');
 const emailController = require('../controllers/emailController');
 const emailNetworkDiagnostic = require('../controllers/emailNetworkDiagnosticController');
 const ictController = require('../controllers/ictController');
+const departmentController = require('../controllers/departmentController');
 
 const router = express.Router();
 
 router.get('/stats', authMiddleware, authorizeRole(['admin', 'rba']), controller.getStats);
+router.get('/departments', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.listDepartments);
+router.post('/departments', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.createDepartment);
+router.put('/departments/:id', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.updateDepartment);
+router.post('/departments/:id/hod', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.assignHod);
+router.post('/departments/accounts', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.createDepartmentAccount);
+router.get('/subjects', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.listSubjects);
+router.post('/subjects', authMiddleware, authorizeRole(['admin', 'rba']), departmentController.createSubject);
 router.get('/security-dashboard', authMiddleware, authorizeRole(['admin', 'rba']), controller.getSecurityDashboard);
 router.post('/password-reset/request', authMiddleware, authorizeRole(['admin', 'rba']), authController.requestPasswordReset);
 router.post('/password-reset/direct', authMiddleware, authorizeRole(['admin', 'rba']), controller.resetStudentPassword);

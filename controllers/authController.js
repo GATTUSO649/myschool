@@ -9,6 +9,10 @@ const { schoolEmail, sendPasswordResetEmail } = require('./emailUtils');
 
 const loginTracker = createLoginAttemptTracker({ maxAttempts: 5, windowMs: 15 * 60 * 1000 });
 
+function cleanLoginValue(value) {
+  return String(value || '').trim();
+}
+
 function publicStudent(row) {
   return {
     id: row.id,
@@ -286,6 +290,41 @@ async function login(req, res) {
   }
 }
 
+async function departmentLogin(req, res) {
+  try {
+    const identifier = cleanLoginValue(req.body?.username || req.body?.email);
+    const password = cleanLoginValue(req.body?.password);
+    const departmentId = Number(req.body?.departmentId);
+    if (!identifier || !password || !departmentId) return res.status(400).json({ success: false, message: 'Department, username, and password are required' });
+    const rows = await query(`
+      SELECT s.*, d.id AS department_id, d.name AS department_name, d.code AS department_code
+      FROM students s
+      JOIN department_staff ds ON ds.staff_id = s.id
+      JOIN departments d ON d.id = ds.department_id AND d.active = 1
+      WHERE d.id = ? AND (s.username = ? OR s.email = ?) AND s.active = 1
+      LIMIT 1`, [departmentId, identifier, identifier.toLowerCase()]);
+    const staff = rows[0];
+    if (!staff || !staff.password_hash || !(await bcrypt.compare(password, staff.password_hash))) {
+      await logActivity(staff?.id || null, 'failed_department_login', `Failed department login for ${identifier}`, req.ip);
+      return res.status(401).json({ success: false, message: 'Invalid department login details' });
+    }
+    await query('UPDATE students SET last_login = NOW() WHERE id = ?', [staff.id]);
+    await logActivity(staff.id, 'department_login', `Successful login to ${staff.department_code}`, req.ip);
+    const token = signToken(staff);
+    await recordSession(token, staff, req);
+    res.cookie('departmentSessionToken', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 60 * 1000, path: '/' });
+    res.json({ success: true, token, student: publicStudent(staff), department: { id: staff.department_id, name: staff.department_name, code: staff.department_code } });
+  } catch (error) {
+    console.error('Department login error:', error);
+    res.status(500).json({ success: false, message: 'Department login failed' });
+  }
+}
+
+async function loginDepartments(req, res) {
+  const departments = await query('SELECT id, name, code FROM departments WHERE active = 1 ORDER BY name');
+  res.json({ success: true, departments });
+}
+
 async function requestPasswordReset(req, res) {
   try {
     const identifier = String(req.body?.identifier || req.body?.email || req.body?.username || req.body?.studentId || '').trim();
@@ -506,6 +545,8 @@ module.exports = {
   requestPasswordReset,
   confirmPasswordReset,
   changePassword,
+  departmentLogin,
+  loginDepartments,
   publicStudent,
   signToken,
   generateOtpCode,

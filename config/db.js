@@ -79,6 +79,53 @@ async function dropColumnIfExists(tableName, columnName) {
 
 async function runMigrations() {
   await getPool().query(`
+    CREATE TABLE IF NOT EXISTS departments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(120) NOT NULL,
+      code VARCHAR(30) NOT NULL UNIQUE,
+      description TEXT NULL,
+      hod_staff_id INT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_departments_hod (hod_staff_id),
+      CONSTRAINT fk_departments_hod FOREIGN KEY (hod_staff_id) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS department_subjects (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      department_id INT NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      code VARCHAR(30) NOT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_department_subject_code (department_id, code),
+      UNIQUE KEY uniq_department_subject_name (department_id, name),
+      CONSTRAINT fk_department_subject_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS department_staff (
+      department_id INT NOT NULL,
+      staff_id INT NOT NULL,
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (department_id, staff_id),
+      CONSTRAINT fk_department_staff_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+      CONSTRAINT fk_department_staff_staff FOREIGN KEY (staff_id) REFERENCES students(id) ON DELETE CASCADE
+    )
+  `);
+  await getPool().query(`
+    INSERT IGNORE INTO departments (name, code, description) VALUES
+      ('Science', 'SCI', 'Science subjects and laboratory learning'),
+      ('Technical', 'TECH', 'Technical and practical learning'),
+      ('Maths', 'MATH', 'Mathematics teaching and performance'),
+      ('Languages', 'LANG', 'English, Kiswahili and language subjects'),
+      ('Humanities', 'HUM', 'Humanities and social sciences')
+  `);
+
+  await getPool().query(`
     CREATE TABLE IF NOT EXISTS app_settings (
       setting_key VARCHAR(100) PRIMARY KEY,
       setting_value TEXT NULL,

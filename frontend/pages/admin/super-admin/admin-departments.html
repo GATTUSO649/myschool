@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Departments | CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/admin/admin-dashboard.css">
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+  <style>
+    .departments-page { max-width: 1200px; width: 100%; margin: 0 auto; }
+    .department-layout { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: 20px; }
+    .department-form, .department-list, .subject-list { padding: 22px; }
+    .department-form h2, .department-list h2, .subject-list h2 { margin-top: 0; }
+    .department-form label { display: grid; gap: 6px; margin: 14px 0; font-weight: 700; }
+    .department-form input, .department-form textarea, .department-form select { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+    .department-form textarea { min-height: 90px; resize: vertical; }
+    .department-table { width: 100%; border-collapse: collapse; }
+    .department-table th, .department-table td { padding: 12px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+    .department-table th { color: #64748b; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+    .department-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .department-actions button, .department-actions a { border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; border-radius: 7px; padding: 7px 10px; cursor: pointer; font-weight: 700; text-decoration: none; }
+    .department-status { min-height: 24px; color: #475569; }
+    @media (max-width: 800px) { .department-layout { grid-template-columns: 1fr; } .department-table { min-width: 680px; } .department-table-wrap { overflow-x: auto; } }
+  </style>
+</head>
+<body class="admin-dashboard-page has-site-footer">
+  <header class="dashboard-header"><div class="header-content"><div class="brand-bar"><div class="school-name">CRESENT HIGH SCHOOL</div><div class="header-note">Department management</div></div><div class="header-actions"><span class="header-pill" id="adminNamePill">Administrator</span><button class="logout-button" data-admin-logout>Logout</button></div></div></header>
+  <div class="student-shell"><aside class="student-sidebar"><div class="sidebar-brand">Admin Control</div><div class="sidebar-section"><h3>Management</h3><a class="sidebar-link" href="admin-dashboard.html">Dashboard</a><a class="sidebar-link active" href="admin-departments.html">Departments</a><a class="sidebar-link" href="admin-roles.html">Staff & roles</a><a class="sidebar-link" href="admin-academics.html">Academics</a></div><div class="sidebar-section"><h3>Records</h3><a class="sidebar-link" href="admin-students.html">Students</a><a class="sidebar-link" href="admin-applications.html">Applications</a><a class="sidebar-link" href="admin-finance.html">Finance</a></div><div class="sidebar-section"><a class="sidebar-link" href="#" data-admin-logout>Logout</a></div></aside>
+    <main class="dashboard-main"><section class="departments-page"><div class="page-header"><p class="eyebrow">School structure</p><h1>Departments</h1><p>Create departments, organize subjects, and assign active teachers as heads of department.</p></div><div class="department-layout"><form class="dashboard-panel department-form" id="departmentForm"><h2>Add department</h2><div class="department-status" id="departmentStatus" role="status"></div><label>Name<input name="name" maxlength="120" required></label><label>Code<input name="code" maxlength="30" required></label><label>Description<textarea name="description" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Create department</button></form><section class="dashboard-panel department-list"><h2>Departments</h2><div class="department-status" id="departmentListStatus">Loading departments...</div><div class="department-table-wrap"><table class="department-table"><thead><tr><th>Name</th><th>Code</th><th>HOD</th><th>Staff</th><th>Subjects</th><th>Actions</th></tr></thead><tbody id="departmentRows"></tbody></table></div></section></div><section class="dashboard-panel subject-list"><h2>Subjects by department</h2><div class="department-status" id="subjectListStatus">Loading subjects...</div><div class="department-table-wrap"><table class="department-table"><thead><tr><th>Subject</th><th>Code</th><th>Department</th><th>Status</th></tr></thead><tbody id="subjectRows"></tbody></table></div></section></section></main>
+  </div><footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+  <script src="/scripts/shared/config.js"></script><script src="/scripts/auth/auth.js"></script><script src="/scripts/admin/departments.js"></script>
+</body>
+</html>

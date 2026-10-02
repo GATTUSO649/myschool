@@ -4,8 +4,11 @@ const finance = require('../controllers/financeController');
 const transcripts = require('../controllers/transcriptController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { documentsUpload, assignmentsUpload } = require('../middleware/uploadMiddleware');
+const departmentController = require('../controllers/departmentController');
 
 const router = express.Router();
+
+router.get('/departments/:id/portal', authMiddleware, departmentController.portal);
 
 router.get('/exams', controller.exams);
 

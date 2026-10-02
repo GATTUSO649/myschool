@@ -101,6 +101,7 @@ function normalizeAdminSidebar() {
     <div class="sidebar-section">
       <h3>Records</h3>
       <a class="sidebar-link${page === 'admin-roles.html' ? ' active' : ''}" href="admin-roles.html">Roles & staff</a>
+      <a class="sidebar-link${page === 'department-roles.html' ? ' active' : ''}" href="department-roles.html">Department roles</a>
       <a class="sidebar-link${page === 'admin-students.html' ? ' active' : ''}" href="admin-students.html">All Students</a>
       <a class="sidebar-link${page === 'admin-applications.html' ? ' active' : ''}" href="admin-applications.html">Applications</a>
       <a class="sidebar-link${page.startsWith('admin-finance') ? ' active' : ''}" href="admin-finance.html">Finance</a>
@@ -172,7 +173,7 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-m}
+}
 
 function money(value) {
   return `KSh ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -280,8 +281,11 @@ function getStatsSnapshot() {
 function renderStatsCards() {
   const stats = adminState.stats || {};
   setText('totalStudents', Number(stats.totalStudents || 0));
+  setText('totalTeachers', Number(stats.totalTeachers || 0));
+  setText('totalStaff', Number(stats.totalStaff || 0));
   setText('totalClasses', Number(stats.totalClasses || 0));
-  setText('totalApplications', Number(stats.applicationCounts?.pending || stats.totalApplications || 0));
+  setText('totalApplications', Number(stats.totalApplications || 0));
+  setText('pendingApplications', Number(stats.applicationCounts?.pending || 0));
   setText('approvedApplications', Number(stats.applicationCounts?.approved || 0));
   setText('rejectedApplications', Number(stats.applicationCounts?.rejected || 0));
   setText('totalResults', Number(stats.totalResults || 0));
