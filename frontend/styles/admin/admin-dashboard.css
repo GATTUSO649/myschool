@@ -1954,3 +1954,202 @@ body.admin-dashboard-page .admin-section {
     padding: 16px;
   }
 }
+
+/* Shared visual polish for the administration portals. */
+body.admin-dashboard-page {
+  --admin-bg: #f3f6f4;
+  --admin-surface: #ffffff;
+  --admin-surface-alt: #f8faf9;
+  --admin-border: #e2e9e4;
+  --admin-text: #152b46;
+  --admin-muted: #66758a;
+  --admin-accent: #087a36;
+  --admin-accent-strong: #075b2d;
+  --admin-teal: #0c8b50;
+  --admin-shadow: 0 10px 30px rgba(21, 43, 70, 0.07);
+  --admin-shadow-soft: 0 4px 16px rgba(21, 43, 70, 0.05);
+  --admin-radius: 18px;
+  --admin-radius-sm: 12px;
+  background: var(--admin-bg);
+}
+
+body.admin-dashboard-page .dashboard-header {
+  background: #0b2854;
+  border-bottom: 3px solid #13813c;
+  box-shadow: 0 8px 24px rgba(11, 40, 84, 0.16);
+}
+
+body.admin-dashboard-page .brand-bar {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 1px;
+}
+
+body.admin-dashboard-page .brand-bar::before {
+  content: "";
+  display: block;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  background: #fff url("/assets/logos/cresent-high-school.png") center / contain no-repeat;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+body.admin-dashboard-page .school-name {
+  grid-column: 2;
+  grid-row: 1;
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.045em;
+}
+
+body.admin-dashboard-page .header-note {
+  grid-column: 2;
+  grid-row: 2;
+  color: #d8e5f1;
+}
+
+body.admin-dashboard-page .student-sidebar {
+  background: #102f50;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-dashboard-page .sidebar-brand {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.admin-dashboard-page .sidebar-link {
+  border-radius: 10px;
+  background: transparent;
+}
+
+body.admin-dashboard-page .sidebar-link:hover,
+body.admin-dashboard-page .sidebar-link.active {
+  background: rgba(19, 129, 60, 0.28);
+  border-color: rgba(128, 218, 156, 0.28);
+}
+
+body.admin-dashboard-page .dashboard-main {
+  background: var(--admin-bg);
+}
+
+body.admin-dashboard-page .admin-section {
+  gap: 20px;
+}
+
+body.admin-dashboard-page .page-intro {
+  background: linear-gradient(120deg, #0b2854 0%, #12496a 62%, #087a36 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  box-shadow: 0 14px 32px rgba(11, 40, 84, 0.15);
+}
+
+body.admin-dashboard-page .dashboard-panel,
+body.admin-dashboard-page .stat-card,
+body.admin-dashboard-page .module-card,
+body.admin-dashboard-page .sheet-card,
+body.admin-dashboard-page .upload-box,
+body.admin-dashboard-page .admin-finance-panel,
+body.admin-dashboard-page .info-box,
+body.admin-dashboard-page .mini-card,
+body.admin-dashboard-page .database-output,
+body.admin-dashboard-page .database-record-form {
+  border-color: var(--admin-border);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-shadow-soft);
+}
+
+body.admin-dashboard-page .dashboard-panel,
+body.admin-dashboard-page .stat-card,
+body.admin-dashboard-page .module-card,
+body.admin-dashboard-page .sheet-card,
+body.admin-dashboard-page .mini-card,
+body.admin-dashboard-page .info-box {
+  background-color: var(--admin-surface);
+}
+
+body.admin-dashboard-page .panel-header,
+body.admin-dashboard-page .section-heading {
+  border-color: var(--admin-border);
+}
+
+body.admin-dashboard-page .dashboard-main table {
+  border-color: var(--admin-border);
+}
+
+body.admin-dashboard-page .dashboard-main table th {
+  background: #f3f7f4;
+  color: #344b61;
+  font-size: 0.76rem;
+  letter-spacing: 0.055em;
+}
+
+body.admin-dashboard-page .dashboard-main table td {
+  color: #31445a;
+}
+
+body.admin-dashboard-page .dashboard-main table tbody tr:hover {
+  background: #f5faf6;
+}
+
+body.admin-dashboard-page .dashboard-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.admin-dashboard-page .dashboard-main select,
+body.admin-dashboard-page .dashboard-main textarea {
+  border-color: #d5dfd9;
+  border-radius: 9px;
+}
+
+body.admin-dashboard-page .dashboard-main input:focus-visible,
+body.admin-dashboard-page .dashboard-main select:focus-visible,
+body.admin-dashboard-page .dashboard-main textarea:focus-visible,
+body.admin-dashboard-page .dashboard-main button:focus-visible,
+body.admin-dashboard-page .dashboard-main a:focus-visible,
+body.admin-dashboard-page .student-sidebar a:focus-visible,
+body.admin-dashboard-page .dashboard-header button:focus-visible {
+  outline: 3px solid rgba(19, 129, 60, 0.35);
+  outline-offset: 2px;
+}
+
+body.admin-dashboard-page .dashboard-main button.primary-button,
+body.admin-dashboard-page .dashboard-main button.sheet-button,
+body.admin-dashboard-page .dashboard-main button:not(.secondary-button):not(.logout-button):not(.sidebar-toggle-btn) {
+  border-radius: 9px;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
+}
+
+body.admin-dashboard-page .dashboard-main button.primary-button:hover,
+body.admin-dashboard-page .dashboard-main button.sheet-button:hover,
+body.admin-dashboard-page .dashboard-main button:not(.secondary-button):not(.logout-button):not(.sidebar-toggle-btn):hover {
+  box-shadow: 0 5px 14px rgba(11, 40, 84, 0.14);
+  transform: translateY(-1px);
+}
+
+body.admin-dashboard-page .dashboard-footer {
+  background: #fff;
+  border-top-color: var(--admin-border);
+}
+
+@media (max-width: 720px) {
+  body.admin-dashboard-page .brand-bar::before {
+    grid-column: 1;
+    width: 44px;
+    height: 44px;
+  }
+
+  body.admin-dashboard-page .brand-bar {
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 9px;
+  }
+
+  body.admin-dashboard-page .school-name {
+    white-space: normal;
+    font-size: 0.88rem;
+  }
+}
