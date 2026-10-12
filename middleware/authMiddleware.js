@@ -121,7 +121,12 @@ async function authMiddleware(req, res, next) {
       rawRole: String(user.role || '').toLowerCase(),
       role: normalizeRole(user.role)
     };
-    if (req.user.must_change_password && !req.path.endsWith('/password/change')) {
+    const isPasswordSettingsPage = req.path.endsWith('/settings.html');
+    if (req.user.must_change_password && !req.path.endsWith('/password/change') && !isPasswordSettingsPage) {
+      if (isHtmlRequest(req)) {
+        const redirectTo = req.originalUrl && req.originalUrl !== '/' ? req.originalUrl : '/dashboard.html';
+        return res.redirect(`/settings.html?passwordChangeRequired=1&redirect=${encodeURIComponent(redirectTo)}`);
+      }
       return res.status(403).json({ success: false, code: 'PASSWORD_CHANGE_REQUIRED', message: 'You must change your temporary password before continuing.' });
     }
     next();

@@ -28,6 +28,26 @@ function switchTab(tabName, evt) {
     }
 }
 
+const settingsParams = new URLSearchParams(window.location.search);
+const passwordChangeRequired = settingsParams.get('passwordChangeRequired') === '1';
+const requestedRedirect = settingsParams.get('redirect');
+
+if (passwordChangeRequired) {
+    switchTab('password');
+    const passwordNavItem = document.querySelector('.settings-nav-item[onclick*="password"]');
+    if (passwordNavItem) passwordNavItem.classList.add('active');
+    const requiredNotice = document.getElementById('passwordChangeRequiredNotice');
+    if (requiredNotice) requiredNotice.hidden = false;
+}
+
+function getSafeRedirect() {
+    if (!requestedRedirect || !requestedRedirect.startsWith('/') || requestedRedirect.startsWith('//') || requestedRedirect.includes('\\')) {
+        return null;
+    }
+    const destination = new URL(requestedRedirect, window.location.origin);
+    return destination.origin === window.location.origin ? destination.href : null;
+}
+
 // Show notification toast
 function showNotification(message, type = 'success') {
     const toast = document.getElementById('notification');
@@ -177,6 +197,9 @@ if (passwordForm) {
             passwordForm.reset();
             document.getElementById('strengthIndicator').className = 'strength-fill';
             document.getElementById('strengthText').textContent = 'Password strength: Weak';
+            if (passwordChangeRequired) {
+                window.location.href = getSafeRedirect() || 'dashboard.html';
+            }
         } catch (error) {
             showNotification(error.message || 'Password change failed', 'error');
         } finally {

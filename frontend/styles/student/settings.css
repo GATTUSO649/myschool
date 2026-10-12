@@ -137,6 +137,16 @@
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
 }
 
+.password-change-required-notice {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: 1px solid #fcd34d;
+    border-radius: 12px;
+    background: #fffbeb;
+    color: #92400e;
+    font-weight: 600;
+}
+
 .settings-card h3 {
     color: #123a56;
     margin: 0 0 10px 0;

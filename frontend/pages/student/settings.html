@@ -9,7 +9,6 @@
 
     <style>
         /* Fail-safe override to ensure content is visible even if CSS buffering fails */
-        .settings-section { display: block !important; }
         .settings-content, .settings-main, .settings-header, .settings-container, .settings-sidebar, .settings-card { display: block !important; }
         .settings-nav-item { display: inline-flex !important; }
         .settings-header { background: #fff !important; }
@@ -157,6 +156,9 @@
                     </div>
 
                     <div class="settings-card">
+                        <div id="passwordChangeRequiredNotice" class="password-change-required-notice" role="status" hidden>
+                            Your approved student account is active. Change the temporary password provided by the school to continue to the portal.
+                        </div>
                         <h3>Change Password</h3>
                         <form id="passwordForm">
                             <div class="form-group">

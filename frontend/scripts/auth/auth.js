@@ -91,11 +91,13 @@ if (loginForm) {
           try {
             const role = (data.student && data.student.role ? data.student.role : '').toLowerCase();
             const username = data.student && data.student.username;
+            const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
             if (data.student?.mustChangePassword) {
-              window.location.href = 'settings.html';
+              const params = new URLSearchParams({ passwordChangeRequired: '1' });
+              if (requestedRedirect) params.set('redirect', requestedRedirect);
+              window.location.href = `settings.html?${params.toString()}`;
               return;
             }
-            const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
             const allowedRedirects = new Set(['academic.html', 'teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html']);
             if (role === 'admin' || role === 'rba' || role === 'school_admin' || role === 'super_admin' || username === 'admin') {
               showAlert('Administrators must use the admin portal.', 'error');
