@@ -195,8 +195,15 @@ passwordForm.addEventListener('submit', async (event) => {
     completePanel.hidden = false;
     document.getElementById('studentBackToLogin').hidden = true;
     statusMessage.textContent = data.message;
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('student');
+    sessionStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('authSessionExpiresAt');
     transactionToken = '';
     resetAuthorization = '';
+    window.setTimeout(() => {
+      window.location.assign('/login.html');
+    }, 2000);
   } catch (error) {
     statusMessage.textContent = error.message || 'Could not reset the password. Verify your code again.';
   } finally {
