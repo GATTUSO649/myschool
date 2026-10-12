@@ -84,6 +84,395 @@ function generateTempPassword() {
   return `Cres${Math.random().toString(36).slice(-8)}!`;
 }
 
+function hashRecoverySecret(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function isAdmissionNumber(value) {
+  return /^[A-Z0-9]+(?:[/-][A-Z0-9]+)*$/.test(value) && value.length <= 50;
+}
+
+function genericStudentRecoveryResponse(transactionToken) {
+  return {
+    success: true,
+    message: 'If the active student account is eligible, a verification code will be sent to the registered parent/guardian email. Check that inbox or contact school administration.',
+    transactionToken,
+    otpExpiresInSeconds: 300
+  };
+}
+
+async function findApprovedStudentRecoveryRecord(connection, admissionNumber) {
+  const [rows] = await connection.execute(
+    `SELECT s.id AS student_id, s.admission_number, a.id AS application_id, a.parent_email
+     FROM students s
+     JOIN applications a
+       ON UPPER(a.admission_number) = UPPER(s.admission_number)
+      AND a.status = 'approved'
+     WHERE UPPER(s.admission_number) = ?
+       AND s.role = 'student'
+       AND s.active = 1
+     ORDER BY a.reviewed_at DESC, a.id DESC
+     LIMIT 2
+     FOR UPDATE`,
+    [admissionNumber]
+  );
+  return rows.length === 1 ? rows[0] : null;
+}
+
+async function getStudentResetTransaction(connection, transactionHash, lookup = 'transaction') {
+  const lookupColumn = lookup === 'authorization' ? 'r.authorization_hash' : 'r.reset_transaction_id';
+  const [rows] = await connection.execute(
+    `SELECT r.*, s.name, s.username, s.admission_number,
+            s.active AS student_active, s.role AS student_role,
+            a.parent_email, a.status AS application_status,
+            (r.expires_at > NOW()) AS otp_not_expired,
+            (r.authorization_expires_at > NOW()) AS authorization_not_expired,
+            TIMESTAMPDIFF(SECOND, r.last_sent_at, NOW()) AS seconds_since_sent
+     FROM student_password_resets r
+     JOIN students s ON s.id = r.student_id
+     JOIN applications a
+       ON a.id = r.application_id
+      AND UPPER(a.admission_number) = UPPER(s.admission_number)
+     WHERE ${lookupColumn} = ?
+       AND r.transaction_expires_at > NOW()
+     LIMIT 1
+     FOR UPDATE`,
+    [transactionHash]
+  );
+  return rows[0] || null;
+}
+
+function validStudentResetRecord(reset) {
+  return reset
+    && Number(reset.student_active) === 1
+    && String(reset.student_role || '').toLowerCase() === 'student'
+    && String(reset.application_status || '').toLowerCase() === 'approved'
+    && emailUtils.isValidRecipientEmail(reset.parent_email);
+}
+
+async function requestStudentPasswordReset(req, res) {
+  const admissionNumber = String(req.body?.admissionNumber || '').trim().toUpperCase();
+  if (!admissionNumber) {
+    return res.status(400).json({ success: false, message: 'Enter your admission number.' });
+  }
+
+  const transactionToken = crypto.randomBytes(32).toString('hex');
+  const genericResponse = genericStudentRecoveryResponse(transactionToken);
+  if (!isAdmissionNumber(admissionNumber)) return res.json(genericResponse);
+
+  let connection;
+  let resetId = null;
+  let recoveryRecord = null;
+  try {
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    recoveryRecord = await findApprovedStudentRecoveryRecord(connection, admissionNumber);
+    if (!recoveryRecord || !emailUtils.isValidRecipientEmail(recoveryRecord.parent_email)) {
+      await connection.rollback();
+      return res.json(genericResponse);
+    }
+    const otp = generateOtpCode();
+    const otpHash = await bcrypt.hash(otp, 10);
+    await connection.execute(
+      `UPDATE student_password_resets
+       SET revoked_at = NOW()
+       WHERE student_id = ? AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [recoveryRecord.student_id]
+    );
+    const [result] = await connection.execute(
+      `INSERT INTO student_password_resets
+         (student_id, application_id, reset_transaction_id, otp_hash, attempts,
+          expires_at, transaction_expires_at, last_sent_at, created_at)
+       VALUES (?, ?, ?, ?, 0, DATE_ADD(NOW(), INTERVAL 5 MINUTE),
+               DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW(), NOW())`,
+      [
+        recoveryRecord.student_id,
+        recoveryRecord.application_id,
+        hashRecoverySecret(transactionToken),
+        otpHash
+      ]
+    );
+    resetId = result.insertId;
+    await connection.commit();
+
+    const delivery = await emailUtils.sendStudentParentPasswordResetOtp({
+      to: recoveryRecord.parent_email,
+      otp,
+      applicationId: recoveryRecord.application_id
+    });
+    if (!delivery.delivered) {
+      await query('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ? AND consumed_at IS NULL', [resetId]);
+      console.error('Student parent password recovery email was not delivered:', delivery.failureReason || 'unknown delivery failure');
+    }
+    return res.json(genericResponse);
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Student password recovery request rollback failed:', rollbackError);
+      }
+    }
+    if (resetId) {
+      try {
+        await query('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ? AND consumed_at IS NULL', [resetId]);
+      } catch (revokeError) {
+        console.error('Could not revoke undelivered student recovery transaction:', revokeError.message || revokeError);
+      }
+    }
+    console.error('Student password recovery request failed:', error.message || error);
+    return res.status(500).json({ success: false, message: 'Could not process the recovery request. Please try again later.' });
+  } finally {
+    connection?.release();
+  }
+}
+
+async function resendStudentPasswordResetOtp(req, res) {
+  const transactionToken = String(req.body?.transactionToken || '');
+  const transactionHash = /^[a-f0-9]{64}$/i.test(transactionToken)
+    ? hashRecoverySecret(transactionToken)
+    : '';
+  if (!transactionHash) {
+    return res.json({ success: true, message: 'If the recovery request is still active, a new code will be sent to the registered parent/guardian email.' });
+  }
+
+  let connection;
+  let resetId = null;
+  let otp;
+  let recipient;
+  let applicationId;
+  try {
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    const reset = await getStudentResetTransaction(connection, transactionHash);
+    if (!validStudentResetRecord(reset)
+      || reset.revoked_at
+      || reset.consumed_at
+      || reset.verified_at) {
+      await connection.rollback();
+      return res.json({ success: true, message: 'If the recovery request is still active, a new code will be sent to the registered parent/guardian email.' });
+    }
+    if (Number(reset.resend_count) >= 5) {
+      await connection.rollback();
+      return res.status(429).json({ success: false, message: 'This recovery request has reached its resend limit. Start a new recovery request.' });
+    }
+    if (Number(reset.seconds_since_sent) < 60) {
+      await connection.rollback();
+      return res.status(429).json({ success: false, message: 'Please wait 60 seconds between code requests.' });
+    }
+
+    otp = generateOtpCode();
+    const otpHash = await bcrypt.hash(otp, 10);
+    await connection.execute(
+      `UPDATE student_password_resets
+       SET otp_hash = ?, attempts = 0, expires_at = DATE_ADD(NOW(), INTERVAL 5 MINUTE),
+           verified_at = NULL, authorization_hash = NULL, authorization_expires_at = NULL,
+           transaction_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE),
+           last_sent_at = NOW(), resend_count = resend_count + 1
+       WHERE id = ?`,
+      [otpHash, reset.id]
+    );
+    resetId = reset.id;
+    recipient = reset.parent_email;
+    applicationId = reset.application_id;
+    await connection.commit();
+
+    const delivery = await emailUtils.sendStudentParentPasswordResetOtp({ to: recipient, otp, applicationId });
+    if (!delivery.delivered) {
+      await query('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ? AND consumed_at IS NULL', [resetId]);
+      console.error('Resent student parent password recovery email was not delivered:', delivery.failureReason || 'unknown delivery failure');
+      return res.status(503).json({ success: false, message: 'The verification email could not be sent. Start a new recovery request or contact school administration.' });
+    }
+    return res.json({ success: true, message: 'If the recovery request is still active, a new code will be sent to the registered parent/guardian email.', otpExpiresInSeconds: 300 });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Student password recovery resend rollback failed:', rollbackError);
+      }
+    }
+    if (resetId) {
+      try {
+        await query('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ? AND consumed_at IS NULL', [resetId]);
+      } catch (revokeError) {
+        console.error('Could not revoke undelivered resent recovery transaction:', revokeError.message || revokeError);
+      }
+    }
+    console.error('Student password recovery resend failed:', error.message || error);
+    return res.status(500).json({ success: false, message: 'Could not resend the verification code. Please try again later.' });
+  } finally {
+    connection?.release();
+  }
+}
+
+async function verifyStudentPasswordResetOtp(req, res) {
+  const transactionToken = String(req.body?.transactionToken || '');
+  const otp = String(req.body?.otp || '').trim();
+  if (!/^[a-f0-9]{64}$/i.test(transactionToken) || !/^\d{6}$/.test(otp)) {
+    return res.status(400).json({ success: false, message: 'Enter the six-digit code sent to the registered parent/guardian email.' });
+  }
+
+  let connection;
+  try {
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    const reset = await getStudentResetTransaction(connection, hashRecoverySecret(transactionToken));
+    if (!validStudentResetRecord(reset) || reset.revoked_at || reset.consumed_at) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'This recovery request is invalid, expired, or already used. Start again from student login.' });
+    }
+    if (reset.verified_at) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'This code has already been used. Start a new recovery request.' });
+    }
+    if (Number(reset.otp_not_expired) !== 1) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'This verification code has expired. Request a new code.' });
+    }
+    if (Number(reset.attempts) >= 5) {
+      await connection.execute('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ?', [reset.id]);
+      await connection.commit();
+      return res.status(429).json({ success: false, message: 'Too many incorrect codes. Start a new recovery request.' });
+    }
+
+    const matches = await bcrypt.compare(otp, reset.otp_hash);
+    if (!matches) {
+      await connection.execute(
+        `UPDATE student_password_resets
+         SET revoked_at = IF(attempts >= 4, NOW(), revoked_at),
+             attempts = attempts + 1
+         WHERE id = ? AND verified_at IS NULL AND consumed_at IS NULL`,
+        [reset.id]
+      );
+      await connection.commit();
+      const attemptsRemaining = Math.max(0, 4 - Number(reset.attempts));
+      return res.status(400).json({
+        success: false,
+        message: attemptsRemaining
+          ? `The code is incorrect. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.`
+          : 'Too many incorrect codes. Start a new recovery request.'
+      });
+    }
+
+    const authorization = crypto.randomBytes(32).toString('hex');
+    await connection.execute(
+      `UPDATE student_password_resets
+       SET verified_at = NOW(), authorization_hash = ?,
+           authorization_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+       WHERE id = ? AND verified_at IS NULL AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [hashRecoverySecret(authorization), reset.id]
+    );
+    await connection.commit();
+    return res.json({
+      success: true,
+      authorization,
+      authorizationExpiresInSeconds: 600
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Student password code verification rollback failed:', rollbackError);
+      }
+    }
+    console.error('Student password code verification failed:', error.message || error);
+    return res.status(500).json({ success: false, message: 'Could not verify the code. Please try again later.' });
+  } finally {
+    connection?.release();
+  }
+}
+
+async function completeStudentPasswordReset(req, res) {
+  const authorization = String(req.body?.authorization || '');
+  const newPassword = String(req.body?.newPassword || '');
+  if (!/^[a-f0-9]{64}$/i.test(authorization)) {
+    return res.status(400).json({ success: false, message: 'A valid parent-verified reset authorization is required.' });
+  }
+  if (!isStrongPassword(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.'
+    });
+  }
+  if (newPassword !== newPassword.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password cannot begin or end with whitespace.'
+    });
+  }
+
+  let connection;
+  let parentEmail = null;
+  let applicationId = null;
+  let studentId = null;
+  try {
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    const reset = await getStudentResetTransaction(connection, hashRecoverySecret(authorization), 'authorization');
+    if (!validStudentResetRecord(reset)
+      || !reset.verified_at
+      || reset.consumed_at
+      || reset.revoked_at
+      || Number(reset.authorization_not_expired) !== 1
+      || !reset.authorization_hash
+      || reset.authorization_hash !== hashRecoverySecret(authorization)) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'The reset authorization is invalid, expired, or already used. Verify a new code to continue.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const [updateResult] = await connection.execute(
+      `UPDATE students
+       SET password_hash = ?, must_change_password = 0
+       WHERE id = ? AND role = 'student' AND active = 1`,
+      [passwordHash, reset.student_id]
+    );
+    if (!updateResult.affectedRows) throw new Error('The student account is no longer active.');
+
+    await connection.execute(
+      `UPDATE student_password_resets
+       SET consumed_at = NOW(), authorization_hash = NULL
+       WHERE id = ? AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [reset.id]
+    );
+    await connection.execute(
+      `UPDATE student_password_resets
+       SET revoked_at = NOW()
+       WHERE student_id = ? AND id <> ? AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [reset.student_id, reset.id]
+    );
+    await connection.execute(
+      'UPDATE ict_sessions SET revoked_at = NOW() WHERE user_id = ? AND revoked_at IS NULL',
+      [reset.student_id]
+    );
+    parentEmail = reset.parent_email;
+    applicationId = reset.application_id;
+    studentId = reset.student_id;
+    await connection.commit();
+
+    const notice = await emailUtils.sendStudentPasswordChangedNotice({ to: parentEmail, applicationId });
+    if (!notice.delivered) {
+      console.error('Student password-change parent notification was not delivered:', notice.failureReason || 'unknown delivery failure');
+    }
+    await logActivity(studentId, 'student_password_reset_completed', 'Student password reset completed after parent email verification', req.ip);
+    return res.json({ success: true, message: 'Password reset completed. You can now sign in with your new password.' });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Student password reset completion rollback failed:', rollbackError);
+      }
+    }
+    console.error('Student password reset completion failed:', error.message || error);
+    return res.status(500).json({ success: false, message: 'Could not reset the password. Please try again later.' });
+  } finally {
+    connection?.release();
+  }
+}
+
 async function signup(req, res) {
   try {
     const username = (req.body.username || req.body.name || '').trim();
@@ -227,7 +616,7 @@ async function login(req, res) {
     let student = await ensureBootstrapAdminAccount(identifier, password);
 
     let rows = [];
-    if (!student) {
+    if (!student || String(student.role || '').toLowerCase() === 'student') {
       rows = await query(
         `SELECT * FROM students
          WHERE username = ? OR email = ? OR name = ? OR admission_number = ?
@@ -349,7 +738,7 @@ async function requestPasswordReset(req, res) {
     }
 
     const rows = await query(
-      `SELECT id, email FROM students
+      `SELECT id, email, role FROM students
        WHERE active = 1 AND (
          id = ? OR LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) OR
          UPPER(admission_number) = UPPER(?) OR UPPER(staff_number) = UPPER(?)
@@ -359,7 +748,7 @@ async function requestPasswordReset(req, res) {
     );
     const student = rows[0];
     const genericMessage = 'If an active account matches those details and has a registered email, password reset instructions will be sent shortly.';
-    if (!student || !emailUtils.isValidRecipientEmail(student.email)) {
+    if (!student || String(student.role || '').toLowerCase() === 'student' || !emailUtils.isValidRecipientEmail(student.email)) {
       return res.json({ success: true, message: genericMessage });
     }
 
@@ -442,7 +831,7 @@ async function confirmPasswordReset(req, res) {
     }
 
     const rows = await query(
-      `SELECT id, username, admission_number
+      `SELECT id, username, admission_number, role
        FROM students
        WHERE active = 1 AND (
          id = ? OR LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) OR
@@ -658,6 +1047,10 @@ module.exports = {
   adminLogin,
   requestPasswordReset,
   confirmPasswordReset,
+  requestStudentPasswordReset,
+  resendStudentPasswordResetOtp,
+  verifyStudentPasswordResetOtp,
+  completeStudentPasswordReset,
   changePassword,
   revokeOtherSessions,
   departmentLogin,

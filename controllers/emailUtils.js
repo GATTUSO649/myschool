@@ -363,6 +363,69 @@ async function sendPasswordResetEmail({ to, otp }) {
   return result;
 }
 
+async function sendStudentParentPasswordResetOtp({ to, otp, applicationId = null }) {
+  const subject = 'Cresent High School Portal — Student Password Recovery';
+  const text = [
+    'Dear Parent/Guardian,',
+    '',
+    'A request has been made to reset the password for a student account associated with your registered email address at Cresent High School.',
+    '',
+    'Your verification code is:',
+    otp,
+    '',
+    'This code expires in five minutes.',
+    '',
+    'Please share this code only with the student if you authorize the password reset. Do not share it with anyone else.',
+    '',
+    'If you did not authorize this request, you can ignore this email. The student\'s password will not change unless the verification process is completed.',
+    '',
+    'Regards,',
+    'Cresent High School Portal'
+  ].join('\n');
+  const html = `<p>Dear Parent/Guardian,</p>
+    <p>A request has been made to reset the password for a student account associated with your registered email address at Cresent High School.</p>
+    <p>Your verification code is:</p>
+    <p style="font-size:28px;font-weight:bold;letter-spacing:6px;color:#102a43;">${escapeEmailHtml(otp)}</p>
+    <p>This code expires in five minutes.</p>
+    <p>Please share this code only with the student if you authorize the password reset. Do not share it with anyone else.</p>
+    <p>If you did not authorize this request, you can ignore this email. The student's password will not change unless the verification process is completed.</p>
+    <p>Regards,<br>Cresent High School Portal</p>`;
+  return deliverMail({
+    to,
+    subject,
+    text,
+    html,
+    applicationId,
+    emailType: 'STUDENT_PASSWORD_RESET_OTP'
+  });
+}
+
+async function sendStudentPasswordChangedNotice({ to, applicationId = null }) {
+  const subject = 'Cresent High School Portal — Student Password Changed';
+  const text = [
+    'Dear Parent/Guardian,',
+    '',
+    'The password for the student account associated with your registered email address at Cresent High School has been changed.',
+    '',
+    'If you did not authorize this change, contact the school administration immediately.',
+    '',
+    'Regards,',
+    'Cresent High School Portal'
+  ].join('\n');
+  const html = `<p>Dear Parent/Guardian,</p>
+    <p>The password for the student account associated with your registered email address at Cresent High School has been changed.</p>
+    <p>If you did not authorize this change, contact the school administration immediately.</p>
+    <p>Regards,<br>Cresent High School Portal</p>`;
+  return deliverMail({
+    to,
+    subject,
+    text,
+    html,
+    applicationId,
+    emailType: 'STUDENT_PASSWORD_CHANGED'
+  });
+}
+
 async function sendApplicationConfirmationEmail({ to, fullName, applicationId = null, triggeredBy = null }) {
   const subject = 'Crescent High School – Application Received Successfully';
   const submittedDate = new Date().toISOString().slice(0, 10);
@@ -429,6 +492,8 @@ module.exports = {
   sendAdmissionApprovalEmail,
   sendApplicationRejectionEmail,
   sendPasswordResetEmail,
+  sendStudentParentPasswordResetOtp,
+  sendStudentPasswordChangedNotice,
   sendApplicationConfirmationEmail,
   deliverMail,
   verifyMailTransport,

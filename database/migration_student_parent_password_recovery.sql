@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS student_password_resets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  application_id INT NOT NULL,
+  reset_transaction_id CHAR(64) NOT NULL UNIQUE,
+  otp_hash VARCHAR(255) NOT NULL,
+  attempts INT NOT NULL DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  transaction_expires_at DATETIME NOT NULL,
+  verified_at DATETIME NULL,
+  authorization_hash CHAR(64) NULL,
+  authorization_expires_at DATETIME NULL,
+  consumed_at DATETIME NULL,
+  revoked_at DATETIME NULL,
+  last_sent_at DATETIME NOT NULL,
+  resend_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_student_password_resets_student (student_id, created_at),
+  CONSTRAINT fk_student_password_resets_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_student_password_resets_application FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+);

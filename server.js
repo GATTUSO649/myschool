@@ -163,6 +163,7 @@ app.use('/api', (req, res, next) => {
     || req.path.startsWith('/auth/csrf-token')
     || req.path.startsWith('/auth/password-reset/request')
     || req.path.startsWith('/auth/password-reset/confirm')
+    || req.path.startsWith('/auth/student-password-reset/')
     || req.path.startsWith('/auth/password/change');
   const isPublicMaintenanceSettings = req.method === 'GET' && req.path === '/admin/settings/public';
   const isPublicApplicationCreate = req.method === 'POST' && req.path === '/applications';
