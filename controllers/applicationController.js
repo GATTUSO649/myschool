@@ -196,14 +196,14 @@ async function approveApplication(req, res) {
     const reviewerId = req.user?.id && Number(req.user.id) > 0 ? Number(req.user.id) : null;
 
     const [existingStudentRows] = await connection.query(
-      'SELECT id, username, email, admission_number FROM students WHERE admission_number = ? OR email = ? LIMIT 1',
-      [admissionNumber, app.parent_email || app.email || null]
+      'SELECT id, username, email, admission_number FROM students WHERE admission_number = ? LIMIT 1',
+      [admissionNumber]
     );
 
     let studentAccount = existingStudentRows[0] || null;
     const initialPasswordForEmail = generateTemporaryPassword();
     if (!studentAccount) {
-      const emailValue = app.parent_email || app.email ? schoolEmail(app.parent_email || app.email, admissionNumber || app.full_name) : null;
+      const emailValue = app.parent_email || app.email ? schoolEmail(admissionNumber || app.full_name, app.full_name) : null;
       const username = String(app.full_name || app.fullName || 'Student').trim();
       const passwordHash = await bcrypt.hash(initialPasswordForEmail, 12);
       const [insertResult] = await connection.query(
@@ -229,7 +229,9 @@ async function approveApplication(req, res) {
       const username = String(app.full_name || app.fullName || studentAccount.username || 'Student').trim();
       const passwordHash = await bcrypt.hash(initialPasswordForEmail, 12);
       await connection.query(
-        'UPDATE students SET username = ?, password_hash = ?, must_change_password = 1 WHERE id = ?',
+        `UPDATE students
+         SET username = ?, password_hash = ?, must_change_password = 1, role = 'student', active = 1
+         WHERE id = ?`,
         [username, passwordHash, studentAccount.id]
       );
       studentAccount.username = username;

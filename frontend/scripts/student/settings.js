@@ -2,7 +2,6 @@
 
 const settingsParams = new URLSearchParams(window.location.search);
 const passwordChangeRequired = settingsParams.get('passwordChangeRequired') === '1';
-const requestedRedirect = settingsParams.get('redirect');
 const studentKey = (() => {
     try {
         const student = JSON.parse(sessionStorage.getItem('student') || 'null');
@@ -61,14 +60,6 @@ function switchTab(tabName, trigger) {
     const menuToggle = document.getElementById('settingsMenuToggle');
     if (sidebar) sidebar.classList.remove('is-open');
     if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
-}
-
-function getSafeRedirect() {
-    if (!requestedRedirect || !requestedRedirect.startsWith('/') || requestedRedirect.startsWith('//') || requestedRedirect.includes('\\')) {
-        return null;
-    }
-    const destination = new URL(requestedRedirect, window.location.origin);
-    return destination.origin === window.location.origin ? destination.href : null;
 }
 
 function initialsImage(name) {
@@ -317,16 +308,16 @@ passwordForm?.addEventListener('submit', async (event) => {
         });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'Password change failed.');
-        const student = JSON.parse(sessionStorage.getItem('student') || 'null');
-        if (student) {
-            student.mustChangePassword = false;
-            sessionStorage.setItem('student', JSON.stringify(student));
-        }
         showNotification(data.message || 'Password changed successfully.', 'success');
         passwordForm.reset();
         document.getElementById('strengthIndicator').className = 'strength-fill';
         document.getElementById('strengthText').textContent = 'Password strength: Weak';
-        if (passwordChangeRequired) window.location.assign(getSafeRedirect() || 'dashboard.html');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('student');
+        sessionStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('authSessionExpiresAt');
+        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        window.setTimeout(() => window.location.replace('/login.html'), 2000);
     } catch (error) {
         console.error('Password update failed:', error);
         showNotification(error.message || 'Password change failed.', 'error');

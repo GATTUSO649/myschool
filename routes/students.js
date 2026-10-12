@@ -1,12 +1,13 @@
 const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
+const { authorizeRole } = require('../middleware/adminMiddleware');
 const controller = require('../controllers/studentController');
 
 const router = express.Router();
 
-router.get('/me', authMiddleware, controller.profile);
-router.put('/me', authMiddleware, controller.updateMyProfile);
-router.get('/dashboard-summary', authMiddleware, async (req, res) => {
+router.get('/me', authMiddleware, authorizeRole(['student']), controller.profile);
+router.put('/me', authMiddleware, authorizeRole(['student']), controller.updateMyProfile);
+router.get('/dashboard-summary', authMiddleware, authorizeRole(['student']), async (req, res) => {
   try {
     const [balanceRows] = await require('../config/db').query(
       `SELECT COALESCE(SUM(amount), 0) AS total_charges FROM fee_charges WHERE student_id = ?`,

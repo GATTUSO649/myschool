@@ -341,7 +341,7 @@ const protectedPageRoleMap = {
   '/teacher.html': ['teacher', 'admin'],
   '/student.html': ['admin', 'teacher'],
   '/profile.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
-  '/settings.html': ['student', 'teacher', 'finance', 'admin', 'parent'],
+  '/settings.html': ['student'],
   '/reports.html': ['admin', 'finance', 'teacher'],
   '/admin-security.html': ['admin'],
   '/notes.html': ['student', 'teacher', 'admin'],
