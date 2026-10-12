@@ -393,8 +393,20 @@ body {
 .landing-nav-login { padding: 9px 13px; border-color: rgba(255,255,255,.7); border-radius: 14px; }
 .landing-nav-login span { font-size: .75rem; margin-right: 4px; }
 
+body.landing-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body.landing-page > main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .landing-hero {
   position: relative;
+  flex: 1;
   min-height: 523px;
   background-image: linear-gradient(90deg, rgba(248,251,255,.96) 0%, rgba(248,251,255,.9) 24%, rgba(248,251,255,.48) 42%, rgba(248,251,255,0) 65%), url("https://tse1.mm.bing.net/th/id/OIP.Q05KZgVvUChBgqbrClkEOAHaEG?r=0&pid=ImgDet&w=474&h=262&rs=1&o=7&rm=3");
   background-position: center;
@@ -476,4 +488,3 @@ body.landing-page .landing-footer { padding: 22px 0 0; background: var(--landing
   body.landing-page:not(.public-page) .landing-brand small { font-size:.48rem; }
   body.landing-page:not(.public-page) .landing-footer-grid { width:min(100% - 204px,870px); grid-template-columns:1.4fr 1fr 1.25fr; gap:22px; }
 }
-
