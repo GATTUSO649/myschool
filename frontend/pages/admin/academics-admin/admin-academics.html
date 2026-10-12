@@ -72,6 +72,57 @@
           </div>
         </div>
 
+        <div class="dashboard-panel" id="cbeAssessmentPanel">
+          <div class="panel-header">
+            <div>
+              <h3>CBE descriptive assessments</h3>
+              <p class="footer-note">Record school-configured learning evidence and descriptors. This does not use 8-4-4 marks or grade boundaries.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form id="cbeAssessmentForm" class="admin-form">
+              <div class="form-row">
+                <label for="cbeAssessmentStudent">CBE learner
+                  <select id="cbeAssessmentStudent" name="studentId" required>
+                    <option value="">Loading CBE learners...</option>
+                  </select>
+                </label>
+                <label for="cbeAssessmentYear">Academic year
+                  <input id="cbeAssessmentYear" name="academicYear" type="number" min="2000" max="2100" required>
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="cbeAssessmentLearningArea">Learning area
+                  <select id="cbeAssessmentLearningArea" name="learningArea" required>
+                    <option value="">Configure learning areas in Settings</option>
+                  </select>
+                </label>
+                <label for="cbeAssessmentTitle">Assessment or activity
+                  <input id="cbeAssessmentTitle" name="assessmentTitle" maxlength="180" required>
+                </label>
+              </div>
+              <label for="cbeAssessmentDescriptor">Performance descriptor
+                <select id="cbeAssessmentDescriptor" name="performanceDescriptor" required>
+                  <option value="">Configure descriptors in Settings</option>
+                </select>
+              </label>
+              <label for="cbeAssessmentEvidence">Evidence observed
+                <textarea id="cbeAssessmentEvidence" name="evidence" rows="3" maxlength="5000"></textarea>
+              </label>
+              <label for="cbeAssessmentFeedback">Feedback for learner
+                <textarea id="cbeAssessmentFeedback" name="feedback" rows="3" maxlength="5000"></textarea>
+              </label>
+              <button type="submit" class="primary-button">Save CBE assessment</button>
+            </form>
+            <div class="sheet-table-wrapper" style="margin-top:20px;">
+              <table class="admin-table">
+                <thead><tr><th>Year</th><th>Learning area</th><th>Assessment</th><th>Descriptor</th><th>Evidence</th><th>Feedback</th><th>Recorded by</th></tr></thead>
+                <tbody id="cbeAssessmentRecordsBody"><tr><td colspan="7">Select a learner to view assessments.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="academics-grid admin-cards-grid">
           <div class="academics-panel">
             <div class="academics-sheet-top-row">
@@ -182,4 +233,3 @@
   <script src="/scripts/shared/shared-bindings.js"></script>
 </body>
 </html>
-

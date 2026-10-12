@@ -71,6 +71,17 @@ async function addColumnIfMissing(tableName, columnName, definition) {
   await getPool().query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`);
 }
 
+async function addIndexIfMissing(tableName, indexName, definition) {
+  const [rows] = await getPool().execute(
+    `SELECT COUNT(*) AS count
+     FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+    [database, tableName, indexName]
+  );
+  if (Number(rows[0].count) > 0) return;
+  await getPool().query(`ALTER TABLE \`${tableName}\` ADD INDEX \`${indexName}\` ${definition}`);
+}
+
 async function dropColumnIfExists(tableName, columnName) {
   const exists = await columnExists(tableName, columnName);
   if (!exists) return;
@@ -130,6 +141,26 @@ async function runMigrations() {
       setting_key VARCHAR(100) PRIMARY KEY,
       setting_value TEXT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS cbe_assessments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      student_id INT NOT NULL,
+      curriculum_type VARCHAR(20) NOT NULL DEFAULT 'CBE',
+      education_level VARCHAR(40) NULL,
+      academic_year SMALLINT NOT NULL,
+      learning_area VARCHAR(150) NOT NULL,
+      assessment_title VARCHAR(180) NOT NULL,
+      performance_descriptor VARCHAR(180) NOT NULL,
+      evidence TEXT NULL,
+      feedback TEXT NULL,
+      assessed_by INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_cbe_assessments_student_year (student_id, academic_year),
+      CONSTRAINT fk_cbe_assessments_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE RESTRICT,
+      CONSTRAINT fk_cbe_assessments_assessor FOREIGN KEY (assessed_by) REFERENCES students(id) ON DELETE SET NULL
     )
   `);
 
@@ -225,6 +256,8 @@ async function runMigrations() {
   await addColumnIfMissing('students', 'staff_number', 'VARCHAR(30) NULL');
   await addColumnIfMissing('students', 'finance_working_area', 'VARCHAR(100) NULL');
   await addColumnIfMissing('students', 'ict_working_area', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('students', 'curriculum_type', 'VARCHAR(20) NULL');
+  await addColumnIfMissing('students', 'preferred_pathway', 'VARCHAR(40) NULL');
   try {
     await getPool().query(`ALTER TABLE students MODIFY role ENUM('student','lecturer','teacher','rba','admin','school_admin','super_admin','finance','accountant','ict') NOT NULL DEFAULT 'student'`);
   } catch (error) {
@@ -235,6 +268,17 @@ async function runMigrations() {
   await addColumnIfMissing('applications', 'kcpe_certificate_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'medical_form_path', 'VARCHAR(255) NULL');
   await addColumnIfMissing('applications', 'parent_email', 'VARCHAR(150) NULL');
+  await addColumnIfMissing('applications', 'curriculum_type', 'VARCHAR(20) NULL');
+  await addColumnIfMissing('applications', 'previous_education_stage', 'VARCHAR(40) NULL');
+  await addColumnIfMissing('applications', 'previous_grade_or_form', 'VARCHAR(30) NULL');
+  await addColumnIfMissing('applications', 'completion_year', 'SMALLINT NULL');
+  await addColumnIfMissing('applications', 'intended_admission_level', 'VARCHAR(30) NULL');
+  await addColumnIfMissing('applications', 'previous_assessment', 'TEXT NULL');
+  await addColumnIfMissing('applications', 'preferred_pathway', 'VARCHAR(40) NULL');
+  await addColumnIfMissing('applications', 'preferred_subject_combination', 'VARCHAR(180) NULL');
+  await addColumnIfMissing('applications', 'admission_placement_status', 'VARCHAR(20) NULL');
+  await addColumnIfMissing('applications', 'confirmed_admission_level', 'VARCHAR(30) NULL');
+  await addIndexIfMissing('applications', 'idx_applications_curriculum_status', '(curriculum_type, status)');
   await addColumnIfMissing('notes', 'topic', 'VARCHAR(150) NULL');
   await addColumnIfMissing('notes', 'file_size', 'BIGINT DEFAULT 0');
   await addColumnIfMissing('notes', 'downloads', 'INT DEFAULT 0');

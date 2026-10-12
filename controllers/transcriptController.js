@@ -46,9 +46,9 @@ function transcriptTableForFormNumber(formNumber) {
 }
 
 async function getTranscriptTableForStudent(studentId) {
-  const rows = await query('SELECT class_name FROM students WHERE id = ? LIMIT 1', [studentId]);
+  const rows = await query('SELECT class_name, curriculum_type FROM students WHERE id = ? LIMIT 1', [studentId]);
   const student = rows[0];
-  if (!student) return null;
+  if (!student || student.curriculum_type === 'CBE') return null;
   return transcriptTableForFormNumber(parseFormNumber(student.class_name));
 }
 
@@ -60,7 +60,7 @@ function transcriptSelectForTable(tableName) {
   return `SELECT t.id, t.student_id, t.adm AS admission_number, t.name AS student_name, t.stream,
                  t.eng, t.kisw, t.mat, t.bio, t.che, t.phy, t.cre, t.his, t.geo, t.comp, t.bus, t.agr,
                  t.total, t.avg, t.grade, t.term, t.academic_year AS year, t.created_at,
-                 s.class_name
+                 s.class_name, s.curriculum_type
           FROM ${tableName} t
           LEFT JOIN students s ON s.id = t.student_id`;
 }
@@ -946,10 +946,10 @@ async function getStudentsForNewSheet(req, res) {
       
       // Query students and filter by exact class match
       const allStudents = await query(
-        `SELECT s.id, s.name, s.admission_number, s.class_name, s.stream, c.name as current_class
+        `SELECT s.id, s.name, s.admission_number, s.class_name, s.stream, s.curriculum_type, c.name as current_class
          FROM students s
          LEFT JOIN classes c ON s.class_name = c.name
-         WHERE s.active = 1 AND s.role = 'student'
+         WHERE s.active = 1 AND s.role = 'student' AND COALESCE(s.curriculum_type, '8-4-4') = '8-4-4'
          ORDER BY s.class_name, s.name`,
         []
       );
@@ -976,10 +976,10 @@ async function getStudentsForNewSheet(req, res) {
     } else {
       // Get all active students from all forms
       students = await query(
-        `SELECT s.id, s.name, s.admission_number, s.class_name, s.stream, c.name as current_class
+        `SELECT s.id, s.name, s.admission_number, s.class_name, s.stream, s.curriculum_type, c.name as current_class
          FROM students s
          LEFT JOIN classes c ON s.class_name = c.name
-         WHERE s.active = 1 AND s.role = 'student'
+         WHERE s.active = 1 AND s.role = 'student' AND COALESCE(s.curriculum_type, '8-4-4') = '8-4-4'
          ORDER BY s.class_name, s.name`,
         []
       );

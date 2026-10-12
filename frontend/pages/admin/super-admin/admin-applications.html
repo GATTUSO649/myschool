@@ -84,14 +84,24 @@
             <button class="sheet-button secondary" data-application-filter="pending">Pending</button>
             <button class="sheet-button secondary" data-application-filter="approved">Approved</button>
             <button class="sheet-button secondary" data-application-filter="rejected">Rejected</button>
+            <label>Curriculum
+              <select id="applicationCurriculumFilter">
+                <option value="">All curricula</option>
+                <option value="CBE">CBE</option>
+                <option value="8-4-4">8-4-4</option>
+              </select>
+            </label>
+            <label>Search applicant / reference
+              <input id="applicationSearch" type="search" placeholder="Name or application number">
+            </label>
           </div>
           <div class="table-wrapper">
             <table class="admin-table">
               <thead>
-                <tr><th>Applicant</th><th>Class</th><th>Stream</th><th>Parent</th><th>Phone</th><th>Documents</th><th>Submitted</th><th>Status</th><th>Action</th></tr>
+                <tr><th>Applicant / reference</th><th>Curriculum</th><th>Previous education</th><th>Intended level / confirm placement</th><th>Pathway preference</th><th>Stream</th><th>Parent</th><th>Phone</th><th>Documents</th><th>Submitted</th><th>Status</th><th>Action</th></tr>
               </thead>
               <tbody>
-                <tr><td colspan="9">Loading applications...</td></tr>
+                <tr><td colspan="12">Loading applications...</td></tr>
               </tbody>
             </table>
           </div>
@@ -105,6 +115,12 @@
   <script>
     let applicationFilter = 'all';
     let applicationRows = [];
+
+    function escapeApplicationText(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
 
     function updateApplicationFilterButtons() {
       document.querySelectorAll('[data-application-filter]').forEach((button) => {
@@ -136,12 +152,17 @@
 
       const tbody = document.querySelector('.admin-table tbody');
       if (!tbody) return;
-      tbody.innerHTML = '<tr><td colspan="9">Loading applications...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12">Loading applications...</td></tr>';
 
       try {
-        const url = applicationFilter === 'all'
-          ? '/applications'
-          : `/applications?status=${encodeURIComponent(applicationFilter)}`;
+        const params = new URLSearchParams();
+        if (applicationFilter !== 'all') params.set('status', applicationFilter);
+        const curriculum = document.getElementById('applicationCurriculumFilter')?.value;
+        const search = document.getElementById('applicationSearch')?.value.trim();
+        if (curriculum) params.set('curriculum', curriculum);
+        if (search) params.set('q', search);
+        const queryString = params.toString();
+        const url = `/applications${queryString ? `?${queryString}` : ''}`;
         const res = await fetchWithAuth(url);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Could not load applications');
@@ -149,7 +170,7 @@
         applicationRows = Array.isArray(data) ? data : [];
 
         if (!applicationRows.length) {
-          tbody.innerHTML = `<tr><td colspan="9">No ${applicationFilter === 'all' ? 'applications' : applicationFilter + ' applications'} found.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="12">No matching applications found.</td></tr>`;
           updateApplicationSummary();
           return;
         }
@@ -158,25 +179,40 @@
           const status = String(app.status || 'pending').toLowerCase();
           const statusClass = status === 'approved' ? 'active' : status === 'rejected' ? 'inactive' : 'pending';
           const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+          const curriculum = app.curriculum_type || '';
+          const placementOptions = curriculum === 'CBE'
+            ? ['Grade 10', 'Grade 11', 'Grade 12']
+            : curriculum === '8-4-4'
+              ? ['Form 1', 'Form 2', 'Form 3', 'Form 4']
+              : [];
+          const placementSelect = status === 'approved'
+            ? `<small>Confirmed: ${escapeApplicationText(app.confirmed_admission_level || app.class_name || 'Placement on record')}</small>`
+            : status === 'rejected'
+              ? '<small>Not admitted</small>'
+              : placementOptions.length
+            ? `<select class="application-placement-select" data-placement aria-label="Confirm admission placement for ${escapeApplicationText(app.full_name || 'applicant')}"><option value="">Confirm placement</option>${placementOptions.map((level) => `<option value="${level}">${level}</option>`).join('')}</select>`
+            : '';
           const docs = [
             ['Birth cert', app.birth_certificate_path],
-            ['KCPE', app.kcpe_certificate_path],
+            ['Academic results', app.kcpe_certificate_path],
             ['Medical', app.medical_form_path]
           ].filter(([, path]) => path).map(([label, path]) => `<a class="action-link" href="${path}" target="_blank" rel="noreferrer">${label}</a>`).join('<br>') || '<span class="status-pill pending">Missing</span>';
           const submittedAt = app.created_at ? new Date(app.created_at).toLocaleDateString() : '-';
           return `
             <tr data-id="${app.id}">
-              <td>${app.full_name || app.fullName || '-'}<br><small>${app.parent_email || app.email || ''}</small></td>
-              <td>${app.class_name || app.className || 'Not set'}</td>
-              <td>${app.stream_preference || app.streamPreference || app.stream || 'Not set'}</td>
-              <td>${app.parent_name || app.parentName || '-'}</td>
-              <td>${app.phone || ''}</td>
+              <td>${escapeApplicationText(app.full_name || app.fullName || '-')}<br><small>${escapeApplicationText(String(app.id).padStart(4, '0'))} · ${escapeApplicationText(app.parent_email || app.email || '')}</small></td>
+              <td>${escapeApplicationText(curriculum || 'Legacy / not recorded')}</td>
+              <td>${escapeApplicationText([app.previous_school || '—', app.previous_education_stage || '', app.previous_grade_or_form || '', app.completion_year || ''].filter(Boolean).join(' · '))}</td>
+              <td>${escapeApplicationText(app.intended_admission_level || app.class_name || 'Not set')}<br>${placementSelect}</td>
+              <td>${escapeApplicationText([app.preferred_pathway, app.preferred_subject_combination].filter(Boolean).join(' · ') || '—')}<br>${app.preferred_pathway ? '<small>Preference only</small>' : ''}</td>
+              <td>${escapeApplicationText(app.stream || '—')}</td>
+              <td>${escapeApplicationText(app.parent_name || app.parentName || '-')}</td>
+              <td>${escapeApplicationText(app.phone || '')}</td>
               <td>${docs}</td>
               <td>${submittedAt}</td>
               <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
               <td>
-                ${status !== 'approved' ? `<button class="approve-button" data-action="approve" data-id="${app.id}">Approve</button>` : '<span class="status-pill active">Approved</span>'}
-                ${status !== 'rejected' ? `<button class="reject-button" data-action="reject" data-id="${app.id}">Reject</button>` : '<span class="status-pill inactive">Rejected</span>'}
+                ${status === 'pending' ? `<button class="approve-button" data-action="approve" data-id="${app.id}">Approve</button><button class="reject-button" data-action="reject" data-id="${app.id}">Reject</button>` : status === 'approved' ? '<span class="status-pill active">Approved</span>' : '<span class="status-pill inactive">Rejected</span>'}
               </td>
             </tr>
           `;
@@ -186,6 +222,11 @@
           btn.addEventListener('click', async () => {
             const id = btn.dataset.id;
             const action = btn.dataset.action;
+            const confirmedPlacement = btn.closest('tr')?.querySelector('[data-placement]')?.value || '';
+            if (action === 'approve' && btn.closest('tr')?.querySelector('[data-placement]') && !confirmedPlacement) {
+              showAlert('Select and confirm the actual admission placement before approving.', 'error');
+              return;
+            }
             const confirmMsg = action === 'approve' ? 'Approve this application?' : 'Reject this application?';
             if (!confirm(confirmMsg)) return;
             const rowButtons = btn.closest('tr')?.querySelectorAll('button[data-action]') || [];
@@ -193,7 +234,10 @@
             btn.textContent = action === 'approve' ? 'Approving...' : 'Rejecting...';
             try {
               const endpoint = `/applications/${id}/${action}`;
-              const response = await fetchWithAuth(endpoint, { method: 'POST' });
+              const response = await fetchWithAuth(endpoint, {
+                method: 'POST',
+                ...(action === 'approve' ? { body: JSON.stringify({ confirmedPlacement }) } : {})
+              });
               const result = await response.json().catch(() => ({}));
               if (!response.ok || !result.success) throw new Error(result.message || result.reason || `Could not ${action} application`);
               const emailNote = result.email === 'FAILED'
@@ -214,7 +258,7 @@
         updateApplicationSummary();
       } catch (err) {
         console.error('Load applications error', err);
-        tbody.innerHTML = `<tr><td colspan="9">${err.message || 'Unable to load applications.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12">${escapeApplicationText(err.message || 'Unable to load applications.')}</td></tr>`;
       }
     }
 
@@ -247,6 +291,12 @@
         button.addEventListener('click', () => {
           loadApplications(button.dataset.applicationFilter);
         });
+      });
+      document.getElementById('applicationCurriculumFilter')?.addEventListener('change', () => loadApplications(applicationFilter));
+      let searchTimer;
+      document.getElementById('applicationSearch')?.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadApplications(applicationFilter), 250);
       });
       loadApplications('all');
       loadApplicationSummary();

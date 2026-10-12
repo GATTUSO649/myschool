@@ -81,6 +81,16 @@
               <label>Stream<input name="stream"></label>
             </div>
             <div class="form-row">
+              <label>Education curriculum
+                <select name="curriculumType">
+                  <option value="">Legacy / not recorded</option>
+                  <option value="CBE">CBE</option>
+                  <option value="8-4-4">8-4-4</option>
+                </select>
+              </label>
+              <label>Curriculum pathway preference<input name="preferredPathway"></label>
+            </div>
+            <div class="form-row">
               <label>Phone<input name="phone"></label>
               <label>Guardian phone<input name="guardianPhone"></label>
             </div>
@@ -93,9 +103,9 @@
           <div class="table-wrapper">
             <table class="admin-table">
               <thead>
-                <tr><th>Name</th><th>Username</th><th>Admission</th><th>Class</th><th>Status</th><th>Action</th></tr>
+                <tr><th>Name</th><th>Username</th><th>Admission</th><th>Class / Grade</th><th>Curriculum</th><th>Role</th><th>Subject</th><th>Status</th><th>Action</th></tr>
               </thead>
-              <tbody id="studentsTableBody"><tr><td colspan="6">Loading student records...</td></tr></tbody>
+              <tbody id="studentsTableBody"><tr><td colspan="9">Loading student records...</td></tr></tbody>
             </table>
           </div>
         </div>

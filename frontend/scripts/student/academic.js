@@ -31,11 +31,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const student = serverStudent || getStudentInfo();
   populateStudentInfo(student);
   initializeResultFilters();
+  const isCbeStudent = String(student?.curriculumType || student?.curriculum_type || '').toUpperCase() === 'CBE';
+  document.querySelectorAll('[data-eight-four-four-academics]').forEach((section) => {
+    section.hidden = isCbeStudent;
+  });
+  const cbeAssessmentPanel = document.getElementById('cbeStudentAssessments');
+  if (cbeAssessmentPanel) cbeAssessmentPanel.hidden = !isCbeStudent;
 
   // Fetch and display academic and finance data
-  await loadAcademicData();
+  if (!isCbeStudent) await loadAcademicData();
+  await loadCbeStudentAssessments();
   await loadStudentDashboardSummary();
-  initializeCharts();
+  if (!isCbeStudent) initializeCharts();
 });
 
 async function loadStudentProfile() {
@@ -43,14 +50,50 @@ async function loadStudentProfile() {
     const response = await fetchWithAuth('/students/me');
     if (!response.ok) return null;
     const profile = await response.json();
-    if (profile && profile.id) {
-      sessionStorage.setItem('student', JSON.stringify(profile));
-      return profile;
+    const student = profile?.student || profile;
+    if (student && student.id) {
+      sessionStorage.setItem('student', JSON.stringify(student));
+      return student;
     }
   } catch (error) {
     console.warn('Could not refresh student profile:', error);
   }
   return null;
+}
+
+async function loadCbeStudentAssessments() {
+  const panel = document.getElementById('cbeStudentAssessments');
+  const body = document.getElementById('cbeStudentAssessmentsBody');
+  if (!panel || !body) return;
+  try {
+    const response = await fetchWithAuth('/academics/cbe-assessments');
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || 'Could not load CBE assessments.');
+    if (!data.isCbeStudent) return;
+    panel.hidden = false;
+    body.innerHTML = data.assessments.length
+      ? data.assessments.map((item) => `<tr>
+          <td>${escapeAcademicHtml(item.academicYear)}</td>
+          <td>${escapeAcademicHtml(item.learningArea)}</td>
+          <td>${escapeAcademicHtml(item.assessmentTitle)}</td>
+          <td>${escapeAcademicHtml(item.performanceDescriptor)}</td>
+          <td>${escapeAcademicHtml(item.evidence || '-')}</td>
+          <td>${escapeAcademicHtml(item.feedback || '-')}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6">No CBE learning assessments have been recorded yet.</td></tr>';
+  } catch (error) {
+    console.error('CBE assessment load error:', error);
+    body.innerHTML = '<tr><td colspan="6">CBE assessment records are temporarily unavailable.</td></tr>';
+  }
+}
+
+function escapeAcademicHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // Populate student information in the hero section

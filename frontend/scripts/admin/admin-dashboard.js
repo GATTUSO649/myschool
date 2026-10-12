@@ -896,18 +896,19 @@ function renderStudents() {
   if (!body) return;
 
   if (!adminState.students.length) {
-    body.innerHTML = '<tr><td colspan="8">No student accounts found.</td></tr>';
+    body.innerHTML = '<tr><td colspan="9">No student accounts found.</td></tr>';
     return;
   }
 
   body.innerHTML = adminState.students.map((student) => `
     <tr>
-      <td>${student.name || '—'}</td>
-      <td>${student.username || '—'}</td>
-      <td>${student.admissionNumber || '—'}</td>
-      <td>${student.className || '—'}</td>
-      <td>${student.role || 'student'}</td>
-      <td>${student.subject || '—'}</td>
+      <td>${escapeHtml(student.name || '—')}</td>
+      <td>${escapeHtml(student.username || '—')}</td>
+      <td>${escapeHtml(student.admissionNumber || '—')}</td>
+      <td>${escapeHtml(student.className || '—')}</td>
+      <td>${escapeHtml(student.curriculumType || 'Legacy / not recorded')}${student.preferredPathway ? `<br><small>${escapeHtml(student.preferredPathway)} preference</small>` : ''}</td>
+      <td>${escapeHtml(student.role || 'student')}</td>
+      <td>${escapeHtml(student.subject || '—')}</td>
       <td><span class="status-pill ${student.active ? 'active' : 'inactive'}">${student.active ? 'Active' : 'Inactive'}</span></td>
       <td>${student.active ? `<a class="action-link" href="#" data-id="${student.id}">Deactivate</a>` : '—'}</td>
     </tr>
@@ -1539,7 +1540,7 @@ async function handleButtonAction(action) {
   }
 
   if (action === 'save-settings') {
-    const values = Array.from(document.querySelectorAll('.admin-settings-form input')).reduce((acc, element) => {
+    const values = Array.from(document.querySelectorAll('.admin-settings-form input, #cbeSeniorSchoolOfferings, #cbeLearningAreas, #cbePerformanceDescriptors')).reduce((acc, element) => {
       acc[element.name] = element.type === 'checkbox' ? element.checked : element.value;
       return acc;
     }, {});
@@ -1563,7 +1564,7 @@ async function loadAdminSettings() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Could not load settings');
     Object.entries(data.settings || {}).forEach(([key, value]) => {
-      const input = form.querySelector(`[name="${key}"]`);
+      const input = form.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key}"]`);
       if (!input) return;
       if (input.type === 'checkbox') input.checked = Boolean(value);
       else input.value = value ?? '';
@@ -1571,7 +1572,7 @@ async function loadAdminSettings() {
   } catch (error) {
     const cached = JSON.parse(localStorage.getItem('adminPortalSettings') || '{}');
     Object.entries(cached).forEach(([key, value]) => {
-      const input = form.querySelector(`[name="${key}"]`);
+      const input = form.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key}"]`);
       if (!input) return;
       if (input.type === 'checkbox') input.checked = Boolean(value);
       else input.value = value ?? '';
@@ -1819,6 +1820,84 @@ function setupSidebarToggle() {
   });
 }
 
+function configuredLines(value) {
+  return [...new Set(String(value || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean))];
+}
+
+async function loadCbeAssessmentRecords(studentId) {
+  const body = document.getElementById('cbeAssessmentRecordsBody');
+  if (!body || !studentId) return;
+  body.innerHTML = '<tr><td colspan="7">Loading assessment records...</td></tr>';
+  try {
+    const response = await fetchWithAuth(`/academics/cbe-assessments?studentId=${encodeURIComponent(studentId)}`);
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || 'Could not load CBE assessments.');
+    body.innerHTML = data.assessments.length
+      ? data.assessments.map((item) => `<tr>
+          <td>${escapeHtml(item.academicYear)}</td>
+          <td>${escapeHtml(item.learningArea)}</td>
+          <td>${escapeHtml(item.assessmentTitle)}</td>
+          <td>${escapeHtml(item.performanceDescriptor)}</td>
+          <td>${escapeHtml(item.evidence || '-')}</td>
+          <td>${escapeHtml(item.feedback || '-')}</td>
+          <td>${escapeHtml(item.assessedBy || '-')}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="7">No CBE assessments recorded for this learner.</td></tr>';
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="7">${escapeHtml(error.message || 'Could not load assessment records.')}</td></tr>`;
+  }
+}
+
+async function setupCbeAssessmentForm() {
+  const form = document.getElementById('cbeAssessmentForm');
+  if (!form) return;
+  const studentSelect = document.getElementById('cbeAssessmentStudent');
+  const learningAreaSelect = document.getElementById('cbeAssessmentLearningArea');
+  const descriptorSelect = document.getElementById('cbeAssessmentDescriptor');
+  const yearInput = document.getElementById('cbeAssessmentYear');
+  yearInput.value = String(new Date().getFullYear());
+
+  try {
+    const studentResponse = await fetchWithAuth('/academics/cbe-assessments/students');
+    const studentData = await studentResponse.json();
+    if (!studentResponse.ok || !studentData.success) throw new Error(studentData.message || 'Could not load CBE learners.');
+
+    studentSelect.innerHTML = '<option value="">Select a CBE learner</option>' + studentData.students
+      .map((student) => `<option value="${escapeHtml(student.id)}">${escapeHtml(student.admissionNumber || student.name)} — ${escapeHtml(student.name)}${student.className ? ` (${escapeHtml(student.className)})` : ''}</option>`)
+      .join('');
+    learningAreaSelect.innerHTML = '<option value="">Select a learning area</option>' + configuredLines(studentData.learningAreas?.join('\n'))
+      .map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join('');
+    descriptorSelect.innerHTML = '<option value="">Select a performance descriptor</option>' + configuredLines(studentData.performanceDescriptors?.join('\n'))
+      .map((descriptor) => `<option value="${escapeHtml(descriptor)}">${escapeHtml(descriptor)}</option>`).join('');
+  } catch (error) {
+    studentSelect.innerHTML = '<option value="">Could not load CBE learners</option>';
+    showAlert(error.message || 'CBE assessment setup could not be loaded.', 'error');
+  }
+
+  studentSelect.addEventListener('change', () => loadCbeAssessmentRecords(studentSelect.value));
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submitButton = form.querySelector('[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      const response = await fetchWithAuth('/academics/cbe-assessments', { method: 'POST', body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not save CBE assessment.');
+      showAlert(data.message || 'CBE assessment saved.', 'success');
+      const selectedStudent = studentSelect.value;
+      form.reset();
+      yearInput.value = String(new Date().getFullYear());
+      await loadCbeAssessmentRecords(selectedStudent);
+      studentSelect.value = selectedStudent;
+    } catch (error) {
+      showAlert(error.message || 'Could not save CBE assessment.', 'error');
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setupSidebarToggle();
   normalizeAdminSidebar();
@@ -1838,6 +1917,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAdminSettings();
   loadDatabasePage();
   setupAcademicsSavedSheets();
+  setupCbeAssessmentForm();
 
   document.querySelectorAll('[data-admin-action]').forEach((button) => {
     button.addEventListener('click', (event) => {

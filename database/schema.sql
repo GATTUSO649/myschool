@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS students (
   password_hash VARCHAR(255),
   role ENUM('student','lecturer','teacher','rba','admin','school_admin','super_admin','finance','accountant','ict') NOT NULL DEFAULT 'student',
   class_name VARCHAR(40),
+  curriculum_type VARCHAR(20) NULL,
+  preferred_pathway VARCHAR(40) NULL,
   subject VARCHAR(100) NULL,
   finance_working_area VARCHAR(100) NULL,
   ict_working_area VARCHAR(100) NULL,
@@ -32,6 +34,16 @@ CREATE TABLE IF NOT EXISTS applications (
   gender VARCHAR(30),
   class_name VARCHAR(40),
   previous_school VARCHAR(150),
+  curriculum_type VARCHAR(20) NULL,
+  previous_education_stage VARCHAR(40) NULL,
+  previous_grade_or_form VARCHAR(30) NULL,
+  completion_year SMALLINT NULL,
+  intended_admission_level VARCHAR(30) NULL,
+  previous_assessment TEXT NULL,
+  preferred_pathway VARCHAR(40) NULL,
+  preferred_subject_combination VARCHAR(180) NULL,
+  admission_placement_status VARCHAR(20) NULL,
+  confirmed_admission_level VARCHAR(30) NULL,
   parent_name VARCHAR(150),
   parent_phone VARCHAR(40),
   address TEXT,
@@ -45,6 +57,7 @@ CREATE TABLE IF NOT EXISTS applications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_applications_status (status),
+  INDEX idx_applications_curriculum_status (curriculum_type, status),
   CONSTRAINT fk_applications_reviewer FOREIGN KEY (reviewed_by) REFERENCES students(id) ON DELETE SET NULL
 );
 
@@ -68,6 +81,25 @@ CREATE TABLE IF NOT EXISTS academic_documents (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_academic_documents_type (type),
   CONSTRAINT fk_academic_documents_uploader FOREIGN KEY (uploaded_by) REFERENCES students(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS cbe_assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  curriculum_type VARCHAR(20) NOT NULL DEFAULT 'CBE',
+  education_level VARCHAR(40) NULL,
+  academic_year SMALLINT NOT NULL,
+  learning_area VARCHAR(150) NOT NULL,
+  assessment_title VARCHAR(180) NOT NULL,
+  performance_descriptor VARCHAR(180) NOT NULL,
+  evidence TEXT NULL,
+  feedback TEXT NULL,
+  assessed_by INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_cbe_assessments_student_year (student_id, academic_year),
+  CONSTRAINT fk_cbe_assessments_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_cbe_assessments_assessor FOREIGN KEY (assessed_by) REFERENCES students(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS assignments (

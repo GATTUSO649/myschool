@@ -37,6 +37,7 @@ function publicStudent(row) {
     role: normalizeRole(row.role),
     rawRole: String(row.role || '').toLowerCase(),
     className: row.class_name,
+    curriculumType: row.curriculum_type || null,
     stream: row.stream,
     workingArea: row.finance_working_area || null,
     ictWorkingArea: row.ict_working_area || null,

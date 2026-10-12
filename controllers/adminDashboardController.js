@@ -97,7 +97,8 @@ async function getStudents(req, res) {
   try {
     const rows = await query(`
       SELECT id, name, username, email, admission_number AS admissionNumber, role, subject,
-        class_name AS className, stream, phone, guardian_name AS guardianName,
+        class_name AS className, curriculum_type AS curriculumType, preferred_pathway AS preferredPathway,
+        stream, phone, guardian_name AS guardianName,
         guardian_phone AS guardianPhone, active, last_login AS lastLogin
       FROM students
       ORDER BY created_at DESC
@@ -118,9 +119,17 @@ async function createStudent(req, res) {
     const role = (body.role || 'student').trim();
     let admissionNumber = (body.admissionNumber || body.admission_number || '').trim().toUpperCase();
     const subject = (body.subject || '').trim() || null;
+    const curriculumType = String(body.curriculumType || body.curriculum_type || '').trim() || null;
+    const preferredPathway = String(body.preferredPathway || body.preferred_pathway || '').trim() || null;
 
     if (!name || !username) {
       return res.status(400).json({ success: false, message: 'Name and username are required' });
+    }
+    if (curriculumType && !['CBE', '8-4-4'].includes(curriculumType)) {
+      return res.status(400).json({ success: false, message: 'Select a valid education curriculum' });
+    }
+    if (preferredPathway && (curriculumType !== 'CBE' || !['STEM', 'Social Sciences', 'Arts and Sports Science'].includes(preferredPathway))) {
+      return res.status(400).json({ success: false, message: 'Select a valid CBE pathway preference for a CBE student' });
     }
 
     if (role === 'lecturer' && !subject) {
@@ -146,8 +155,8 @@ async function createStudent(req, res) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await query(
-      `INSERT INTO students (name, username, email, admission_number, password_hash, role, subject, class_name, stream, phone, guardian_name, guardian_phone, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      `INSERT INTO students (name, username, email, admission_number, password_hash, role, subject, class_name, stream, curriculum_type, preferred_pathway, phone, guardian_name, guardian_phone, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         name,
         username,
@@ -158,6 +167,8 @@ async function createStudent(req, res) {
         subject,
         body.className || body.class_name || null,
         body.stream || null,
+        curriculumType,
+        preferredPathway,
         body.phone || null,
         body.guardianName || body.guardian_name || null,
         body.guardianPhone || body.guardian_phone || null
@@ -266,7 +277,10 @@ async function getSettings(req, res) {
       academicYear: settings.academicYear || String(new Date().getFullYear()),
       currentTerm: settings.currentTerm || 'Term 1',
       systemTheme: settings.systemTheme || 'Modern Blue',
-      maintenanceMode: settings.maintenanceMode === 'true'
+      maintenanceMode: settings.maintenanceMode === 'true',
+      cbeSeniorSchoolOfferings: settings.cbeSeniorSchoolOfferings || '',
+      cbeLearningAreas: settings.cbeLearningAreas || '',
+      cbePerformanceDescriptors: settings.cbePerformanceDescriptors || ''
     }
   });
 }
@@ -278,7 +292,10 @@ async function saveSettings(req, res) {
     academicYear: body.academicYear || String(new Date().getFullYear()),
     currentTerm: body.currentTerm || 'Term 1',
     systemTheme: body.systemTheme || 'Modern Blue',
-    maintenanceMode: body.maintenanceMode ? 'true' : 'false'
+    maintenanceMode: body.maintenanceMode ? 'true' : 'false',
+    cbeSeniorSchoolOfferings: String(body.cbeSeniorSchoolOfferings || '').trim().slice(0, 5000),
+    cbeLearningAreas: String(body.cbeLearningAreas || '').trim().slice(0, 5000),
+    cbePerformanceDescriptors: String(body.cbePerformanceDescriptors || '').trim().slice(0, 5000)
   };
 
   for (const [key, value] of Object.entries(settings)) {
@@ -294,7 +311,7 @@ async function saveSettings(req, res) {
 }
 
 async function getPublicSettings(req, res) {
-  const rows = await query("SELECT setting_key AS settingKey, setting_value AS settingValue FROM app_settings WHERE setting_key IN ('maintenanceMode','schoolName','schoolMotto','footerText','contactEmail','contactPhone','contactAddress','landingHeroTitle','landingHeroText','landingAboutTitle','landingAboutText')");
+  const rows = await query("SELECT setting_key AS settingKey, setting_value AS settingValue FROM app_settings WHERE setting_key IN ('maintenanceMode','schoolName','schoolMotto','footerText','contactEmail','contactPhone','contactAddress','landingHeroTitle','landingHeroText','landingAboutTitle','landingAboutText','cbeSeniorSchoolOfferings')");
   const settings = rows.reduce((result, row) => { result[row.settingKey] = row.settingValue; return result; }, {});
   res.json({ success: true, maintenanceMode: settings.maintenanceMode === 'true', settings });
 }

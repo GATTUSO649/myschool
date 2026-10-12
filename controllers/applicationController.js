@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { logActivity } = require('./logController');
 const { getAdmissionAssignmentForApplication } = require('./admissionAllocator');
 const { schoolEmail, isValidRecipientEmail, sendAdmissionApprovalEmail, sendApplicationRejectionEmail, sendApplicationConfirmationEmail } = require('./emailUtils');
+const { parseCbeOfferings, validateApplicationCurriculum, validateConfirmedPlacement } = require('../services/applicationCurriculum');
 
 function getApplicationRecipientEmail(application) {
   const parentEmail = String(application?.parent_email || '').trim();
@@ -41,9 +42,7 @@ const setIO = (ioInstance) => {
 async function createApplication(req, res) {
   try {
     const body = req.body || {};
-    console.log('DEBUG application req.body:', body);
-    console.log('DEBUG application req.files:', req.files);
-    const fullName = body.fullName || body.full_name || body.name;
+    const fullName = String(body.fullName || body.full_name || body.name || '').trim();
     if (!fullName) {
       return res.status(400).json({ success: false, message: 'Student full name is required' });
     }
@@ -53,25 +52,67 @@ async function createApplication(req, res) {
       return res.status(400).json({ success: false, message: 'A valid recipient email address is required' });
     }
 
+    const dateOfBirth = String(body.dateOfBirth || body.date_of_birth || body.dob || '').trim();
+    const parsedDateOfBirth = new Date(`${dateOfBirth}T00:00:00Z`);
+    const gender = String(body.gender || '').trim();
+    const parentName = String(body.parentName || body.parent_name || body.guardianName || '').trim();
+    const parentPhone = String(body.parentPhone || body.parent_phone || body.guardianPhone || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)
+      || Number.isNaN(parsedDateOfBirth.getTime())
+      || parsedDateOfBirth.toISOString().slice(0, 10) !== dateOfBirth) {
+      return res.status(400).json({ success: false, message: 'A valid date of birth is required.' });
+    }
+    if (!['Female', 'Male'].includes(gender)) {
+      return res.status(400).json({ success: false, message: 'Select a valid gender.' });
+    }
+    if (!parentName || !parentPhone) {
+      return res.status(400).json({ success: false, message: 'Parent/guardian name and phone are required.' });
+    }
+
+    const curriculumSetting = await query(
+      'SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1',
+      ['cbeSeniorSchoolOfferings']
+    );
+    const curriculumValidation = validateApplicationCurriculum(
+      body,
+      parseCbeOfferings(curriculumSetting[0]?.setting_value)
+    );
+    if (!curriculumValidation.valid) {
+      return res.status(400).json({ success: false, message: curriculumValidation.message });
+    }
+    const curriculum = curriculumValidation.fields;
+
     const birthCertificateValue = getDocumentValue(req, 'birthCertificate', body.birthCertificateUrl || body.birth_certificate_url || body.birthCertificate || body.birth_certificate || null);
     const kcpeCertificateValue = getDocumentValue(req, 'kcpeCertificate', body.kcpeCertificateUrl || body.kcpe_certificate_url || body.kcpeCertificate || body.kcpe_certificate || null);
     const medicalFormValue = getDocumentValue(req, 'medicalForm', body.medicalFormUrl || body.medical_form_url || body.medicalForm || body.medical_form || null);
 
     const result = await query(
       `INSERT INTO applications
-       (full_name, email, parent_email, phone, date_of_birth, gender, class_name, previous_school, parent_name, parent_phone, address, requirements, medical_notes, birth_certificate_path, kcpe_certificate_path, medical_form_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+       (full_name, email, parent_email, phone, date_of_birth, gender, class_name, previous_school,
+        curriculum_type, previous_education_stage, previous_grade_or_form, completion_year,
+        intended_admission_level, previous_assessment, preferred_pathway, preferred_subject_combination,
+        admission_placement_status, parent_name, parent_phone, address, requirements, medical_notes,
+        birth_certificate_path, kcpe_certificate_path, medical_form_path)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)` ,
       [
         fullName,
         body.email || null,
         recipientEmail,
         body.phone || body.phoneNumber || null,
-        body.dateOfBirth || body.date_of_birth || body.dob || null,
-        body.gender || null,
-        body.className || body.class_name || body.class || null,
-        body.previousSchool || body.previous_school || null,
-        body.parentName || body.parent_name || body.guardianName || null,
-        body.parentPhone || body.parent_phone || body.guardianPhone || null,
+        dateOfBirth,
+        gender,
+        curriculum.intendedAdmissionLevel,
+        curriculum.previousSchool,
+        curriculum.curriculumType,
+        curriculum.previousEducationStage,
+        curriculum.previousGradeOrForm,
+        curriculum.completionYear,
+        curriculum.intendedAdmissionLevel,
+        curriculum.previousAssessment || null,
+        curriculum.preferredPathway || null,
+        curriculum.preferredSubjectCombination || null,
+        parentName,
+        parentPhone,
         body.address || null,
         body.requirements || null,
         body.medicalNotes || body.medical_notes || null,
@@ -86,7 +127,10 @@ async function createApplication(req, res) {
     void sendApplicationConfirmationEmail({
       to: recipientEmail,
       fullName: fullName || body.full_name || body.name || 'Applicant',
-      applicationId: result.insertId
+      applicationId: result.insertId,
+      curriculumType: curriculum.curriculumType,
+      previousSchool: curriculum.previousSchool,
+      intendedAdmissionLevel: curriculum.intendedAdmissionLevel
     }).catch((error) => {
       console.error('Application confirmation email queue error:', error.message || error);
     });
@@ -106,10 +150,27 @@ async function createApplication(req, res) {
 async function listApplications(req, res) {
   const params = [];
   let sql = 'SELECT * FROM applications';
-  if (req.query.status) {
-    sql += ' WHERE status = ?';
-    params.push(req.query.status);
+  const filters = [];
+  if (req.query.status && !['pending', 'approved', 'rejected'].includes(String(req.query.status).toLowerCase())) {
+    return res.status(400).json({ success: false, message: 'Invalid application status filter.' });
   }
+  if (req.query.status) {
+    filters.push('status = ?');
+    params.push(String(req.query.status).toLowerCase());
+  }
+  if (req.query.curriculum && !['CBE', '8-4-4'].includes(String(req.query.curriculum))) {
+    return res.status(400).json({ success: false, message: 'Invalid curriculum filter.' });
+  }
+  if (req.query.curriculum) {
+    filters.push('curriculum_type = ?');
+    params.push(String(req.query.curriculum));
+  }
+  const search = String(req.query.q || '').trim();
+  if (search) {
+    filters.push('(full_name LIKE ? OR CAST(id AS CHAR) LIKE ? OR LPAD(CAST(id AS CHAR), 4, \'0\') LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+  if (filters.length) sql += ` WHERE ${filters.join(' AND ')}`;
   sql += ' ORDER BY created_at DESC';
   const rows = await query(sql, params);
   res.json(rows);
@@ -118,7 +179,8 @@ async function listApplications(req, res) {
 async function sendPendingApplicationConfirmations(req, res) {
   try {
     const rows = await query(
-      `SELECT a.id, a.full_name, a.email, a.parent_email
+      `SELECT a.id, a.full_name, a.email, a.parent_email, a.curriculum_type,
+              a.previous_school, a.intended_admission_level
        FROM applications a
        WHERE LOWER(COALESCE(a.status, 'pending')) = 'pending'
          AND NOT EXISTS (
@@ -143,6 +205,9 @@ async function sendPendingApplicationConfirmations(req, res) {
         to: recipientEmail,
         fullName: application.full_name || 'Applicant',
         applicationId: application.id,
+        curriculumType: application.curriculum_type,
+        previousSchool: application.previous_school,
+        intendedAdmissionLevel: application.intended_admission_level,
         triggeredBy: req.user?.id || null
       });
       if (emailResult.delivered) {
@@ -189,10 +254,25 @@ async function approveApplication(req, res) {
       return res.status(409).json({ success: false, message: 'Application is already rejected.' });
     }
 
-    const assignment = app.admission_number && app.stream
-      ? { admissionNumber: app.admission_number, stream: app.stream }
-      : await getAdmissionAssignmentForApplication(app);
-    const { admissionNumber, stream } = assignment;
+    const curriculumType = app.curriculum_type || null;
+    const confirmedPlacement = String(req.body?.confirmedPlacement || '').trim();
+    if (curriculumType && !validateConfirmedPlacement(curriculumType, confirmedPlacement)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `Confirm a valid ${curriculumType} admission placement before approving this application.`
+      });
+    }
+    const intendedAdmissionLevel = app.intended_admission_level || app.class_name || null;
+    const admissionLevel = curriculumType ? confirmedPlacement : app.class_name || null;
+    const assignment = app.admission_number && (curriculumType !== '8-4-4' || app.stream)
+      ? { admissionNumber: app.admission_number, stream: curriculumType === 'CBE' ? null : app.stream }
+      : await getAdmissionAssignmentForApplication({
+        ...app,
+        class_name: curriculumType ? (curriculumType === 'CBE' ? null : confirmedPlacement) : app.class_name
+      });
+    const admissionNumber = assignment.admissionNumber;
+    const stream = curriculumType === 'CBE' ? null : assignment.stream;
     const reviewerId = req.user?.id && Number(req.user.id) > 0 ? Number(req.user.id) : null;
 
     const [existingStudentRows] = await connection.query(
@@ -207,8 +287,8 @@ async function approveApplication(req, res) {
       const username = String(app.full_name || app.fullName || 'Student').trim();
       const passwordHash = await bcrypt.hash(initialPasswordForEmail, 12);
       const [insertResult] = await connection.query(
-        `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, phone, guardian_name, guardian_phone, active, must_change_password)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)`,
+        `INSERT INTO students (name, username, email, admission_number, password_hash, role, class_name, stream, curriculum_type, preferred_pathway, phone, guardian_name, guardian_phone, active, must_change_password)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)`,
         [
           app.full_name || app.fullName || null,
           username,
@@ -216,8 +296,10 @@ async function approveApplication(req, res) {
           admissionNumber,
           passwordHash,
           'student',
-          app.class_name || app.className || null,
+          admissionLevel,
           stream,
+          curriculumType,
+          app.preferred_pathway || null,
           app.phone || null,
           app.parent_name || app.parentName || null,
           app.parent_phone || app.parentPhone || null
@@ -231,17 +313,22 @@ async function approveApplication(req, res) {
       await connection.query(
         `UPDATE students
          SET username = ?, password_hash = ?, must_change_password = 1, role = 'student', active = 1
+             , curriculum_type = COALESCE(?, curriculum_type),
+             preferred_pathway = COALESCE(?, preferred_pathway),
+             class_name = COALESCE(?, class_name),
+             stream = CASE WHEN ? = 'CBE' THEN NULL ELSE COALESCE(?, stream) END
          WHERE id = ?`,
-        [username, passwordHash, studentAccount.id]
+        [username, passwordHash, curriculumType, app.preferred_pathway || null, admissionLevel, curriculumType, stream, studentAccount.id]
       );
       studentAccount.username = username;
     }
 
     await connection.query(
       `UPDATE applications
-       SET status = 'approved', admission_number = ?, stream = ?, reviewed_by = ?, reviewed_at = NOW()
+       SET status = 'approved', admission_number = ?, stream = ?, reviewed_by = ?, reviewed_at = NOW(),
+           admission_placement_status = ?, confirmed_admission_level = ?
        WHERE id = ?`,
-      [admissionNumber, stream, reviewerId, id]
+      [admissionNumber, stream, reviewerId, curriculumType ? 'confirmed' : app.admission_placement_status || null, curriculumType ? admissionLevel : app.confirmed_admission_level || null, id]
     );
 
     await connection.commit();
@@ -257,7 +344,12 @@ async function approveApplication(req, res) {
           loginUsername: safeStudentName,
           initialPassword: initialPasswordForEmail,
           stream,
-          className: app.class_name || app.className || 'Assigned by administration',
+          className: admissionLevel || app.class_name || app.className || 'Assigned by administration',
+          curriculumType,
+          intendedAdmissionLevel,
+          confirmedAdmissionLevel: admissionLevel,
+          preferredPathway: app.preferred_pathway || null,
+          preferredSubjectCombination: app.preferred_subject_combination || null,
           academicYear: new Date().getFullYear(),
           applicationReference: String(app.id || '').padStart(4, '0'),
           portalUrl: `${process.env.APP_URL || 'https://cresenthighschool.onrender.com'}/login.html`,
@@ -277,7 +369,7 @@ async function approveApplication(req, res) {
       io.to('role:rba').emit('student_approved', {
         studentName: safeStudentName,
         admissionNumber: admissionNumber,
-        className: app.class_name,
+        className: admissionLevel,
         stream: stream,
         email: 'PENDING',
         timestamp: new Date().toISOString()
@@ -288,6 +380,8 @@ async function approveApplication(req, res) {
       success: true,
       admissionNumber,
       stream,
+      curriculumType,
+      confirmedAdmissionLevel: admissionLevel,
       email: recipientEmail ? 'PENDING' : 'SKIPPED',
       message: recipientEmail
         ? 'Application approved successfully. The notification email is being processed.'
@@ -326,7 +420,10 @@ async function rejectApplication(req, res) {
 
     const rejectionReason = String(req.body?.rejectionReason || req.body?.reason || '').trim();
     await connection.query(
-      `UPDATE applications SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?`,
+      `UPDATE applications
+       SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW(),
+           admission_placement_status = CASE WHEN curriculum_type IS NULL THEN admission_placement_status ELSE 'not_applicable' END
+       WHERE id = ?`,
       [req.user.id, id]
     );
 

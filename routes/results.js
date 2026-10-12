@@ -5,6 +5,11 @@ const { query } = require('../config/db');
 const router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
+  const studentRows = await query('SELECT curriculum_type AS curriculumType FROM students WHERE id = ? LIMIT 1', [req.user.id]);
+  if (studentRows[0]?.curriculumType === 'CBE') {
+    return res.status(400).json({ success: false, message: 'CBE learners use descriptive learning assessments rather than 8-4-4 numeric results.' });
+  }
+
   const clauses = ['student_id = ?'];
   const params = [req.user.id];
   const term = String(req.query.term || '').trim();

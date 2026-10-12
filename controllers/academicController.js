@@ -1,6 +1,7 @@
 const path = require('path');
 const { query } = require('../config/db');
 const { logActivity } = require('./logController');
+const { parseConfiguredOptions, validateCbeAssessment } = require('../services/cbeAssessment');
 
 // Socket IO instance (set by server)
 let io = null;
@@ -9,6 +10,134 @@ function setIO(ioInstance) { io = ioInstance; }
 function docFileResponse(res, filename, folder = 'documents') {
   const safeName = path.basename(filename);
   res.sendFile(path.join(__dirname, '..', 'uploads', folder, safeName));
+}
+
+async function getCbeAssessmentSettings() {
+  const rows = await query(
+    `SELECT setting_key AS settingKey, setting_value AS settingValue
+     FROM app_settings
+     WHERE setting_key IN ('cbeLearningAreas', 'cbePerformanceDescriptors')`
+  );
+  return rows.reduce((settings, row) => {
+    settings[row.settingKey] = row.settingValue || '';
+    return settings;
+  }, { cbeLearningAreas: '', cbePerformanceDescriptors: '' });
+}
+
+async function listCbeAssessmentStudents(req, res) {
+  const role = String(req.user?.role || '').toLowerCase();
+  const year = new Date().getFullYear();
+  const settings = await getCbeAssessmentSettings();
+  const rows = role === 'teacher' || role === 'lecturer'
+    ? await query(
+      `SELECT DISTINCT s.id, s.name, s.admission_number AS admissionNumber, s.class_name AS className
+       FROM students s
+       INNER JOIN teacher_assignments ta ON ta.class_name = s.class_name
+       WHERE ta.teacher_id = ? AND ta.academic_year = ? AND ta.active = 1
+         AND s.role = 'student' AND s.active = 1 AND s.curriculum_type = 'CBE'
+       ORDER BY s.class_name, s.name`,
+      [req.user.id, year]
+    )
+    : await query(
+      `SELECT id, name, admission_number AS admissionNumber, class_name AS className
+       FROM students
+       WHERE role = 'student' AND active = 1 AND curriculum_type = 'CBE'
+       ORDER BY class_name, name`
+    );
+  res.json({
+    success: true,
+    students: rows,
+    learningAreas: parseConfiguredOptions(settings.cbeLearningAreas),
+    performanceDescriptors: parseConfiguredOptions(settings.cbePerformanceDescriptors)
+  });
+}
+
+async function listCbeAssessments(req, res) {
+  const role = String(req.user?.role || '').toLowerCase();
+  const isStudent = role === 'student';
+  if (!isStudent && !['admin', 'rba', 'teacher', 'lecturer'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'You are not authorized to view CBE assessments.' });
+  }
+
+  const studentId = isStudent ? Number(req.user.id) : Number(req.query.studentId);
+  if (!Number.isSafeInteger(studentId) || studentId < 1) {
+    return res.status(400).json({ success: false, message: 'Select a valid student.' });
+  }
+
+  const students = await query(
+    `SELECT id, class_name AS className FROM students WHERE id = ? AND role = 'student' AND curriculum_type = 'CBE' LIMIT 1`,
+    [studentId]
+  );
+  if (!students.length) {
+    return res.json({ success: true, isCbeStudent: false, assessments: [] });
+  }
+  if (['teacher', 'lecturer'].includes(role)) {
+    const assignment = await query(
+      `SELECT id FROM teacher_assignments
+       WHERE teacher_id = ? AND class_name = ? AND academic_year = ? AND active = 1
+       LIMIT 1`,
+      [req.user.id, students[0].className, new Date().getFullYear()]
+    );
+    if (!assignment.length) {
+      return res.status(403).json({ success: false, message: 'CBE assessment access is limited to your assigned classes.' });
+    }
+  }
+
+  const assessments = await query(
+    `SELECT ca.id, ca.academic_year AS academicYear, ca.education_level AS educationLevel,
+            ca.learning_area AS learningArea, ca.assessment_title AS assessmentTitle,
+            ca.performance_descriptor AS performanceDescriptor, ca.evidence, ca.feedback,
+            ca.created_at AS createdAt, assessor.name AS assessedBy
+     FROM cbe_assessments ca
+     LEFT JOIN students assessor ON assessor.id = ca.assessed_by
+     WHERE ca.student_id = ? AND ca.curriculum_type = 'CBE'
+     ORDER BY ca.created_at DESC, ca.id DESC
+     LIMIT 200`,
+    [studentId]
+  );
+  res.json({ success: true, isCbeStudent: true, assessments });
+}
+
+async function createCbeAssessment(req, res) {
+  const settings = await getCbeAssessmentSettings();
+  const validation = validateCbeAssessment(req.body || {}, settings);
+  if (validation.error) {
+    return res.status(400).json({ success: false, message: validation.error });
+  }
+
+  const { studentId, academicYear, learningArea, assessmentTitle, performanceDescriptor, evidence, feedback } = validation.value;
+  const students = await query(
+    `SELECT id, class_name AS className
+     FROM students
+     WHERE id = ? AND role = 'student' AND active = 1 AND curriculum_type = 'CBE'
+     LIMIT 1`,
+    [studentId]
+  );
+  if (!students.length) {
+    return res.status(400).json({ success: false, message: 'The selected learner is not an active CBE student.' });
+  }
+  if (['teacher', 'lecturer'].includes(String(req.user?.role || '').toLowerCase())) {
+    const assignment = await query(
+      `SELECT id FROM teacher_assignments
+       WHERE teacher_id = ? AND class_name = ? AND academic_year = ? AND active = 1
+       LIMIT 1`,
+      [req.user.id, students[0].className, academicYear]
+    );
+    if (!assignment.length) {
+      return res.status(403).json({ success: false, message: 'You can only assess CBE learners in your assigned classes.' });
+    }
+  }
+
+  const result = await query(
+    `INSERT INTO cbe_assessments
+      (student_id, curriculum_type, education_level, academic_year, learning_area,
+       assessment_title, performance_descriptor, evidence, feedback, assessed_by)
+     VALUES (?, 'CBE', ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [studentId, students[0].className || null, academicYear, learningArea, assessmentTitle,
+      performanceDescriptor, evidence, feedback, req.user.id]
+  );
+  await logActivity(req.user.id, 'cbe_assessment_created', `Recorded ${learningArea} assessment for CBE student #${studentId}`, req.ip);
+  res.status(201).json({ success: true, id: result.insertId, message: 'CBE assessment saved.' });
 }
 
 function gradeForScore(score) {
@@ -83,9 +212,9 @@ async function cleanupTranscriptDuplicates(tableName, studentId, academicYear, t
 }
 
 async function syncTranscriptForStudent(studentId, academicYear, term, examType = null) {
-  const studentRows = await query('SELECT id, name, admission_number, class_name, stream FROM students WHERE id = ? LIMIT 1', [studentId]);
+  const studentRows = await query('SELECT id, name, admission_number, class_name, stream, curriculum_type FROM students WHERE id = ? LIMIT 1', [studentId]);
   const student = studentRows[0];
-  if (!student) return null;
+  if (!student || student.curriculum_type === 'CBE') return null;
 
   const tableName = transcriptTableForClassName(student.class_name);
   if (!tableName) return null;
@@ -225,7 +354,7 @@ async function listEntryStudents(req, res) {
     }
 
     const params = [];
-    let where = "WHERE role = 'student' AND active = 1";
+    let where = "WHERE role = 'student' AND active = 1 AND COALESCE(curriculum_type, '8-4-4') = '8-4-4'";
     if (filters.className) {
       where += ' AND class_name = ?';
       params.push(filters.className);
@@ -298,7 +427,7 @@ async function saveEntryResults(req, res) {
       if (studentIds.length) {
         const placeholders = studentIds.map(() => '?').join(',');
         const assignedStudents = await query(
-          `SELECT id FROM students WHERE id IN (${placeholders}) AND role = 'student' AND active = 1 AND class_name = ?`,
+          `SELECT id FROM students WHERE id IN (${placeholders}) AND role = 'student' AND active = 1 AND class_name = ? AND COALESCE(curriculum_type, '8-4-4') = '8-4-4'`,
           [...studentIds, className]
         );
         if (assignedStudents.length !== new Set(studentIds.map(Number)).size) {
@@ -317,6 +446,25 @@ async function saveEntryResults(req, res) {
       defaultStudentId = await findStudentIdByAdmissionNumber(admissionNumber);
       if (!defaultStudentId) {
         return res.status(404).json({ success: false, message: 'Student not found for the provided admission number' });
+      }
+    }
+
+    const targetStudentIds = [...new Set(entries
+      .map((entry) => Number(entry.student_id || entry.studentId || defaultStudentId))
+      .filter((studentId) => Number.isInteger(studentId) && studentId > 0))];
+    if (targetStudentIds.length) {
+      const placeholders = targetStudentIds.map(() => '?').join(',');
+      const compatibleStudents = await query(
+        `SELECT id FROM students
+         WHERE id IN (${placeholders}) AND role = 'student' AND active = 1
+           AND COALESCE(curriculum_type, '8-4-4') = '8-4-4'`,
+        targetStudentIds
+      );
+      if (compatibleStudents.length !== targetStudentIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'The existing examination-results module supports 8-4-4 students only; CBE records require a configured CBE assessment process.'
+        });
       }
     }
 
@@ -556,11 +704,14 @@ async function getStudentTranscript(req, res) {
     const className = req.query.className || 'Form 4';
 
     const studentRows = await query(
-      'SELECT id, name, admission_number, stream, class_name FROM students WHERE id = ? LIMIT 1',
+      'SELECT id, name, admission_number, stream, class_name, curriculum_type FROM students WHERE id = ? LIMIT 1',
       [studentId]
     );
     const student = studentRows[0];
     if (!student) return res.status(404).json({ error: 'Student not found' });
+    if (student.curriculum_type === 'CBE') {
+      return res.status(400).json({ error: 'CBE learners use the descriptive learning-assessment view, not the 8-4-4 numeric transcript.' });
+    }
 
     // Fetch results grouped by term
     const results = await query(
@@ -626,7 +777,10 @@ module.exports = {
   deleteDoc,
   serveDoc,
   docFileResponse,
-  getStudentTranscript
+  getStudentTranscript,
+  listCbeAssessmentStudents,
+  listCbeAssessments,
+  createCbeAssessment
 };
 // export setter for io
 module.exports.setIO = setIO;

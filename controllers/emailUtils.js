@@ -212,12 +212,12 @@ function statusBanner(label, background, color) {
   return `<div style="margin:20px 0 28px;padding:16px 18px;background:${background};border-left:5px solid ${color};color:${color};font-size:15px;font-weight:bold;letter-spacing:1px;">${label}</div>`;
 }
 
-function buildReceivedEmailHtml({ fullName, applicationReference, submittedDate, schoolEmailAddress }) {
+function buildReceivedEmailHtml({ fullName, applicationReference, submittedDate, curriculumType, previousSchool, intendedAdmissionLevel, schoolEmailAddress }) {
   const content = `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Dear Parent/Guardian,</p>
     <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Thank you for choosing Crescent High School.</p>
     <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">We are pleased to confirm that the admission application for the following student has been successfully received:</p>
     <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT DETAILS</h2>
-    ${emailDetailTable([['Student Name', fullName || 'Applicant'], ['Application Reference', applicationReference || 'N/A'], ['Date Submitted', submittedDate || new Date().toISOString().slice(0, 10)]])}
+    ${emailDetailTable([['Student Name', fullName || 'Applicant'], ['Application Reference', applicationReference || 'N/A'], ...(curriculumType ? [['Selected Curriculum', curriculumType]] : []), ...(previousSchool ? [['Previous School', previousSchool]] : []), ...(intendedAdmissionLevel ? [['Intended Admission Level', intendedAdmissionLevel]] : []), ['Date Submitted', submittedDate || new Date().toISOString().slice(0, 10)]])}
     ${statusBanner('PENDING REVIEW', '#fff7df', '#8a5a00')}
     <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Your application has been successfully submitted and is now awaiting review by our admissions team.</p>
     <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#526579;"><strong>Please note:</strong> This email confirms receipt of your application and does not constitute admission to Crescent High School.</p>
@@ -227,12 +227,12 @@ function buildReceivedEmailHtml({ fullName, applicationReference, submittedDate,
   return emailShell({ title: 'Application Received Successfully', eyebrow: 'APPLICATION RECEIVED', content, schoolEmailAddress });
 }
 
-function buildApprovalEmailHtml({ fullName, admissionNumber, className, stream, academicYear, portalUrl, loginLabel, initialPasswordText, schoolEmailAddress }) {
+function buildApprovalEmailHtml({ fullName, admissionNumber, className, stream, academicYear, portalUrl, loginLabel, initialPasswordText, curriculumType, intendedAdmissionLevel, confirmedAdmissionLevel, preferredPathway, preferredSubjectCombination, schoolEmailAddress }) {
   const content = `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Dear Parent/Guardian,</p>
     <p style="margin:0 0 6px;font-size:21px;line-height:1.4;color:#1d6b45;font-weight:bold;">Congratulations!</p>
     <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">We are pleased to inform you that the admission application for <strong>${escapeEmailHtml(fullName || 'the student')}</strong> has been approved.</p>
     <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT DETAILS</h2>
-    ${emailDetailTable([['Student Name', fullName || 'Student'], ['Admission Number', admissionNumber || 'Pending'], ['Form', className || 'Assigned by administration'], ['Stream', stream || 'Assigned by administration'], ['Academic Year', academicYear || 'N/A']])}
+    ${emailDetailTable([['Student Name', fullName || 'Student'], ['Admission Number', admissionNumber || 'Pending'], ...(curriculumType ? [['Curriculum', curriculumType]] : []), [curriculumType ? 'Confirmed Admission Placement' : 'Form', confirmedAdmissionLevel || className || 'Assigned by administration'], ...(!curriculumType || curriculumType === '8-4-4' ? [['Stream', stream || 'Assigned by administration']] : []), ...(intendedAdmissionLevel && intendedAdmissionLevel !== confirmedAdmissionLevel ? [['Intended Admission Level', intendedAdmissionLevel]] : []), ...(preferredPathway ? [['Applicant Pathway Preference (not placement)', preferredPathway]] : []), ...(preferredSubjectCombination ? [['Preferred Subject Combination', preferredSubjectCombination]] : []), ['Academic Year', academicYear || 'N/A']])}
     ${statusBanner('ADMISSION APPROVED', '#e7f6ed', '#1d6b45')}
     <h2 style="margin:0;color:#102a43;font-size:15px;letter-spacing:1px;">STUDENT PORTAL LOGIN DETAILS</h2>
     ${emailDetailTable([['Portal', portalUrl || 'Student Portal'], ['Username', loginLabel || admissionNumber || 'Student'], ['Password', initialPasswordText || 'Your admission number']])}
@@ -259,7 +259,7 @@ function buildRejectionEmailHtml({ fullName, applicationReference, className, de
   return emailShell({ title: 'Admission Application Update', eyebrow: 'APPLICATION UPDATE', content, schoolEmailAddress });
 }
 
-async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, loginUsername, initialPassword, stream, className, academicYear, applicationReference, portalUrl, applicationId = null, triggeredBy = null }) {
+async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, loginUsername, initialPassword, stream, className, academicYear, applicationReference, portalUrl, curriculumType, intendedAdmissionLevel, confirmedAdmissionLevel, preferredPathway, preferredSubjectCombination, applicationId = null, triggeredBy = null }) {
   const subject = 'Crescent High School – Admission Application Approved';
   const loginText = String(initialPassword || '').trim();
   const initialPasswordDisplay = loginText && loginText !== 'undefined' ? loginText : 'Your admission number';
@@ -273,6 +273,11 @@ async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, login
     portalUrl: portalUrl || `${process.env.APP_URL || 'https://cresenthighschool.onrender.com'}/login.html`,
     loginLabel: loginUsername || admissionNumber || 'Student',
     initialPasswordText: initialPasswordDisplay,
+    curriculumType,
+    intendedAdmissionLevel,
+    confirmedAdmissionLevel,
+    preferredPathway,
+    preferredSubjectCombination,
     schoolEmailAddress: process.env.SMTP_FROM || 'info@cresenthighschool.com'
   });
   const text = [
@@ -284,8 +289,12 @@ async function sendAdmissionApprovalEmail({ to, fullName, admissionNumber, login
     'STUDENT DETAILS',
     `Student Name: ${fullName}`,
     `Admission Number: ${admissionNumber || 'N/A'}`,
-    `Form: ${className || 'Assigned by administration'}`,
-    `Stream: ${stream || 'Assigned by administration'}`,
+    ...(curriculumType ? [`Curriculum: ${curriculumType}`] : []),
+    `${curriculumType ? 'Confirmed Admission Placement' : 'Form'}: ${confirmedAdmissionLevel || className || 'Assigned by administration'}`,
+    ...(!curriculumType || curriculumType === '8-4-4' ? [`Stream: ${stream || 'Assigned by administration'}`] : []),
+    ...(intendedAdmissionLevel && intendedAdmissionLevel !== confirmedAdmissionLevel ? [`Intended Admission Level: ${intendedAdmissionLevel}`] : []),
+    ...(preferredPathway ? [`Applicant Pathway Preference (not placement): ${preferredPathway}`] : []),
+    ...(preferredSubjectCombination ? [`Preferred Subject Combination: ${preferredSubjectCombination}`] : []),
     `Academic Year: ${academicYear || 'N/A'}`,
     '',
     'STUDENT PORTAL LOGIN DETAILS',
@@ -426,13 +435,16 @@ async function sendStudentPasswordChangedNotice({ to, applicationId = null }) {
   });
 }
 
-async function sendApplicationConfirmationEmail({ to, fullName, applicationId = null, triggeredBy = null }) {
+async function sendApplicationConfirmationEmail({ to, fullName, applicationId = null, triggeredBy = null, curriculumType, previousSchool, intendedAdmissionLevel }) {
   const subject = 'Crescent High School – Application Received Successfully';
   const submittedDate = new Date().toISOString().slice(0, 10);
   const html = buildReceivedEmailHtml({
     fullName,
     applicationReference: applicationId ? String(applicationId).padStart(4, '0') : 'N/A',
     submittedDate,
+    curriculumType,
+    previousSchool,
+    intendedAdmissionLevel,
     schoolEmailAddress: process.env.SMTP_FROM || 'info@cresenthighschool.com'
   });
   const text = [
@@ -444,6 +456,9 @@ async function sendApplicationConfirmationEmail({ to, fullName, applicationId = 
     'STUDENT DETAILS',
     `Student Name: ${fullName || 'Applicant'}`,
     `Application Reference: ${applicationId ? String(applicationId).padStart(4, '0') : 'N/A'}`,
+    ...(curriculumType ? [`Selected Curriculum: ${curriculumType}`] : []),
+    ...(previousSchool ? [`Previous School: ${previousSchool}`] : []),
+    ...(intendedAdmissionLevel ? [`Intended Admission Level: ${intendedAdmissionLevel}`] : []),
     `Date Submitted: ${submittedDate}`,
     '',
     'APPLICATION STATUS',

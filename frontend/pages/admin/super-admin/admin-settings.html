@@ -49,7 +49,7 @@
         </div>
         <div class="dashboard-panel">
           <div class="panel-header"><h3>General school settings</h3><span class="panel-pill">Theme / academic year</span></div>
-          <form class="admin-form admin-settings-form">
+          <form id="admin-settings-form" class="admin-form admin-settings-form">
             <div class="form-row">
               <label>School name<input name="schoolName" value="Cresent High School"></label>
               <label>Academic year<input name="academicYear" value="2026"></label>
@@ -67,12 +67,31 @@
             </label>
           </form>
         </div>
+        <div class="dashboard-panel">
+          <div class="panel-header"><h3>CBE senior-school offerings</h3><span class="panel-pill">Applicant preferences</span></div>
+          <div class="panel-body" style="padding:16px 20px;">
+            <label for="cbeSeniorSchoolOfferings">Approved subject combinations (one per line, in the format <code>STEM: combination name</code>)</label>
+            <textarea id="cbeSeniorSchoolOfferings" name="cbeSeniorSchoolOfferings" form="admin-settings-form" rows="5" maxlength="5000" placeholder="STEM: Enter an approved combination&#10;Social Sciences: Enter an approved combination&#10;Arts and Sports Science: Enter an approved combination"></textarea>
+            <p class="muted">Only combinations configured here appear in the application form. Keep this blank until the school has verified its approved offerings. A learner's selection is a preference, not a placement.</p>
+          </div>
+        </div>
+        <div class="dashboard-panel">
+          <div class="panel-header"><h3>CBE assessment configuration</h3><span class="panel-pill">School-defined descriptors</span></div>
+          <div class="panel-body" style="padding:16px 20px;">
+            <label for="cbeLearningAreas">Approved CBE learning areas (one per line)</label>
+            <textarea id="cbeLearningAreas" name="cbeLearningAreas" form="admin-settings-form" rows="5" maxlength="5000" placeholder="Enter one school-approved learning area per line"></textarea>
+            <label for="cbePerformanceDescriptors">Approved performance descriptors (one per line)</label>
+            <textarea id="cbePerformanceDescriptors" name="cbePerformanceDescriptors" form="admin-settings-form" rows="5" maxlength="5000" placeholder="Enter one school-approved descriptive outcome per line"></textarea>
+            <p class="muted">CBE assessments use only these qualitative descriptors. Do not enter numeric grade boundaries here.</p>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 
   <script src="/scripts/auth/auth.js"></script>
   <script src="/scripts/admin/admin-dashboard.js"></script>
-  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>`n  <script src="/scripts/shared/shared-bindings.js"></script>
+  <footer class="dashboard-footer">© 2026 CRESENT HIGH SCHOOL. All rights reserved.</footer>
+  <script src="/scripts/shared/shared-bindings.js"></script>
 </body>
 </html>

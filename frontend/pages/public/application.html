@@ -111,19 +111,24 @@
       <form id="applicationForm">
         <div class="form-section">
           <h2>Applicant Profile <span>Tell us about the applicant</span></h2>
+          <div class="form-group">
+            <label for="curriculumType">Select Education Curriculum <span class="required-marker">*</span></label>
+            <select id="curriculumType" name="curriculumType" required>
+              <option value="">Choose a curriculum</option>
+              <option value="CBE">Competency-Based Education (CBE)</option>
+              <option value="8-4-4">8-4-4 Curriculum</option>
+            </select>
+            <small>Choose the pathway followed by the learner. CBE and 8-4-4 grade structures are kept separate.</small>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label for="fullName">Full Name <span class="required-marker">*</span></label>
               <input type="text" id="fullName" name="fullName" placeholder="Enter full name as in birth certificate" required>
             </div>
             <div class="form-group">
-              <label for="className">Applying For <span class="required-marker">*</span></label>
-              <select id="className" name="className" required>
-                <option value="">Select Class</option>
-                <option value="Form 1">Form 1</option>
-                <option value="Form 2">Form 2</option>
-                <option value="Form 3">Form 3</option>
-                <option value="Form 4">Form 4</option>
+              <label for="className">Intended Admission Level <span class="required-marker">*</span></label>
+              <select id="className" name="intendedAdmissionLevel" required disabled>
+                <option value="">Select a curriculum first</option>
               </select>
             </div>
           </div>
@@ -143,13 +148,61 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="previousSchool">Previous School</label>
-              <input type="text" id="previousSchool" name="previousSchool" placeholder="Enter name of previous school">
+              <label for="previousSchool">Previous School <span class="required-marker">*</span></label>
+              <input type="text" id="previousSchool" name="previousSchool" placeholder="Enter name of previous school" required>
             </div>
             <div class="form-group">
-              <label for="kcpeMarks">KCPE Marks / Previous Score</label>
-              <input type="text" id="kcpeMarks" name="kcpeMarks" placeholder="Enter KCPE marks or previous score">
+              <label for="completionYear">Year Completed <span class="required-marker">*</span></label>
+              <input type="number" id="completionYear" name="completionYear" min="1900" required>
             </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="previousEducationStage">Previous Education Stage <span class="required-marker">*</span></label>
+              <select id="previousEducationStage" name="previousEducationStage" required disabled>
+                <option value="">Select a curriculum first</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="previousGradeOrForm">Last Grade / Class Completed <span class="required-marker">*</span></label>
+              <select id="previousGradeOrForm" name="previousGradeOrForm" required disabled>
+                <option value="">Select education stage first</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="previousAssessment">Previous Assessment Information</label>
+              <textarea id="previousAssessment" name="previousAssessment" placeholder="Relevant assessment, examination or results information (optional)"></textarea>
+            </div>
+            <div id="cbePathwayFields" class="form-group" hidden>
+              <label for="preferredPathway">Preferred Senior School Pathway (optional)</label>
+              <select id="preferredPathway" name="preferredPathway">
+                <option value="">No pathway preference</option>
+                <option value="STEM">STEM</option>
+                <option value="Social Sciences">Social Sciences</option>
+                <option value="Arts and Sports Science">Arts and Sports Science</option>
+              </select>
+              <label for="preferredSubjectCombination">Preferred combination (school-configured options only)</label>
+              <select id="preferredSubjectCombination" name="preferredSubjectCombination" disabled>
+                <option value="">No combination configured</option>
+              </select>
+              <small id="cbeOfferingNotice">The school has not configured specific combinations. You may still state a pathway preference.</small>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="birthCertificate">Birth Certificate (optional)</label>
+              <input type="file" id="birthCertificate" name="birthCertificate" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+            <div class="form-group">
+              <label for="kcpeCertificate" id="academicDocumentLabel">Previous academic results / assessment document (optional)</label>
+              <input type="file" id="kcpeCertificate" name="kcpeCertificate" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="medicalForm">Medical Form (optional)</label>
+            <input type="file" id="medicalForm" name="medicalForm" accept=".pdf,.jpg,.jpeg,.png">
           </div>
         </div>
 
@@ -210,6 +263,90 @@
       status.className = `application-status ${type}`;
       status.textContent = message;
     }
+
+    const curriculumSelect = document.getElementById('curriculumType');
+    const intendedLevelSelect = document.getElementById('className');
+    const previousStageSelect = document.getElementById('previousEducationStage');
+    const previousGradeSelect = document.getElementById('previousGradeOrForm');
+    const pathwayFields = document.getElementById('cbePathwayFields');
+    const pathwaySelect = document.getElementById('preferredPathway');
+    const combinationSelect = document.getElementById('preferredSubjectCombination');
+    let configuredCbeOfferings = [];
+
+    function setSelectOptions(select, values, placeholder) {
+      select.innerHTML = `<option value="">${placeholder}</option>${values.map((value) => `<option value="${value}">${value}</option>`).join('')}`;
+      select.disabled = values.length === 0;
+    }
+
+    function updatePreviousGrades() {
+      const curriculum = curriculumSelect.value;
+      const stage = previousStageSelect.value;
+      const gradeMap = curriculum === 'CBE'
+        ? {
+          'Early Years Education': ['PP1', 'PP2'],
+          'Primary School': ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
+          'Junior School': ['Grade 7', 'Grade 8', 'Grade 9'],
+          'Senior School': ['Grade 10', 'Grade 11', 'Grade 12']
+        }
+        : {
+          'Primary School': ['Standard 1', 'Standard 2', 'Standard 3', 'Standard 4', 'Standard 5', 'Standard 6', 'Standard 7', 'Standard 8'],
+          'Secondary School': ['Form 1', 'Form 2', 'Form 3', 'Form 4']
+        };
+      setSelectOptions(previousGradeSelect, gradeMap[stage] || [], 'Select last grade/class completed');
+    }
+
+    function updateCbeCombinations() {
+      const pathway = pathwaySelect.value;
+      const offerings = configuredCbeOfferings.filter((item) => item.pathway === pathway);
+      setSelectOptions(combinationSelect, offerings.map((item) => item.combination), offerings.length ? 'No combination preference' : 'No configured combinations');
+      document.getElementById('cbeOfferingNotice').textContent = configuredCbeOfferings.length
+        ? 'Combinations shown are the school-configured preferences; final placement remains with the school.'
+        : 'The school has not configured specific combinations. You may still state a pathway preference.';
+    }
+
+    function resetCurriculumFields() {
+      intendedLevelSelect.value = '';
+      previousStageSelect.value = '';
+      previousGradeSelect.value = '';
+      document.getElementById('previousAssessment').value = '';
+      pathwaySelect.value = '';
+      combinationSelect.value = '';
+      pathwayFields.hidden = curriculumSelect.value !== 'CBE';
+      document.getElementById('academicDocumentLabel').textContent = curriculumSelect.value === 'CBE'
+        ? 'Previous CBE assessment / academic document (optional)'
+        : 'Previous academic results / certificate (optional)';
+
+      if (curriculumSelect.value === 'CBE') {
+        setSelectOptions(intendedLevelSelect, ['Grade 10', 'Grade 11', 'Grade 12'], 'Select senior-school grade');
+        setSelectOptions(previousStageSelect, ['Early Years Education', 'Primary School', 'Junior School', 'Senior School'], 'Select previous stage');
+      } else if (curriculumSelect.value === '8-4-4') {
+        setSelectOptions(intendedLevelSelect, ['Form 1', 'Form 2', 'Form 3', 'Form 4'], 'Select admission form');
+        setSelectOptions(previousStageSelect, ['Primary School', 'Secondary School'], 'Select previous stage');
+      } else {
+        setSelectOptions(intendedLevelSelect, [], 'Select a curriculum first');
+        setSelectOptions(previousStageSelect, [], 'Select a curriculum first');
+      }
+      updatePreviousGrades();
+      updateCbeCombinations();
+    }
+
+    curriculumSelect.addEventListener('change', resetCurriculumFields);
+    previousStageSelect.addEventListener('change', updatePreviousGrades);
+    pathwaySelect.addEventListener('change', updateCbeCombinations);
+    window.CresentApplicationClient.request('/admin/settings/public')
+      .then(({ response, data }) => {
+        if (!response.ok) throw new Error(data?.message || 'Could not load school-configured CBE offerings');
+        const lines = String(data?.settings?.cbeSeniorSchoolOfferings || '').split(/\r?\n/);
+        configuredCbeOfferings = lines.map((line) => {
+          const separator = line.indexOf(':');
+          return separator > 0 ? { pathway: line.slice(0, separator).trim(), combination: line.slice(separator + 1).trim() } : null;
+        }).filter((item) => item && ['STEM', 'Social Sciences', 'Arts and Sports Science'].includes(item.pathway) && item.combination);
+        updateCbeCombinations();
+      })
+      .catch((error) => {
+        console.error('CBE offerings could not be loaded:', error);
+        document.getElementById('cbeOfferingNotice').textContent = 'School-configured combinations could not be loaded; submit only a pathway preference or try again later.';
+      });
 
     document.getElementById('applicationForm').addEventListener('submit', async (event) => {
       event.preventDefault();

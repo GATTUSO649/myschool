@@ -60,7 +60,7 @@
           </div>
           <div class="hero-details">
             <div class="detail-item">
-              <span class="detail-label">Form</span>
+              <span class="detail-label">Education level</span>
               <strong id="studentForm">-</strong>
             </div>
             <div class="detail-item">
@@ -71,7 +71,23 @@
         </div>
       </section>
 
-      <section class="results-filter-panel" aria-labelledby="resultsFilterTitle">
+      <section class="dashboard-panel" id="cbeStudentAssessments" hidden>
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">CBE learning progress</p>
+            <h2>Learning-area assessments</h2>
+          </div>
+          <span class="panel-pill">Descriptive feedback</span>
+        </div>
+        <div class="sheet-table-wrapper">
+          <table class="admin-table">
+            <thead><tr><th>Year</th><th>Learning area</th><th>Assessment</th><th>Descriptor</th><th>Evidence</th><th>Feedback</th></tr></thead>
+            <tbody id="cbeStudentAssessmentsBody"><tr><td colspan="6">Loading CBE assessment records...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="results-filter-panel" data-eight-four-four-academics aria-labelledby="resultsFilterTitle">
         <div>
           <p class="eyebrow">Results archive</p>
           <h2 id="resultsFilterTitle">Filter academic results</h2>
@@ -98,7 +114,7 @@
       </section>
 
       <!-- Performance Summary Stats -->
-      <section class="academic-panels">
+      <section class="academic-panels" data-eight-four-four-academics>
         <section class="academic-summary-card">
           <div class="summary-card-header">
             <div>
@@ -176,7 +192,7 @@
       </section>
 
       <!-- Academic Charts -->
-      <section class="academic-charts">
+      <section class="academic-charts" data-eight-four-four-academics>
         <div class="dashboard-panel chart-card">
           <div class="panel-header">
             <h3>Subject Performance</h3>
@@ -210,7 +226,7 @@
       </section>
 
       <!-- Student Transcript -->
-      <section class="transcript-card dashboard-panel">
+      <section class="transcript-card dashboard-panel" data-eight-four-four-academics>
         <div class="panel-header">
           <div>
             <p class="eyebrow">Academic record</p>
