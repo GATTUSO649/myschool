@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/api';
 import { DashboardLayout } from '../components/Layouts';
-import { formatCurrency, calculateProgress } from '../utils/helpers';
+import { calculateProgress } from '../utils/helpers';
 
 export function DashboardPage() {
   const { user } = useAuth();

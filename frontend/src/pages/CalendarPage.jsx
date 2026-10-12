@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/Layouts';
-import { Link } from 'react-router-dom';
 
 export function CalendarPage() {
-  const [events, setEvents] = useState([]);
+  const [events] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

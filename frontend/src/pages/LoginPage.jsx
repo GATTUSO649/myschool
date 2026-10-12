@@ -82,7 +82,7 @@ export function LoginPage() {
           </form>
 
           <div className="mt-6 pt-6 border-t text-center text-sm text-gray-600">
-            <p className="mb-2">Don't have an account?</p>
+            <p className="mb-2">Don&apos;t have an account?</p>
             <a href="/signup" className="text-primary-600 font-medium hover:underline">
               Create Portal Account
             </a>

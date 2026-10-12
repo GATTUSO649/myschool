@@ -1,12 +1,14 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/db');
-const { logActivity } = require('./logController');
+const db = require('../config/db');
+const logController = require('./logController');
 const { isStrongPassword, createLoginAttemptTracker } = require('../middleware/security');
 const { normalizeRole } = require('../middleware/authMiddleware');
 const { schoolEmail, sendPasswordResetEmail } = require('./emailUtils');
 
+const query = (...args) => db.query(...args);
+const logActivity = (...args) => logController.logActivity(...args);
 const loginTracker = createLoginAttemptTracker({ maxAttempts: 5, windowMs: 15 * 60 * 1000 });
 
 function cleanLoginValue(value) {

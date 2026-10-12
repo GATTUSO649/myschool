@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/Layouts';
 
 export function RevisionPage() {
-  const [materials, setMaterials] = useState([]);
+  const [materials] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

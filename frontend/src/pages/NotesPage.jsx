@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/Layouts';
 
 export function NotesPage() {
-  const [notes, setNotes] = useState([]);
+  const [notes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

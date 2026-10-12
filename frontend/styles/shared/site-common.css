@@ -2020,3 +2020,70 @@ body.admin-dashboard-page .panel-header {
     backdrop-filter: none !important;
   }
 }
+
+.school-name::before {
+  content: "";
+  display: inline-block;
+  width: 42px;
+  height: 42px;
+  margin-inline-end: 10px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  background: #fff url("/assets/logos/cresent-high-school.png") center 10% / 165% auto no-repeat;
+}
+
+body.admin-dashboard-page .school-name::before {
+  display: none;
+}
+
+.brand-mark,
+.landing-brand-mark,
+.staff-landing .staff-brand-mark,
+.teacher-mark {
+  overflow: hidden;
+  background-color: #fff !important;
+  background-image: url("/assets/logos/cresent-high-school.png") !important;
+  background-position: center 10% !important;
+  background-size: 165% auto !important;
+  color: transparent !important;
+}
+
+.landing-brand-mark {
+  border-color: rgba(255, 255, 255, 0.82);
+}
+
+.landing-brand-mark::before,
+.landing-brand-mark::after {
+  display: none;
+}
+
+.landing-brand-mark span {
+  visibility: hidden;
+}
+
+.staff-landing .staff-brand-mark {
+  border: 1px solid #d7e3ec;
+}
+
+.teacher-mark {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d7e3ec;
+  border-radius: 12px;
+  vertical-align: middle;
+}
+
+.department-card::before,
+.finance-login-card::before,
+.ict-login-card::before,
+.teacher-card::before {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #fff url("/assets/logos/cresent-high-school.png") center 10% / 165% auto no-repeat;
+}

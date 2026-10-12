@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const db = require('../config/db');
+const logController = require('../controllers/logController');
 const { generateOtpCode, generateTempPassword, login } = require('../controllers/authController');
 
 test('generateOtpCode returns a six-digit code', () => {
@@ -16,7 +17,13 @@ test('generateTempPassword returns a school-style temporary password', () => {
 
 test('login rejects the hard-coded admin fallback credentials', async () => {
   const originalQuery = db.query;
+  const originalLogActivity = logController.logActivity;
+  const originalAdminUsername = process.env.ADMIN_USERNAME;
+  const originalAdminPassword = process.env.ADMIN_PASSWORD;
+  process.env.ADMIN_USERNAME = 'test-bootstrap-admin';
+  process.env.ADMIN_PASSWORD = 'TestOnly-Admin-Pass-2026';
   db.query = async () => [];
+  logController.logActivity = async () => {};
 
   try {
     const req = {
@@ -45,11 +52,17 @@ test('login rejects the hard-coded admin fallback credentials', async () => {
     assert.equal(res.payload.success, false);
   } finally {
     db.query = originalQuery;
+    logController.logActivity = originalLogActivity;
+    if (originalAdminUsername === undefined) delete process.env.ADMIN_USERNAME;
+    else process.env.ADMIN_USERNAME = originalAdminUsername;
+    if (originalAdminPassword === undefined) delete process.env.ADMIN_PASSWORD;
+    else process.env.ADMIN_PASSWORD = originalAdminPassword;
   }
 });
 
-test('login accepts the environment-backed admin credentials even when the database is unavailable', async () => {
+test('student login rejects environment-backed admin credentials and directs admins to their portal', async () => {
   const originalQuery = db.query;
+  const originalLogActivity = logController.logActivity;
   const originalAdminUsername = process.env.ADMIN_USERNAME;
   const originalAdminPassword = process.env.ADMIN_PASSWORD;
   process.env.ADMIN_USERNAME = 'admin';
@@ -57,6 +70,7 @@ test('login accepts the environment-backed admin credentials even when the datab
   db.query = async () => {
     throw new Error('database unavailable');
   };
+  logController.logActivity = async () => {};
 
   try {
     const req = {
@@ -81,11 +95,12 @@ test('login accepts the environment-backed admin credentials even when the datab
 
     await login(req, res);
 
-    assert.equal(res.statusCode, null);
-    assert.equal(res.payload.success, true);
-    assert.equal(res.payload.student.role, 'admin');
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.payload.success, false);
+    assert.match(res.payload.message, /admin portal/i);
   } finally {
     db.query = originalQuery;
+    logController.logActivity = originalLogActivity;
     if (originalAdminUsername === undefined) delete process.env.ADMIN_USERNAME;
     else process.env.ADMIN_USERNAME = originalAdminUsername;
     if (originalAdminPassword === undefined) delete process.env.ADMIN_PASSWORD;
