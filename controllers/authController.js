@@ -5,7 +5,7 @@ const db = require('../config/db');
 const logController = require('./logController');
 const { isStrongPassword, createLoginAttemptTracker } = require('../middleware/security');
 const { normalizeRole } = require('../middleware/authMiddleware');
-const { schoolEmail, sendPasswordResetEmail } = require('./emailUtils');
+const emailUtils = require('./emailUtils');
 
 const query = (...args) => db.query(...args);
 const logActivity = (...args) => logController.logActivity(...args);
@@ -77,7 +77,7 @@ async function recordSession(token, user, req) {
 }
 
 function generateOtpCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 function generateTempPassword() {
@@ -341,48 +341,92 @@ async function loginDepartments(req, res) {
 }
 
 async function requestPasswordReset(req, res) {
+  let connection;
   try {
     const identifier = String(req.body?.identifier || req.body?.email || req.body?.username || req.body?.studentId || '').trim();
     if (!identifier) {
-      return res.status(400).json({ success: false, message: 'Student identifier is required' });
+      return res.status(400).json({ success: false, message: 'Enter your username, email, admission number, or staff number.' });
     }
 
     const rows = await query(
-      `SELECT * FROM students WHERE id = ? OR username = ? OR email = ? OR admission_number = ? LIMIT 1`,
-      [identifier, identifier, identifier, identifier.toUpperCase()]
+      `SELECT id, email FROM students
+       WHERE active = 1 AND (
+         id = ? OR LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) OR
+         UPPER(admission_number) = UPPER(?) OR UPPER(staff_number) = UPPER(?)
+       )
+       LIMIT 1`,
+      [identifier, identifier, identifier, identifier, identifier]
     );
     const student = rows[0];
-    if (!student) {
-      return res.status(404).json({ success: false, message: 'Student account not found' });
+    const genericMessage = 'If an active account matches those details and has a registered email, password reset instructions will be sent shortly.';
+    if (!student || !emailUtils.isValidRecipientEmail(student.email)) {
+      return res.json({ success: true, message: genericMessage });
+    }
+
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    const [activeRows] = await connection.execute(
+      'SELECT id FROM students WHERE id = ? AND active = 1 FOR UPDATE',
+      [student.id]
+    );
+    if (!activeRows.length) {
+      await connection.rollback();
+      return res.json({ success: true, message: genericMessage });
+    }
+    const [recentRequests] = await connection.execute(
+      `SELECT id FROM password_reset_requests
+       WHERE student_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+       LIMIT 1`,
+      [student.id]
+    );
+    if (recentRequests.length) {
+      await connection.commit();
+      return res.json({ success: true, message: genericMessage });
     }
 
     const otp = generateOtpCode();
-    const temporaryPassword = generateTempPassword();
     const otpHash = await bcrypt.hash(otp, 10);
-    const tempPasswordHash = await bcrypt.hash(temporaryPassword, 10);
-
-    await query(
-      `INSERT INTO password_reset_requests (student_id, email, otp_hash, temp_password_hash, expires_at, created_at)
-       VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW())`,
-      [student.id, student.email || schoolEmail(student.email, student.admission_number), otpHash, tempPasswordHash]
+    await connection.execute(
+      `UPDATE password_reset_requests SET used_at = NOW()
+       WHERE student_id = ? AND used_at IS NULL`,
+      [student.id]
     );
+    const [result] = await connection.execute(
+      `INSERT INTO password_reset_requests
+         (student_id, email, otp_hash, expires_at, created_at, attempt_count)
+       VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW(), 0)`,
+      [student.id, student.email, otpHash]
+    );
+    await connection.commit();
 
-    const destinationEmail = student.email || schoolEmail(student.email, student.admission_number);
-    if (destinationEmail) {
-      await sendPasswordResetEmail({ to: destinationEmail, otp, temporaryPassword });
+    const delivery = await emailUtils.sendPasswordResetEmail({ to: student.email, otp });
+    if (!delivery.delivered) {
+      await query('UPDATE password_reset_requests SET used_at = NOW() WHERE id = ?', [result.insertId]);
+      console.error('Password reset email was not delivered:', delivery.failureReason || 'unknown delivery failure');
+      return res.json({ success: true, message: genericMessage });
     }
 
-    await logActivity(req.user?.id || student.id, 'password_reset_requested', `Password reset initiated for ${student.username || student.admission_number}`, req.ip);
-    return res.json({ success: true, message: 'Password reset instructions have been sent to the student email.' });
+    await logActivity(student.id, 'password_reset_requested', 'Password reset instructions sent', req.ip);
+    return res.json({ success: true, message: genericMessage });
   } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Password reset request transaction rollback failed:', rollbackError);
+      }
+    }
     console.error('Password reset request error:', error);
     return res.status(500).json({ success: false, message: 'Password reset request failed' });
+  } finally {
+    connection?.release();
   }
 }
 
 async function confirmPasswordReset(req, res) {
+  let connection;
   try {
-    const identifier = String(req.body?.identifier || req.body?.username || req.body?.email || '').trim();
+    const identifier = String(req.body?.identifier || req.body?.username || req.body?.email || req.body?.studentId || '').trim();
     const otp = String(req.body?.otp || '').trim();
     const newPassword = String(req.body?.newPassword || '').trim();
 
@@ -398,36 +442,73 @@ async function confirmPasswordReset(req, res) {
     }
 
     const rows = await query(
-      `SELECT * FROM students WHERE username = ? OR email = ? OR admission_number = ? LIMIT 1`,
-      [identifier, identifier, identifier.toUpperCase()]
+      `SELECT id, username, admission_number
+       FROM students
+       WHERE active = 1 AND (
+         id = ? OR LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?) OR
+         UPPER(admission_number) = UPPER(?) OR UPPER(staff_number) = UPPER(?)
+       )
+       LIMIT 1`,
+      [identifier, identifier, identifier, identifier, identifier]
     );
     const student = rows[0];
     if (!student) {
-      return res.status(404).json({ success: false, message: 'Student account not found' });
+      return res.status(400).json({ success: false, message: 'The reset code is invalid or expired. Request a new code and try again.' });
     }
 
-    const resetRows = await query(
-      `SELECT * FROM password_reset_requests WHERE student_id = ? AND used_at IS NULL AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
+    connection = await db.getPool().getConnection();
+    await connection.beginTransaction();
+    const [resetRows] = await connection.execute(
+      `SELECT id, otp_hash, attempt_count
+       FROM password_reset_requests
+       WHERE student_id = ? AND used_at IS NULL AND expires_at > NOW()
+       ORDER BY created_at DESC
+       LIMIT 1
+       FOR UPDATE`,
       [student.id]
     );
     const resetRequest = resetRows[0];
-    if (!resetRequest) {
-      return res.status(400).json({ success: false, message: 'No active password reset request was found' });
+    if (!resetRequest || Number(resetRequest.attempt_count) >= 5) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'The reset code is invalid or expired. Request a new code and try again.' });
     }
 
     const otpMatch = await bcrypt.compare(otp, resetRequest.otp_hash);
     if (!otpMatch) {
-      return res.status(400).json({ success: false, message: 'The OTP is invalid or expired' });
+      await connection.execute(
+        `UPDATE password_reset_requests
+         SET used_at = IF(attempt_count >= 4, NOW(), used_at),
+             attempt_count = attempt_count + 1
+         WHERE id = ? AND used_at IS NULL`,
+        [resetRequest.id]
+      );
+      await connection.commit();
+      return res.status(400).json({ success: false, message: 'The reset code is invalid or expired. Request a new code and try again.' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE students SET password_hash = ? WHERE id = ?', [passwordHash, student.id]);
-    await query('UPDATE password_reset_requests SET used_at = NOW() WHERE id = ?', [resetRequest.id]);
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const [updateResult] = await connection.execute(
+      'UPDATE students SET password_hash = ?, must_change_password = 0 WHERE id = ? AND active = 1',
+      [passwordHash, student.id]
+    );
+    if (!updateResult.affectedRows) throw new Error('The account was deactivated during password reset.');
+    await connection.execute('UPDATE password_reset_requests SET used_at = NOW() WHERE id = ?', [resetRequest.id]);
+    await connection.execute('UPDATE ict_sessions SET revoked_at = NOW() WHERE user_id = ? AND revoked_at IS NULL', [student.id]);
+    await connection.commit();
     await logActivity(student.id, 'password_reset_confirmed', `Password reset completed for ${student.username || student.admission_number}`, req.ip);
     return res.json({ success: true, message: 'Password reset completed successfully' });
   } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Password reset transaction rollback failed:', rollbackError);
+      }
+    }
     console.error('Password reset confirm error:', error);
     return res.status(500).json({ success: false, message: 'Password reset confirmation failed' });
+  } finally {
+    connection?.release();
   }
 }
 

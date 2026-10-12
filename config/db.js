@@ -252,11 +252,13 @@ async function runMigrations() {
       email VARCHAR(255) NULL,
       otp_hash VARCHAR(255) NOT NULL,
       temp_password_hash VARCHAR(255) NULL,
+      attempt_count INT NOT NULL DEFAULT 0,
       expires_at DATETIME NOT NULL,
       used_at DATETIME NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  await addColumnIfMissing('password_reset_requests', 'attempt_count', 'INT NOT NULL DEFAULT 0');
 
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS teacher_assignments (

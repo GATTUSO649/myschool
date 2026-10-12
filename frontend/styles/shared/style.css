@@ -27,9 +27,7 @@ body {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text-primary);
   line-height: 1.6;
-  background:
-    linear-gradient(135deg, rgba(3, 10, 24, 0.72), rgba(6, 24, 44, 0.62)),
-    url('https://classnotes.ng/wp-content/uploads/2024/09/agumagu.jpeg') center/cover no-repeat;
+  background: #9ca3af;
 }
 
 .container {
@@ -296,7 +294,7 @@ body {
 .landing-button-secondary:hover { background: var(--landing-sky); }
 .landing-support-line { margin: 18px 0 0; color: var(--landing-muted); font-size: .92rem; }
 .landing-support-line a { color: var(--landing-blue); font-weight: 700; }
-.landing-hero-image { min-height: 520px; background: linear-gradient(90deg, #f4f8fd 0%, rgba(244,248,253,0) 20%), url('/assets/images/login-bg.jpg') center / cover no-repeat; }
+.landing-hero-image { min-height: 520px; background: #9ca3af; }
 
 .landing-access { padding: 74px 0; background: #fff; }
 .landing-section-heading { margin-bottom: 26px; }
@@ -397,6 +395,7 @@ body.landing-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #9ca3af;
 }
 body.landing-page > main {
   flex: 1;
@@ -408,9 +407,7 @@ body.landing-page > main {
   position: relative;
   flex: 1;
   min-height: 523px;
-  background-image: linear-gradient(90deg, rgba(248,251,255,.96) 0%, rgba(248,251,255,.9) 24%, rgba(248,251,255,.48) 42%, rgba(248,251,255,0) 65%), url("https://tse1.mm.bing.net/th/id/OIP.Q05KZgVvUChBgqbrClkEOAHaEG?r=0&pid=ImgDet&w=474&h=262&rs=1&o=7&rm=3");
-  background-position: center;
-  background-size: cover;
+  background: #9ca3af;
   border: 0;
 }
 .landing-hero-inner { width: min(100% - 116px, 956px); margin: 0 auto; }

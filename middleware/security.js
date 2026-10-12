@@ -27,6 +27,16 @@ function createAuthRateLimiter() {
   });
 }
 
+function createPasswordResetRateLimiter(max, message) {
+  return rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message }
+  });
+}
+
 function createGeneralRateLimiter() {
   return rateLimit({
     windowMs: 1 * 60 * 1000,
@@ -62,12 +72,10 @@ const extraImgSrcs = (process.env.CSP_IMG_SRC || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
-// Allow externally-hosted QR and background images used by portal pages.
+// Allow externally-hosted QR images used by portal pages.
 const defaultImgHosts = [
   'https://api.qrserver.com',
-  'https://c8.alamy.com',
-  'https://t3.ftcdn.net',
-  'https://tse1.mm.bing.net'
+  'https://c8.alamy.com'
 ];
 
 const securityHeaders = helmet({
@@ -151,6 +159,7 @@ function createLoginAttemptTracker(options = {}) {
 module.exports = {
   isStrongPassword,
   createAuthRateLimiter,
+  createPasswordResetRateLimiter,
   createGeneralRateLimiter,
   csrfProtection,
   securityHeaders,

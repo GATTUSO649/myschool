@@ -1,10 +1,9 @@
 (() => {
-  const api = (typeof getApiUrl === 'function' ? getApiUrl() : `${window.location.origin}/api`);
+  const api = String(window.CONFIG?.API_URL || `${window.location.origin}/api`).replace(/\/+$/, '');
   const departmentSelect = document.getElementById('departmentId');
   const loginForm = document.getElementById('departmentLoginForm');
   const loginStatus = document.getElementById('departmentLoginStatus');
   const loginButton = document.getElementById('departmentLoginButton');
-  const resetStatus = document.getElementById('resetStatus');
   const escapeValue = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
 
   async function loadDepartments() {
@@ -37,19 +36,6 @@
       loginStatus.textContent = error.message || 'Department login failed.';
     } finally {
       loginButton.disabled = false;
-    }
-  });
-
-  document.getElementById('departmentResetForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    resetStatus.textContent = 'Requesting reset instructions...';
-    try {
-      const response = await fetch(`${api}/auth/password-reset/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ identifier: document.getElementById('resetIdentifier').value.trim() }) });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Reset request failed');
-      resetStatus.textContent = data.message;
-    } catch (error) {
-      resetStatus.textContent = error.message || 'Reset request failed.';
     }
   });
 

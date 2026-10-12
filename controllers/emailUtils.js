@@ -347,18 +347,19 @@ async function sendApplicationRejectionEmail({ to, fullName, applicationReferenc
   return deliverMail({ to, subject, text, html, applicationId, emailType: 'APPLICATION_REJECTED', triggeredBy });
 }
 
-async function sendPasswordResetEmail({ to, otp, temporaryPassword }) {
+async function sendPasswordResetEmail({ to, otp }) {
   const subject = 'Password Reset Instructions - Crescent High School';
   const text = [
     'A password reset was requested for your Crescent High School portal account.',
-    `OTP: ${otp}`,
-    `Temporary password: ${temporaryPassword}`,
-    'Use the OTP and your new password on the portal reset page to finish the reset.',
+    `Your one-time reset code is: ${otp}`,
+    'Enter this code on the Forgot Password page to choose a new password. The code expires in 15 minutes and can only be used once.',
     'If you did not request this, contact the school administration immediately.'
   ].join('\n');
 
   const result = await deliverMail({ to, subject, text, emailType: 'PASSWORD_RESET' });
-  await logActivity(null, 'password_reset_email_sent', `Password reset email sent to ${to}`, null);
+  if (result.delivered) {
+    await logActivity(null, 'password_reset_email_sent', `Password reset email sent to ${to}`, null);
+  }
   return result;
 }
 

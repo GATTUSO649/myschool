@@ -49,16 +49,16 @@ body {
   overflow-x: hidden;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--ink);
-  background: #ffffff; /* enforce clean white background across site */
+  background: #9ca3af;
 }
 
-/* Portal-specific body style: keep content area white and neutral */
+/* Keep portal page backgrounds consistent and image-free. */
 body.student-portal {
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
   color: var(--ink);
-  background: #ffffff url('/assets/images/login-bg.jpg') center / cover no-repeat fixed; /* background image with fallback white */
+  background: #9ca3af;
 }
 
 body.has-site-footer {
@@ -548,7 +548,7 @@ body.student-portal .dashboard-main {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, #07111f 0%, #123a66 45%, #0d6c80 100%);
+  background: #9ca3af;
 }
 
 .auth-card {

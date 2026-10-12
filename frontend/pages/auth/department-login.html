@@ -1,1 +1,54 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Department Portal Login | CRESENT HIGH SCHOOL</title><link rel="stylesheet" href="/styles/shared/site-common.css"><link rel="stylesheet" href="/styles/shared/responsive.css"><style>body{margin:0;background:#071d3d;color:#102a43;font-family:"Segoe UI",Arial,sans-serif}.department-login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#071d3d,#0f766e)}.department-card{width:min(440px,100%);padding:28px;background:#fff;border-radius:8px;box-shadow:0 22px 55px #04132980}.department-card h1{margin:5px 0 8px}.department-card p{color:#64748b;line-height:1.5}.department-form{display:grid;gap:14px}.department-form label{display:grid;gap:6px;font-weight:700}.department-form input,.department-form select{height:44px;padding:0 12px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}.department-form button{height:44px;border:0;border-radius:6px;background:#0f766e;color:#fff;font-weight:800;cursor:pointer}.department-form button:disabled{opacity:.6}.login-status{min-height:22px;color:#b42318;font-size:.9rem}.reset-panel{margin-top:22px;padding-top:18px;border-top:1px solid #e2e8f0}.reset-panel form{display:grid;gap:10px}.reset-panel input{height:40px;padding:0 10px;border:1px solid #cbd5e1;border-radius:6px}.reset-panel button{padding:9px;border:1px solid #0f766e;border-radius:6px;background:#fff;color:#0f766e;font-weight:700}.links{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.links a{color:#0f766e}</style></head><body><main class="department-login"><section class="department-card"><p class="eyebrow">CRESENT HIGH SCHOOL</p><h1>Department Portal</h1><p>Sign in to the department assigned to your staff account.</p><form class="department-form" id="departmentLoginForm"><label for="departmentId">Department<select id="departmentId" required><option value="">Loading departments...</option></select></label><label for="departmentUsername">Staff number or email<input id="departmentUsername" autocomplete="username" required></label><label for="departmentPassword">Password<input id="departmentPassword" type="password" autocomplete="current-password" required></label><div class="login-status" id="departmentLoginStatus" role="alert"></div><button type="submit" id="departmentLoginButton">Sign in</button></form><section class="reset-panel"><h2>Password reset</h2><p>Request a reset instruction for your department account.</p><form id="departmentResetForm"><input id="resetIdentifier" placeholder="Staff number or email" autocomplete="username" required><button type="submit">Request reset</button><div class="login-status" id="resetStatus" role="status"></div></form></section><div class="links"><a href="teacher-login.html">Teacher portal</a><a href="admin-login.html">Admin portal</a></div></section></main><script src="/scripts/shared/config.js"></script><script src="/scripts/auth/department-login.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Department Portal Login | CRESENT HIGH SCHOOL</title>
+  <link rel="stylesheet" href="/styles/shared/site-common.css">
+  <link rel="stylesheet" href="/styles/shared/responsive.css">
+  <style>
+    body { margin: 0; background: #9ca3af; color: #102a43; font-family: "Segoe UI", Arial, sans-serif; }
+    .department-login { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #9ca3af; }
+    .department-card { width: min(440px, 100%); padding: 28px; background: #fff; border-radius: 8px; box-shadow: 0 22px 55px #04132980; }
+    .department-card h1 { margin: 5px 0 8px; }
+    .department-card p { color: #64748b; line-height: 1.5; }
+    .department-form { display: grid; gap: 14px; }
+    .department-form label { display: grid; gap: 6px; font-weight: 700; }
+    .department-form input, .department-form select { height: 44px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; }
+    .department-form button { height: 44px; border: 0; border-radius: 6px; background: #0f766e; color: #fff; font-weight: 800; cursor: pointer; }
+    .department-form button:disabled { opacity: .6; }
+    .login-status { min-height: 22px; color: #b42318; font-size: .9rem; }
+    .links { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+    .links a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <main class="department-login">
+    <section class="department-card">
+      <p class="eyebrow">CRESENT HIGH SCHOOL</p>
+      <h1>Department Portal</h1>
+      <p>Sign in to the department assigned to your staff account.</p>
+      <form class="department-form" id="departmentLoginForm">
+        <label for="departmentId">Department
+          <select id="departmentId" required><option value="">Loading departments...</option></select>
+        </label>
+        <label for="departmentUsername">Staff number or email
+          <input id="departmentUsername" autocomplete="username" required>
+        </label>
+        <label for="departmentPassword">Password
+          <input id="departmentPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <div class="login-status" id="departmentLoginStatus" role="alert"></div>
+        <button type="submit" id="departmentLoginButton">Sign in</button>
+      </form>
+      <div class="links">
+        <a href="forgot-password.html?returnTo=department-login.html">Forgot password?</a>
+        <a href="teacher-login.html">Teacher portal</a>
+        <a href="admin-login.html">Admin portal</a>
+      </div>
+    </section>
+  </main>
+  <script src="/scripts/shared/config.js"></script>
+  <script src="/scripts/auth/department-login.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const csrf = require('csurf');
+const { createPasswordResetRateLimiter } = require('../middleware/security');
 
 const router = express.Router();
 
@@ -12,6 +13,8 @@ const csrfTokenProtection = csrf({
     secure: process.env.NODE_ENV === 'production'
   }
 });
+const passwordResetRequestLimiter = createPasswordResetRateLimiter(5, 'Too many reset requests. Please wait before trying again.');
+const passwordResetConfirmLimiter = createPasswordResetRateLimiter(15, 'Too many code attempts. Please wait before trying again.');
 
 // CSRF token endpoint for secure login
 router.get('/csrf-token', csrfTokenProtection, (req, res) => {
@@ -23,8 +26,8 @@ router.post('/login', auth.login);
 router.post('/department-login', auth.departmentLogin);
 router.get('/departments', auth.loginDepartments);
 router.post('/admin-login', auth.adminLogin);
-router.post('/password-reset/request', auth.requestPasswordReset);
-router.post('/password-reset/confirm', auth.confirmPasswordReset);
+router.post('/password-reset/request', passwordResetRequestLimiter, auth.requestPasswordReset);
+router.post('/password-reset/confirm', passwordResetConfirmLimiter, auth.confirmPasswordReset);
 router.post('/password/change', authMiddleware, auth.changePassword);
 router.post('/sessions/revoke-others', authMiddleware, auth.revokeOtherSessions);
 router.get('/me', authMiddleware, auth.me);
