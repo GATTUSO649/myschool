@@ -10,6 +10,9 @@ ALTER TABLE applications
   ADD COLUMN preferred_subject_combination VARCHAR(180) NULL,
   ADD COLUMN admission_placement_status VARCHAR(20) NULL,
   ADD COLUMN confirmed_admission_level VARCHAR(30) NULL,
+  ADD COLUMN birth_certificate_path VARCHAR(255) NULL,
+  ADD COLUMN kcpe_certificate_path VARCHAR(255) NULL,
+  ADD COLUMN medical_form_path VARCHAR(255) NULL,
   ADD INDEX idx_applications_curriculum_status (curriculum_type, status);
 
 ALTER TABLE students

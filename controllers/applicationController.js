@@ -22,7 +22,7 @@ function getDocumentValue(req, fieldName, fallbackValue) {
   const uploaded = req.files?.[fieldName]?.[0];
   if (uploaded) {
     const appBaseUrl = process.env.APP_URL || 'https://cresenthighschool.onrender.com';
-    return `${appBaseUrl.replace(/\/$/, '')}/uploads/applications/${uploaded.filename}`;
+    return `${appBaseUrl.replace(/\/$/, '')}/uploads/documents/${uploaded.filename}`;
   }
 
   const bodyValue = req.body?.[fieldName] || req.body?.[fieldName.replace(/([A-Z])/g, '_$1').toLowerCase()];
@@ -143,6 +143,12 @@ async function createApplication(req, res) {
     });
   } catch (error) {
     console.error('Application create error:', error);
+    if (['ER_BAD_FIELD_ERROR', 'ER_NO_SUCH_TABLE'].includes(error.code)) {
+      return res.status(503).json({
+        success: false,
+        message: 'The application database is not up to date. Please contact the school administrator to complete the database migration.'
+      });
+    }
     res.status(500).json({ success: false, message: 'Could not submit application' });
   }
 }

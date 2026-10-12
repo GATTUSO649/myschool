@@ -399,7 +399,7 @@
           submitButton.disabled = false;
           submitButton.textContent = originalSubmitLabel;
         }
-        setStatus('Could not submit application. Check that the backend server is running.', 'error');
+        setStatus(error.message || 'Could not submit application. Check that the backend server is running.', 'error');
       }
     });
   </script>
