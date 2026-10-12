@@ -66,7 +66,8 @@ const extraImgSrcs = (process.env.CSP_IMG_SRC || '')
 // by default so externally-hosted images (QR and background) render correctly.
 const defaultImgHosts = [
   'https://api.qrserver.com',
-  'https://c8.alamy.com'
+  'https://c8.alamy.com',
+  'https://t3.ftcdn.net'
 ];
 
 const securityHeaders = helmet({

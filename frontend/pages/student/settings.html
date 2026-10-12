@@ -7,20 +7,13 @@
     <link rel="stylesheet" href="/styles/student/dashboard.css">
     <link rel="stylesheet" href="/styles/student/settings.css">
 
-    <style>
-        /* Fail-safe override to ensure content is visible even if CSS buffering fails */
-        .settings-content, .settings-main, .settings-header, .settings-container, .settings-sidebar, .settings-card { display: block !important; }
-        .settings-nav-item { display: inline-flex !important; }
-        .settings-header { background: #fff !important; }
-        #debugMessage { display: block !important; }
-    </style>
   <link rel="stylesheet" href="/styles/shared/site-common.css">
   <link rel="stylesheet" href="/styles/shared/responsive.css">
 </head>
 <body class="student-portal">
     <header class="dashboard-header">
         <div class="header-content">
-            <button class="mobile-sidebar-toggle" type="button" data-toggle-sidebar aria-label="Toggle menu">
+            <button class="mobile-sidebar-toggle" type="button" id="settingsMenuToggle" aria-label="Toggle settings menu" aria-expanded="false" aria-controls="settingsSidebar">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="school-name">CRESENT HIGH SCHOOL</div>
@@ -46,29 +39,29 @@
 
         <div class="settings-container">
             <!-- Sidebar Navigation -->
-            <aside class="settings-sidebar">
+            <aside class="settings-sidebar" id="settingsSidebar">
                 <nav class="settings-nav">
-                    <button class="settings-nav-item active" onclick="switchTab('profile', event)">
+                    <button class="settings-nav-item active" type="button" data-settings-tab="profile">
                         <i class="fas fa-user-circle"></i>
                         <span>Profile</span>
                     </button>
-                    <button class="settings-nav-item" onclick="switchTab('password', event)">
+                    <button class="settings-nav-item" type="button" data-settings-tab="password">
                         <i class="fas fa-lock"></i>
                         <span>Password & Security</span>
                     </button>
-                    <button class="settings-nav-item" onclick="switchTab('notifications', event)">
+                    <button class="settings-nav-item" type="button" data-settings-tab="notifications">
                         <i class="fas fa-bell"></i>
                         <span>Notifications</span>
                     </button>
-                    <button class="settings-nav-item" onclick="switchTab('privacy', event)">
+                    <button class="settings-nav-item" type="button" data-settings-tab="privacy">
                         <i class="fas fa-shield-alt"></i>
                         <span>Privacy</span>
                     </button>
-                    <button class="settings-nav-item" onclick="switchTab('appearance', event)">
+                    <button class="settings-nav-item" type="button" data-settings-tab="appearance">
                         <i class="fas fa-paint-brush"></i>
                         <span>Appearance</span>
                     </button>
-                    <button class="settings-nav-item" onclick="switchTab('sessions', event)">
+                    <button class="settings-nav-item" type="button" data-settings-tab="sessions">
                         <i class="fas fa-laptop"></i>
                         <span>Active Sessions</span>
                     </button>
@@ -88,15 +81,16 @@
                     <div class="settings-card">
                         <div class="profile-picture-section">
                             <div class="profile-picture">
-                                <img id="profileImg" src="https://ui-avatars.com/api/?name=Student&background=1565c0&color=fff" alt="Profile Picture">
+                                <img id="profileImg" src="/assets/logos/cresent-high-school.png" alt="Profile Picture">
                             </div>
                             <div class="profile-actions">
-                                <button class="btn-secondary" onclick="uploadProfilePicture()">
+                                <button class="btn-secondary" id="uploadProfilePhoto" type="button">
                                     <i class="fas fa-camera"></i> Upload Photo
                                 </button>
-                                <button class="btn-secondary" onclick="removeProfilePicture()">
+                                <button class="btn-secondary" id="removeProfilePhoto" type="button">
                                     <i class="fas fa-trash"></i> Remove
                                 </button>
+                                <input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                             </div>
                         </div>
                     </div>
@@ -127,20 +121,15 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="course">Course/Class</label>
-                                    <select id="course">
-                                        <option value="">Select your course</option>
-                                        <option value="form-1">Form 1</option>
-                                        <option value="form-2">Form 2</option>
-                                        <option value="form-3">Form 3</option>
-                                        <option value="form-4">Form 4</option>
-                                    </select>
+                                    <input type="text" id="course" readonly aria-describedby="courseHelp">
+                                    <small id="courseHelp">Class placement is managed by school administration.</small>
                                 </div>
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary">
                                     <i class="fas fa-save"></i> Save Changes
                                 </button>
-                                <button type="reset" class="btn-secondary">
+                                <button type="reset" id="discardProfileChanges" class="btn-secondary">
                                     <i class="fas fa-redo"></i> Discard
                                 </button>
                             </div>
@@ -189,37 +178,9 @@
                     </div>
 
                     <div class="settings-card">
-                        <h3>Two-Factor Authentication</h3>
-                        <p class="card-description">Add an extra layer of security to your account</p>
-                        <div class="security-status">
-                            <div class="status-badge disabled">
-                                <i class="fas fa-shield-alt"></i> Not Enabled
-                            </div>
-                            <button class="btn-secondary" onclick="enable2FA()">
-                                <i class="fas fa-mobile-alt"></i> Enable 2FA
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
                         <h3>Account Recovery</h3>
-                        <p class="card-description">Set up recovery options for account access</p>
-                        <div class="recovery-options">
-                            <div class="recovery-item">
-                                <div class="recovery-info">
-                                    <strong>Recovery Email</strong>
-                                    <p>backup.email@example.com</p>
-                                </div>
-                                <button class="btn-secondary btn-sm">Update</button>
-                            </div>
-                            <div class="recovery-item">
-                                <div class="recovery-info">
-                                    <strong>Recovery Phone</strong>
-                                    <p>+254 700 000 000</p>
-                                </div>
-                                <button class="btn-secondary btn-sm">Update</button>
-                            </div>
-                        </div>
+                        <p class="card-description">Recovery contact details are managed by school administration. Keep the email and phone number in your profile up to date.</p>
+                        <a class="btn-secondary settings-action-link" href="#profile" data-settings-tab-link="profile">Update profile details</a>
                     </div>
                 </section>
 
@@ -227,7 +188,7 @@
                 <section id="notifications" class="settings-section">
                     <div class="section-header">
                         <h2>Notification Preferences</h2>
-                        <p>Control how and when you receive notifications</p>
+                        <p>Save your notification preferences on this device. These preferences do not change school email delivery yet.</p>
                     </div>
 
                     <div class="settings-card">
@@ -239,7 +200,7 @@
                                     <p>Grades, assignments, and course announcements</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Academic updates notifications">
+                                    <input type="checkbox" checked aria-label="Academic updates notifications" data-setting="notification-academic">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -250,7 +211,7 @@
                                     <p>Fee statements and payment reminders</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Finance notifications">
+                                    <input type="checkbox" checked aria-label="Finance notifications" data-setting="notification-finance">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -261,7 +222,7 @@
                                     <p>Exam schedules and results</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Exam updates notifications">
+                                    <input type="checkbox" checked aria-label="Exam updates notifications" data-setting="notification-exams">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -272,7 +233,7 @@
                                     <p>Important system updates and maintenance</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="System notifications">
+                                    <input type="checkbox" checked aria-label="System notifications" data-setting="notification-system">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -283,7 +244,7 @@
                         <h3>Notification Frequency</h3>
                         <div class="frequency-options">
                             <label class="radio-option">
-                                <input type="radio" name="frequency" value="instant" checked>
+                                <input type="radio" name="frequency" value="instant" checked data-setting="notification-frequency">
                                 <span class="radio-custom"></span>
                                 <div>
                                     <strong>Instant</strong>
@@ -292,7 +253,7 @@
                             </label>
 
                             <label class="radio-option">
-                                <input type="radio" name="frequency" value="daily">
+                                <input type="radio" name="frequency" value="daily" data-setting="notification-frequency">
                                 <span class="radio-custom"></span>
                                 <div>
                                     <strong>Daily Digest</strong>
@@ -301,7 +262,7 @@
                             </label>
 
                             <label class="radio-option">
-                                <input type="radio" name="frequency" value="weekly">
+                                <input type="radio" name="frequency" value="weekly" data-setting="notification-frequency">
                                 <span class="radio-custom"></span>
                                 <div>
                                     <strong>Weekly Summary</strong>
@@ -316,7 +277,7 @@
                 <section id="privacy" class="settings-section">
                     <div class="section-header">
                         <h2>Privacy Settings</h2>
-                        <p>Control who can see your information</p>
+                        <p>Save your privacy preferences on this device. These options do not change profile visibility or messaging access yet.</p>
                     </div>
 
                     <div class="settings-card">
@@ -328,7 +289,7 @@
                                     <p>Allow other students to view your profile</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" aria-label="Public profile visibility">
+                                    <input type="checkbox" aria-label="Public profile visibility" data-setting="privacy-public-profile">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -339,7 +300,7 @@
                                     <p>Let others see when you're online</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Show online status">
+                                    <input type="checkbox" checked aria-label="Show online status" data-setting="privacy-online-status">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -350,7 +311,7 @@
                                     <p>Allow other students to message you</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Allow messages">
+                                    <input type="checkbox" checked aria-label="Allow messages" data-setting="privacy-messages">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -360,11 +321,11 @@
                     <div class="settings-card">
                         <h3>Data & Privacy</h3>
                         <div class="privacy-actions">
-                            <button class="btn-secondary">
+                            <button class="btn-secondary" id="downloadMyData" type="button">
                                 <i class="fas fa-download"></i> Download My Data
                             </button>
-                            <button class="btn-secondary">
-                                <i class="fas fa-file-pdf"></i> View Privacy Policy
+                            <button class="btn-secondary" id="clearSavedPreferences" type="button">
+                                <i class="fas fa-rotate-left"></i> Reset Saved Preferences
                             </button>
                         </div>
                     </div>
@@ -374,28 +335,28 @@
                 <section id="appearance" class="settings-section">
                     <div class="section-header">
                         <h2>Appearance</h2>
-                        <p>Customize how the portal looks</p>
+                        <p>Customize supported display preferences for this device.</p>
                     </div>
 
                     <div class="settings-card">
                         <h3>Theme</h3>
                         <div class="theme-options">
                             <label class="theme-option">
-                                <input type="radio" name="theme" value="light" checked>
+                                <input type="radio" name="theme" value="light" checked data-setting="theme">
                                 <div class="theme-preview light-theme">
                                     <span class="theme-label">Light</span>
                                 </div>
                             </label>
 
                             <label class="theme-option">
-                                <input type="radio" name="theme" value="dark">
+                                <input type="radio" name="theme" value="dark" data-setting="theme">
                                 <div class="theme-preview dark-theme">
                                     <span class="theme-label">Dark</span>
                                 </div>
                             </label>
 
                             <label class="theme-option">
-                                <input type="radio" name="theme" value="auto">
+                                <input type="radio" name="theme" value="auto" data-setting="theme">
                                 <div class="theme-preview auto-theme">
                                     <span class="theme-label">Auto</span>
                                 </div>
@@ -412,7 +373,7 @@
                                     <p>Use a more condensed layout</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" aria-label="Compact view">
+                                    <input type="checkbox" aria-label="Compact view" data-setting="compact-view">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -423,7 +384,7 @@
                                     <p>Enable smooth page transitions</p>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" checked aria-label="Animations">
+                                    <input type="checkbox" checked aria-label="Animations" data-setting="animations">
                                     <span class="slider"></span>
                                 </label>
                             </div>
@@ -432,8 +393,9 @@
 
                     <div class="settings-card">
                         <h3>Language</h3>
+                        <p class="card-description">Choose a saved language preference. Portal text is currently available in English.</p>
                         <label for="languageSelect" class="sr-only">Preferred language</label>
-                        <select id="languageSelect" class="language-select" aria-label="Preferred language">
+                        <select id="languageSelect" class="language-select" aria-label="Preferred language" data-setting="language">
                             <option value="en" selected>English</option>
                             <option value="sw">Swahili</option>
                             <option value="fr">French</option>
@@ -456,45 +418,22 @@
                                     <i class="fas fa-laptop"></i>
                                 </div>
                                 <div class="session-details">
-                                    <strong>Windows - Chrome</strong>
-                                    <p>Browser session</p>
-                                    <small>Current session • Last active now</small>
+                                    <strong>This device</strong>
+                                    <p>Current browser session</p>
+                                    <small>Active now</small>
                                 </div>
                                 <div class="session-status">
                                     <span class="badge-active">Active</span>
                                 </div>
                             </div>
 
-                            <div class="session-item">
-                                <div class="session-icon">
-                                    <i class="fas fa-mobile-alt"></i>
-                                </div>
-                                <div class="session-details">
-                                    <strong>iPhone - Safari</strong>
-                                    <p>Mobile session</p>
-                                    <small>Last active 2 hours ago</small>
-                                </div>
-                                <button class="btn-danger btn-sm">Logout</button>
-                            </div>
-
-                            <div class="session-item">
-                                <div class="session-icon">
-                                    <i class="fas fa-tablet-alt"></i>
-                                </div>
-                                <div class="session-details">
-                                    <strong>iPad - Chrome</strong>
-                                    <p>Tablet session</p>
-                                    <small>Last active 1 day ago</small>
-                                </div>
-                                <button class="btn-danger btn-sm">Logout</button>
-                            </div>
                         </div>
                     </div>
 
                     <div class="settings-card">
-                        <h3>Logout All Other Sessions</h3>
-                        <p class="card-description">Sign out all active sessions except this one</p>
-                        <button class="btn-danger">
+                        <h3>Sign out other devices</h3>
+                        <p class="card-description">Revoke all other registered sessions for your account. This device stays signed in.</p>
+                        <button class="btn-danger" id="logoutOtherSessions" type="button">
                             <i class="fas fa-sign-out-alt"></i> Logout All
                         </button>
                     </div>

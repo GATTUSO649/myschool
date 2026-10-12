@@ -135,6 +135,58 @@ async function profile(req, res) {
   res.json({ success: true, student: publicStudent(req.user) });
 }
 
+async function updateMyProfile(req, res) {
+  try {
+    const name = String(req.body?.name || '').trim();
+    const email = String(req.body?.email || '').trim();
+    const phone = String(req.body?.phone || '').trim();
+    const dateOfBirth = String(req.body?.dateOfBirth || '').trim();
+
+    if (!name || name.length > 150) {
+      return res.status(400).json({ success: false, message: 'Name is required and must be 150 characters or fewer.' });
+    }
+    if (email && (email.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+    }
+    if (phone.length > 40) {
+      return res.status(400).json({ success: false, message: 'Phone number must be 40 characters or fewer.' });
+    }
+    if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+      return res.status(400).json({ success: false, message: 'Enter a valid date of birth.' });
+    }
+    if (dateOfBirth) {
+      const parsedDate = new Date(`${dateOfBirth}T00:00:00Z`);
+      if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== dateOfBirth) {
+        return res.status(400).json({ success: false, message: 'Enter a valid date of birth.' });
+      }
+    }
+
+    if (email) {
+      const existingRows = await query(
+        'SELECT id FROM students WHERE LOWER(email) = LOWER(?) AND id <> ? LIMIT 1',
+        [email, req.user.id]
+      );
+      if (existingRows.length) {
+        return res.status(409).json({ success: false, message: 'That email address is already in use.' });
+      }
+    }
+
+    await query(
+      'UPDATE students SET name = ?, email = ?, phone = ?, date_of_birth = ? WHERE id = ? AND active = 1',
+      [name, email || null, phone || null, dateOfBirth || null, req.user.id]
+    );
+    await logActivity(req.user.id, 'profile_updated', 'Updated account profile details', req.ip);
+    const rows = await query('SELECT * FROM students WHERE id = ? AND active = 1 LIMIT 1', [req.user.id]);
+    if (!rows[0]) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+    return res.json({ success: true, student: publicStudent(rows[0]) });
+  } catch (error) {
+    console.error('Update own profile error:', error);
+    return res.status(500).json({ success: false, message: 'Could not save profile changes.' });
+  }
+}
+
 async function studentFormStreamCounts(req, res) {
   try {
     const rows = await query(
@@ -158,5 +210,6 @@ module.exports = {
   updateRole,
   deactivateStudent,
   profile,
+  updateMyProfile,
   studentFormStreamCounts
 };

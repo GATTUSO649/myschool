@@ -105,7 +105,7 @@ async function authMiddleware(req, res, next) {
     }
 
     const rows = await query(
-      'SELECT id, name, username, email, admission_number, staff_number, finance_working_area, ict_working_area, role, class_name, stream, avatar, subject, active, must_change_password FROM students WHERE id = ? LIMIT 1',
+      'SELECT id, name, username, email, admission_number, staff_number, finance_working_area, ict_working_area, role, class_name, stream, avatar, phone, date_of_birth, subject, active, must_change_password FROM students WHERE id = ? LIMIT 1',
       [decoded.id]
     );
     const user = rows[0];
@@ -121,6 +121,7 @@ async function authMiddleware(req, res, next) {
       rawRole: String(user.role || '').toLowerCase(),
       role: normalizeRole(user.role)
     };
+    req.authSessionJti = decoded.jti || null;
     const isPasswordSettingsPage = req.path.endsWith('/settings.html');
     if (req.user.must_change_password && !req.path.endsWith('/password/change') && !isPasswordSettingsPage) {
       if (isHtmlRequest(req)) {

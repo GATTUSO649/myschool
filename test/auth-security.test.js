@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const db = require('../config/db');
 const logController = require('../controllers/logController');
-const { generateOtpCode, generateTempPassword, login } = require('../controllers/authController');
+const { generateOtpCode, generateTempPassword, login, publicStudent } = require('../controllers/authController');
 
 test('generateOtpCode returns a six-digit code', () => {
   const code = generateOtpCode();
@@ -13,6 +13,18 @@ test('generateTempPassword returns a school-style temporary password', () => {
   const password = generateTempPassword();
   assert.ok(password.startsWith('Cres'));
   assert.ok(password.length >= 12);
+});
+
+test('public student profile formats date of birth for date inputs', () => {
+  const student = publicStudent({
+    id: 1,
+    name: 'Student',
+    role: 'student',
+    active: 1,
+    date_of_birth: new Date(2010, 8, 12)
+  });
+
+  assert.equal(student.dateOfBirth, '2010-09-12');
 });
 
 test('login rejects the hard-coded admin fallback credentials', async () => {

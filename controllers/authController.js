@@ -15,6 +15,17 @@ function cleanLoginValue(value) {
   return String(value || '').trim();
 }
 
+function formatDateOnly(value) {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(value).slice(0, 10);
+}
+
 function publicStudent(row) {
   return {
     id: row.id,
@@ -31,6 +42,8 @@ function publicStudent(row) {
     ictWorkingArea: row.ict_working_area || null,
     subject: row.subject || null,
     avatar: row.avatar,
+    phone: row.phone || null,
+    dateOfBirth: formatDateOnly(row.date_of_birth),
     active: Boolean(row.active),
     mustChangePassword: Boolean(row.must_change_password),
     last_login: row.last_login
@@ -447,6 +460,24 @@ async function changePassword(req, res) {
   }
 }
 
+async function revokeOtherSessions(req, res) {
+  try {
+    if (!req.authSessionJti) {
+      return res.status(401).json({ success: false, message: 'Current session could not be identified. Please sign in again.' });
+    }
+    const result = await query(
+      'UPDATE ict_sessions SET revoked_at = NOW() WHERE user_id = ? AND jti <> ? AND revoked_at IS NULL',
+      [req.user.id, req.authSessionJti]
+    );
+    const revokedCount = Number(result?.affectedRows || 0);
+    await logActivity(req.user.id, 'other_sessions_revoked', `Revoked ${revokedCount} other session(s)`, req.ip);
+    return res.json({ success: true, revokedCount, message: `${revokedCount} other session(s) signed out.` });
+  } catch (error) {
+    console.error('Revoke other sessions error:', error);
+    return res.status(500).json({ success: false, message: 'Could not sign out other sessions' });
+  }
+}
+
 /**
  * Admin-specific login with enhanced security
  * Enforces admin role verification and enhanced logging
@@ -547,6 +578,7 @@ module.exports = {
   requestPasswordReset,
   confirmPasswordReset,
   changePassword,
+  revokeOtherSessions,
   departmentLogin,
   loginDepartments,
   publicStudent,

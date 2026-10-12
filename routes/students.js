@@ -5,6 +5,7 @@ const controller = require('../controllers/studentController');
 const router = express.Router();
 
 router.get('/me', authMiddleware, controller.profile);
+router.put('/me', authMiddleware, controller.updateMyProfile);
 router.get('/dashboard-summary', authMiddleware, async (req, res) => {
   try {
     const [balanceRows] = await require('../config/db').query(
