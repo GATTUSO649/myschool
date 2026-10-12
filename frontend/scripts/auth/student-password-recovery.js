@@ -11,6 +11,7 @@ const passwordForm = document.getElementById('studentPasswordForm');
 const admissionInput = document.getElementById('admissionNumber');
 const otpInput = document.getElementById('studentOtp');
 const statusMessage = document.getElementById('studentRecoveryStatus');
+const deliveryMessage = document.getElementById('studentOtpDeliveryMessage');
 const resendButton = document.getElementById('resendStudentOtpButton');
 const otpSection = document.getElementById('studentOtpSection');
 const passwordSection = document.getElementById('studentPasswordSection');
@@ -22,6 +23,13 @@ let expiryTimer = null;
 let otpExpiresAt = 0;
 let resendAvailableAt = 0;
 let csrfToken = '';
+
+function showDeliveryMessage(data) {
+  deliveryMessage.textContent = data.emailSent
+    ? data.message
+    : 'If the active student account is eligible, a verification code will be sent to the registered parent/guardian email. Check that inbox or contact school administration.';
+  statusMessage.textContent = '';
+}
 
 async function recoveryRequest(endpoint, payload) {
   if (!csrfToken) {
@@ -87,7 +95,7 @@ requestForm.addEventListener('submit', async (event) => {
     transactionToken = data.transactionToken;
     requestForm.hidden = true;
     otpSection.hidden = false;
-    statusMessage.textContent = data.message;
+    showDeliveryMessage(data);
     startCountdowns(data.otpExpiresInSeconds || 300, 60);
     otpInput.focus();
   } catch (error) {
@@ -103,7 +111,7 @@ resendButton.addEventListener('click', async () => {
   statusMessage.textContent = 'Requesting a new verification code...';
   try {
     const data = await recoveryRequest('resend', { transactionToken });
-    statusMessage.textContent = data.message;
+    showDeliveryMessage(data);
     otpInput.value = '';
     startCountdowns(data.otpExpiresInSeconds || 300, 60);
     otpInput.focus();
@@ -119,6 +127,7 @@ document.getElementById('backToAdmissionButton').addEventListener('click', () =>
   requestForm.hidden = false;
   transactionToken = '';
   otpInput.value = '';
+  deliveryMessage.textContent = '';
   statusMessage.textContent = '';
   window.clearInterval(resendTimer);
   window.clearInterval(expiryTimer);

@@ -203,8 +203,13 @@ async function requestStudentPasswordReset(req, res) {
     if (!delivery.delivered) {
       await query('UPDATE student_password_resets SET revoked_at = NOW() WHERE id = ? AND consumed_at IS NULL', [resetId]);
       console.error('Student parent password recovery email was not delivered:', delivery.failureReason || 'unknown delivery failure');
+      return res.json(genericResponse);
     }
-    return res.json(genericResponse);
+    return res.json({
+      ...genericResponse,
+      emailSent: true,
+      message: `Email sent to ${recoveryRecord.parent_email}.`
+    });
   } catch (error) {
     if (connection) {
       try {
@@ -283,7 +288,12 @@ async function resendStudentPasswordResetOtp(req, res) {
       console.error('Resent student parent password recovery email was not delivered:', delivery.failureReason || 'unknown delivery failure');
       return res.status(503).json({ success: false, message: 'The verification email could not be sent. Start a new recovery request or contact school administration.' });
     }
-    return res.json({ success: true, message: 'If the recovery request is still active, a new code will be sent to the registered parent/guardian email.', otpExpiresInSeconds: 300 });
+    return res.json({
+      success: true,
+      emailSent: true,
+      message: `Email sent to ${recipient}.`,
+      otpExpiresInSeconds: 300
+    });
   } catch (error) {
     if (connection) {
       try {

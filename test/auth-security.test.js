@@ -167,7 +167,7 @@ test('student recovery sends OTP only to the approved application parent email',
           student_id: 7,
           admission_number: 'CRES/001/2026',
           application_id: 19,
-          parent_email: 'guardian@example.org'
+          parent_email: 'Parent+Family@Example.org'
         }], []];
       }
       if (sql.includes('SELECT id FROM student_password_resets')) return [[], []];
@@ -191,7 +191,9 @@ test('student recovery sends OTP only to the approved application parent email',
       ip: '127.0.0.1'
     }, res);
     assert.equal(res.payload.success, true);
-    assert.equal(delivered.to, 'guardian@example.org');
+    assert.equal(delivered.to, 'Parent+Family@Example.org');
+    assert.equal(res.payload.emailSent, true);
+    assert.equal(res.payload.message, 'Email sent to Parent+Family@Example.org.');
     assert.match(delivered.otp, /^\d{6}$/);
     assert.equal(delivered.applicationId, 19);
     assert.equal(Object.hasOwn(res.payload, 'email'), false);
@@ -238,6 +240,8 @@ test('student without a registered parent email receives generic recovery guidan
     await requestStudentPasswordReset({ body: { admissionNumber: 'CRES/001/2026' }, ip: '127.0.0.1' }, res);
     assert.equal(res.payload.success, true);
     assert.match(res.payload.message, /contact school administration/i);
+    assert.equal(res.payload.emailSent, undefined);
+    assert.equal(res.payload.message.includes('guardian@example.org'), false);
     assert.equal(delivered, false);
   } finally {
     db.getPool = originalGetPool;
@@ -270,7 +274,59 @@ test('unknown admission numbers get the generic student recovery response', asyn
     await requestStudentPasswordReset({ body: { admissionNumber: 'CRES/999/2026' }, ip: '127.0.0.1' }, res);
     assert.equal(res.payload.success, true);
     assert.match(res.payload.message, /if the active student account is eligible/i);
+    assert.equal(res.payload.emailSent, undefined);
+    assert.equal(res.payload.message.includes('@'), false);
     assert.equal(delivered, false);
+  } finally {
+    db.getPool = originalGetPool;
+    emailUtils.sendStudentParentPasswordResetOtp = originalSendOtp;
+  }
+});
+
+test('student recovery resend confirms the exact application parent email', async () => {
+  const originalGetPool = db.getPool;
+  const originalSendOtp = emailUtils.sendStudentParentPasswordResetOtp;
+  let delivered;
+  const recipient = 'Parent+Family@Example.org';
+  const connection = {
+    async beginTransaction() {},
+    async execute(sql) {
+      if (sql.includes('SELECT r.*')) {
+        return [[{
+          id: 35,
+          student_active: 1,
+          student_role: 'student',
+          application_status: 'approved',
+          parent_email: recipient,
+          seconds_since_sent: 90,
+          resend_count: 0,
+          verified_at: null,
+          consumed_at: null,
+          revoked_at: null,
+          application_id: 19
+        }], []];
+      }
+      return [{ affectedRows: 1 }, []];
+    },
+    async commit() {},
+    async rollback() {},
+    release() {}
+  };
+  db.getPool = () => ({ getConnection: async () => connection });
+  emailUtils.sendStudentParentPasswordResetOtp = async (message) => {
+    delivered = message;
+    return { delivered: true };
+  };
+  const res = createResponse();
+
+  try {
+    await resendStudentPasswordResetOtp({
+      body: { transactionToken: 'd'.repeat(64) },
+      ip: '127.0.0.1'
+    }, res);
+    assert.equal(delivered.to, recipient);
+    assert.equal(res.payload.emailSent, true);
+    assert.equal(res.payload.message, `Email sent to ${recipient}.`);
   } finally {
     db.getPool = originalGetPool;
     emailUtils.sendStudentParentPasswordResetOtp = originalSendOtp;
