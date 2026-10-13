@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS students (
   admission_number VARCHAR(50) UNIQUE,
   staff_number VARCHAR(30) UNIQUE,
   password_hash VARCHAR(255),
-  role ENUM('student','lecturer','teacher','rba','admin','school_admin','super_admin','finance','accountant','ict') NOT NULL DEFAULT 'student',
+  role VARCHAR(40) NOT NULL DEFAULT 'student',
   class_name VARCHAR(40),
   curriculum_type VARCHAR(20) NULL,
   preferred_pathway VARCHAR(40) NULL,
@@ -22,6 +22,61 @@ CREATE TABLE IF NOT EXISTS students (
   last_login DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS roles (
+  role_key VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS permissions (
+  permission_key VARCHAR(100) PRIMARY KEY,
+  description VARCHAR(180) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_key VARCHAR(50) NOT NULL,
+  permission_key VARCHAR(100) NOT NULL,
+  PRIMARY KEY (role_key, permission_key),
+  CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_key) REFERENCES roles(role_key) ON DELETE CASCADE,
+  CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_key) REFERENCES permissions(permission_key) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id INT NOT NULL,
+  role_key VARCHAR(50) NOT NULL,
+  assigned_by INT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  is_primary TINYINT(1) NOT NULL DEFAULT 0,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, role_key),
+  INDEX idx_user_roles_role_active (role_key, active),
+  CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_user_roles_role FOREIGN KEY (role_key) REFERENCES roles(role_key) ON DELETE CASCADE,
+  CONSTRAINT fk_user_roles_assigner FOREIGN KEY (assigned_by) REFERENCES students(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS staff_number_sequences (
+  sequence_key VARCHAR(30) PRIMARY KEY,
+  last_number BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS staff_appointments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  staff_id INT NOT NULL,
+  staff_number VARCHAR(30) NOT NULL,
+  category VARCHAR(60) NOT NULL,
+  role_snapshot TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  appointed_by INT NULL,
+  appointed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ended_at DATETIME NULL,
+  INDEX idx_staff_appointments_staff (staff_id, appointed_at),
+  CONSTRAINT fk_staff_appointments_staff FOREIGN KEY (staff_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_staff_appointments_appointing_user FOREIGN KEY (appointed_by) REFERENCES students(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS applications (

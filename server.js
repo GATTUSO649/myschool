@@ -96,8 +96,14 @@ app.use((req, res, next) => {
   if (!req.path.endsWith('.html') || !req.path.startsWith('/ict-') || req.path === '/ict-login.html') return next();
   return authMiddleware(req, res, (error) => {
     if (error) return next(error);
-    const rawRole = String(req.user?.rawRole || '').toLowerCase();
-    if (!['ict', 'super_admin'].includes(rawRole)) return res.redirect('/ict-login.html');
+    const userRoles = new Set([
+      String(req.user?.rawRole || '').toLowerCase(),
+      ...(Array.isArray(req.user?.roleKeys) ? req.user.roleKeys : []),
+      ...(Array.isArray(req.user?.roles) ? req.user.roles : [])
+    ]);
+    if (!['ict', 'super_admin', 'ict_admin', 'system_admin', 'admin'].some((role) => userRoles.has(role))) {
+      return res.redirect('/ict-login.html');
+    }
     return next();
   });
 });
@@ -107,6 +113,7 @@ app.use('/pages', (req, res, next) => {
   const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
   return res.redirect(`/${pageName}${query}`);
 });
+app.use('/vendor/chartjs', express.static(path.join(__dirname, 'node_modules', 'chart.js', 'dist'), { index: false, maxAge: '1d' }));
 app.use(express.static(path.join(__dirname, 'frontend'), { index: false }));
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
@@ -285,6 +292,7 @@ const protectedPagePatterns = [
   '/calendar.html',
   '/clearance-request.html',
   '/revision.html',
+  '/staff-change-password.html',
   
 ];
 
@@ -358,12 +366,43 @@ const protectedPageRoleMap = {
   '/calendar.html': ['student', 'teacher', 'admin', 'parent'],
   '/clearance-request.html': ['student', 'admin'],
   '/revision.html': ['student', 'teacher', 'admin'],
+  '/staff-change-password.html': ['admin', 'finance', 'ict', 'academics', 'hod', 'teacher', 'deputy', 'registrar', 'librarian', 'discipline', 'counsellor'],
   
 };
+
+for (const [routePath, relativePath] of Object.entries(frontendPageTargets)) {
+  const normalizedRelativePath = relativePath.replace(/\\/g, '/');
+  if (!normalizedRelativePath.startsWith('pages/admin/')) continue;
+  let allowedRoles;
+  if (normalizedRelativePath.startsWith('pages/admin/super-admin/')) {
+    allowedRoles = ['admin'];
+  } else if (normalizedRelativePath.startsWith('pages/admin/academics-admin/')) {
+    allowedRoles = routePath === '/admin-stream-entry.html'
+      ? ['admin', 'academics', 'teacher']
+      : ['admin', 'academics'];
+  } else if (normalizedRelativePath.startsWith('pages/admin/finance-admin/')) {
+    allowedRoles = routePath.startsWith('/admin-finance-')
+      ? ['finance', 'system_admin']
+      : ['admin', 'finance'];
+  } else if (normalizedRelativePath.startsWith('pages/admin/departments/')) {
+    allowedRoles = ['admin'];
+  } else if (normalizedRelativePath.startsWith('pages/admin/ict-admin/')) {
+    allowedRoles = ['ict', 'admin'];
+  }
+  if (!allowedRoles) continue;
+  if (!protectedPagePatterns.includes(routePath)) protectedPagePatterns.push(routePath);
+  protectedPageRoleMap[routePath] = routePath.startsWith('/admin-finance-')
+    ? allowedRoles
+    : [...new Set([...(protectedPageRoleMap[routePath] || []), ...allowedRoles])];
+}
 
 app.get('/departments-roles.html', (req, res) => {
   const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
   res.redirect(`/department-roles.html${query}`);
+});
+
+app.get('/staff/change-password', (req, res) => {
+  res.redirect('/staff-change-password.html');
 });
 
 app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
@@ -372,8 +411,12 @@ app.get(protectedPagePatterns, authMiddleware, (req, res, next) => {
   if (!allowedRoles) {
     return res.redirect('/login.html');
   }
-  const userRole = req.user?.role;
-  if (!userRole || !allowedRoles.includes(userRole)) {
+  const userRoles = new Set([
+    req.user?.role,
+    ...(Array.isArray(req.user?.roles) ? req.user.roles : []),
+    ...(Array.isArray(req.user?.roleKeys) ? req.user.roleKeys : [])
+  ]);
+  if (!allowedRoles.some((role) => userRoles.has(role))) {
     const loginPage = pathname.startsWith('/ict-') ? '/ict-login.html' : pathname.startsWith('/admin-finance') ? '/finance-login.html' : '/login.html';
     return res.status(403).redirect(loginPage);
   }

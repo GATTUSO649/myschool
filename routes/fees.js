@@ -2,28 +2,25 @@ const express = require('express');
 const finance = require('../controllers/financeController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { documentsUpload } = require('../middleware/uploadMiddleware');
-const { authorizeFinanceRole } = require('../middleware/adminMiddleware');
+const { authorizePermission } = require('../middleware/adminMiddleware');
 
 const router = express.Router();
 
-// Public file serving for finance documents (keep before auth middleware)
-router.get('/files/:filename', finance.serveFile);
-
 router.use(authMiddleware);
-router.use(authorizeFinanceRole());
 
-router.get('/overview', finance.overview);
-router.get('/overview-charts', finance.overviewCharts);
-router.get('/balances', finance.balances);
-router.get('/statement', finance.statement);
-router.get('/fee-structure', finance.getFeeStructure);
-router.post('/charges', finance.postCharges);
-router.get('/payments', finance.payments);
-router.post('/payments', finance.recordPayment);
-router.get('/payments/:id/download', finance.downloadReceipt);
-router.get('/docs', finance.listDocs);
-router.post('/docs', documentsUpload.single('file'), finance.createDoc);
-router.delete('/docs/:id', finance.deleteDoc);
-router.post('/generate-fee-statement', finance.generateStatement);
+router.get('/files/:filename', authorizePermission('financial_reports.view'), finance.serveFile);
+router.get('/overview', authorizePermission('finance.dashboard.view'), finance.overview);
+router.get('/overview-charts', authorizePermission('financial_reports.view'), finance.overviewCharts);
+router.get('/balances', authorizePermission('financial_reports.view'), finance.balances);
+router.get('/statement', authorizePermission('statements.view'), finance.statement);
+router.get('/fee-structure', authorizePermission('fees.manage'), finance.getFeeStructure);
+router.post('/charges', authorizePermission('fees.manage'), finance.postCharges);
+router.get('/payments', authorizePermission('payments.verify'), finance.payments);
+router.post('/payments', authorizePermission('payments.record'), finance.recordPayment);
+router.get('/payments/:id/download', authorizePermission('receipts.generate'), finance.downloadReceipt);
+router.get('/docs', authorizePermission('fees.manage'), finance.listDocs);
+router.post('/docs', authorizePermission('fees.manage'), documentsUpload.single('file'), finance.createDoc);
+router.delete('/docs/:id', authorizePermission('fees.manage'), finance.deleteDoc);
+router.post('/generate-fee-statement', authorizePermission('statements.view'), finance.generateStatement);
 
 module.exports = router;

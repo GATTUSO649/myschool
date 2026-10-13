@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+const { getPool, query } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const { logActivity } = require('./logController');
 
@@ -83,11 +83,39 @@ async function assignHod(req, res) {
   const departmentId = Number(req.params.id);
   const staffId = Number(req.body?.staffId);
   if (!departmentId || !staffId) return res.status(400).json({ success: false, message: 'Department and staff member are required' });
-  const staff = await query("SELECT id FROM students WHERE id = ? AND active = 1 AND role IN ('lecturer', 'teacher') LIMIT 1", [staffId]);
+  const staff = await query(
+    `SELECT s.id
+     FROM students s
+     LEFT JOIN user_roles ur ON ur.user_id = s.id AND ur.role_key = 'teacher' AND ur.active = 1
+     WHERE s.id = ? AND s.active = 1
+       AND (ur.user_id IS NOT NULL
+         OR (LOWER(s.role) IN ('lecturer', 'teacher')
+           AND NOT EXISTS (SELECT 1 FROM user_roles any_role WHERE any_role.user_id = s.id)))
+     LIMIT 1`,
+    [staffId]
+  );
   if (!staff.length) return res.status(404).json({ success: false, message: 'Active teacher not found' });
-  const departmentRows = await query('SELECT code FROM departments WHERE id = ? LIMIT 1', [departmentId]);
-  await query('UPDATE departments SET hod_staff_id = ? WHERE id = ?', [staffId, departmentId]);
-  await query('INSERT IGNORE INTO department_staff (department_id, staff_id) VALUES (?, ?)', [departmentId, staffId]);
+  const departmentRows = await query('SELECT code FROM departments WHERE id = ? AND active = 1 LIMIT 1', [departmentId]);
+  if (!departmentRows.length) return res.status(404).json({ success: false, message: 'Active department not found' });
+  const connection = await getPool().getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute('UPDATE departments SET hod_staff_id = ? WHERE id = ?', [staffId, departmentId]);
+    await connection.execute('INSERT IGNORE INTO department_staff (department_id, staff_id) VALUES (?, ?)', [departmentId, staffId]);
+    await connection.execute(
+      `INSERT INTO user_roles (user_id, role_key, assigned_by, active, is_primary)
+       VALUES (?, 'department_head', ?, 1, 0)
+       ON DUPLICATE KEY UPDATE assigned_by = VALUES(assigned_by), active = 1,
+                               is_primary = IF(is_primary = 1, 1, 0), assigned_at = CURRENT_TIMESTAMP`,
+      [staffId, Number(req.user?.id) > 0 ? Number(req.user.id) : null]
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
   await logActivity(req.user.id, 'department_hod_assigned', `Assigned staff ${staffId} as HOD for department ${departmentRows[0]?.code || departmentId}`, req.ip);
   res.json({ success: true, message: 'HOD assigned' });
 }
@@ -140,35 +168,54 @@ async function portal(req, res) {
   const department = departments[0];
   if (!department) return res.status(404).json({ success: false, message: 'Department not found' });
 
-  const isAdmin = ['admin', 'rba'].includes(String(req.user?.rawRole || req.user?.role || '').toLowerCase()) || req.user?.role === 'admin';
+  const assignedRoles = Array.isArray(req.user?.roleKeys) ? req.user.roleKeys : [];
+  const isAdmin = req.user?.role === 'admin'
+    || assignedRoles.some((role) => ['school_admin', 'system_admin'].includes(role));
+  const isHod = Number(department.hodId) === Number(req.user.id);
   const membership = await query(
     'SELECT 1 FROM department_staff WHERE department_id = ? AND staff_id = ? LIMIT 1',
     [departmentId, req.user.id]
   );
-  if (!isAdmin && department.hodId !== req.user.id && !membership.length) {
+  if (!isAdmin && !isHod && !membership.length) {
     return res.status(403).json({ success: false, message: 'You are not assigned to this department' });
   }
 
-  const subjects = await query(
-    `SELECT id, name, code, active FROM department_subjects WHERE department_id = ? ORDER BY name`,
-    [departmentId]
-  );
+  const canViewDepartmentWide = isAdmin || isHod;
+  const subjects = canViewDepartmentWide
+    ? await query(
+      `SELECT id, name, code, active FROM department_subjects
+       WHERE department_id = ? AND active = 1 ORDER BY name`,
+      [departmentId]
+    )
+    : await query(
+      `SELECT DISTINCT sub.id, sub.name, sub.code, sub.active
+       FROM department_subjects sub
+       JOIN teacher_assignments ta ON ta.subject = sub.name AND ta.active = 1
+       WHERE sub.department_id = ? AND sub.active = 1 AND ta.teacher_id = ?
+       ORDER BY sub.name`,
+      [departmentId, req.user.id]
+    );
   const subjectNames = subjects.map((subject) => subject.name);
   const subjectPlaceholders = subjectNames.map(() => '?').join(',');
-  const assignmentFilter = subjectNames.length ? `WHERE ta.subject IN (${subjectPlaceholders}) AND ta.active = 1` : 'WHERE 1 = 0';
+  const assignmentFilter = subjectNames.length
+    ? `WHERE ta.subject IN (${subjectPlaceholders}) AND ta.active = 1${canViewDepartmentWide ? '' : ' AND ta.teacher_id = ?'}`
+    : 'WHERE 1 = 0';
+  const assignmentParams = canViewDepartmentWide ? subjectNames : [...subjectNames, req.user.id];
   const assignments = subjectNames.length ? await query(
     `SELECT DISTINCT ta.teacher_id AS teacherId, ta.class_name AS className, ta.subject, ta.academic_year AS academicYear
      FROM teacher_assignments ta ${assignmentFilter} ORDER BY ta.subject, ta.class_name`,
-    subjectNames
+    assignmentParams
   ) : [];
-  const memberTeachers = await query(
-    `SELECT DISTINCT s.id, s.name, s.staff_number AS staffNumber, s.email, s.phone, s.active
-     FROM students s
-     JOIN department_staff ds ON ds.staff_id = s.id
-     WHERE ds.department_id = ? AND s.role IN ('teacher', 'lecturer')
-     ORDER BY s.name`,
-    [departmentId]
-  );
+  const memberTeachers = canViewDepartmentWide
+    ? await query(
+      `SELECT DISTINCT s.id, s.name, s.staff_number AS staffNumber, s.email, s.phone, s.active
+       FROM students s
+       JOIN department_staff ds ON ds.staff_id = s.id
+       WHERE ds.department_id = ? AND s.active = 1 AND s.role IN ('teacher', 'lecturer')
+       ORDER BY s.name`,
+      [departmentId]
+    )
+    : [];
   const teacherIds = [...new Set([...memberTeachers.map((teacher) => teacher.id), ...assignments.map((item) => item.teacherId)])];
   const teacherPlaceholders = teacherIds.map(() => '?').join(',');
   const teachers = teacherIds.length ? await query(
@@ -181,27 +228,34 @@ async function portal(req, res) {
      LEFT JOIN students s ON s.class_name = ta.class_name AND s.role = 'student' AND s.active = 1
      ${assignmentFilter}
      GROUP BY ta.class_name ORDER BY ta.class_name`,
-    subjectNames
+    assignmentParams
   ) : [];
   const students = classes.length ? await query(
     `SELECT DISTINCT s.id, s.name, s.admission_number AS admissionNumber, s.class_name AS className, s.stream
      FROM students s JOIN teacher_assignments ta ON ta.class_name = s.class_name
      WHERE s.role = 'student' AND s.active = 1 AND ta.subject IN (${subjectPlaceholders}) AND ta.active = 1
-     ORDER BY s.class_name, s.name`, subjectNames
+       ${canViewDepartmentWide ? '' : 'AND ta.teacher_id = ?'}
+     ORDER BY s.class_name, s.name`,
+    assignmentParams
   ) : [];
   const performance = subjectNames.length ? await query(
     `SELECT r.subject, AVG(r.score) AS average, COUNT(*) AS resultCount
-     FROM results r WHERE r.subject IN (${subjectPlaceholders}) GROUP BY r.subject ORDER BY r.subject`, subjectNames
+     FROM results r
+     JOIN students s ON s.id = r.student_id AND s.active = 1
+     ${canViewDepartmentWide ? '' : 'JOIN teacher_assignments ta ON ta.subject = r.subject AND ta.class_name = s.class_name AND ta.teacher_id = ? AND ta.active = 1'}
+     WHERE r.subject IN (${subjectPlaceholders})
+     GROUP BY r.subject ORDER BY r.subject`,
+    canViewDepartmentWide ? subjectNames : [req.user.id, ...subjectNames]
   ) : [];
-  const activity = await query(
+  const activity = canViewDepartmentWide ? await query(
     `SELECT al.action, al.details, al.created_at AS createdAt, s.name AS userName
      FROM activity_logs al LEFT JOIN students s ON s.id = al.user_id
-      WHERE al.details LIKE ?
-      ORDER BY al.created_at DESC LIMIT 15`,
-     [`%${department.code}%`]
-  );
+     WHERE al.details LIKE ?
+     ORDER BY al.created_at DESC LIMIT 15`,
+    [`%${department.code}%`]
+  ) : [];
 
-  res.json({ success: true, department, isHod: department.hodId === req.user.id, subjects, teachers, assignments, classes, students, performance, activity });
+  res.json({ success: true, department, isHod, subjects, teachers, assignments, classes, students, performance, activity });
 }
 
 module.exports = { listDepartments, createDepartment, updateDepartment, listSubjects, createSubject, assignHod, createDepartmentAccount, portal };

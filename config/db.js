@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const { LEGACY_ROLE_MAP, ROLE_NAMES, ROLE_PERMISSIONS } = require('./rbac');
 require('dotenv').config();
 
 const dbHost = process.env.DB_HOST || process.env.DB_HOSTNAME || 'localhost';
@@ -66,6 +67,16 @@ async function columnExists(tableName, columnName) {
   return Number(rows[0].count) > 0;
 }
 
+async function getColumnDataType(tableName, columnName) {
+  const [rows] = await getPool().execute(
+    `SELECT DATA_TYPE AS dataType
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [database, tableName, columnName]
+  );
+  return rows[0]?.dataType || null;
+}
+
 async function addColumnIfMissing(tableName, columnName, definition) {
   if (await columnExists(tableName, columnName)) return;
   await getPool().query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`);
@@ -89,6 +100,106 @@ async function dropColumnIfExists(tableName, columnName) {
 }
 
 async function runMigrations() {
+  if ((await getColumnDataType('students', 'role')) === 'enum') {
+    await getPool().query("ALTER TABLE students MODIFY COLUMN role VARCHAR(40) NOT NULL DEFAULT 'student'");
+  }
+
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS roles (
+      role_key VARCHAR(50) PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS permissions (
+      permission_key VARCHAR(100) PRIMARY KEY,
+      description VARCHAR(180) NOT NULL
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_key VARCHAR(50) NOT NULL,
+      permission_key VARCHAR(100) NOT NULL,
+      PRIMARY KEY (role_key, permission_key),
+      CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_key) REFERENCES roles(role_key) ON DELETE CASCADE,
+      CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_key) REFERENCES permissions(permission_key) ON DELETE CASCADE
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS user_roles (
+      user_id INT NOT NULL,
+      role_key VARCHAR(50) NOT NULL,
+      assigned_by INT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      is_primary TINYINT(1) NOT NULL DEFAULT 0,
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, role_key),
+      INDEX idx_user_roles_role_active (role_key, active),
+      CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES students(id) ON DELETE CASCADE,
+      CONSTRAINT fk_user_roles_role FOREIGN KEY (role_key) REFERENCES roles(role_key) ON DELETE CASCADE,
+      CONSTRAINT fk_user_roles_assigner FOREIGN KEY (assigned_by) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+  await addColumnIfMissing('user_roles', 'is_primary', 'TINYINT(1) NOT NULL DEFAULT 0');
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS staff_number_sequences (
+      sequence_key VARCHAR(30) PRIMARY KEY,
+      last_number BIGINT UNSIGNED NOT NULL DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS staff_appointments (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      staff_id INT NOT NULL,
+      staff_number VARCHAR(30) NOT NULL,
+      category VARCHAR(60) NOT NULL,
+      role_snapshot TEXT NOT NULL,
+      start_date DATE NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'active',
+      appointed_by INT NULL,
+      appointed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      ended_at DATETIME NULL,
+      INDEX idx_staff_appointments_staff (staff_id, appointed_at),
+      CONSTRAINT fk_staff_appointments_staff FOREIGN KEY (staff_id) REFERENCES students(id) ON DELETE CASCADE,
+      CONSTRAINT fk_staff_appointments_appointing_user FOREIGN KEY (appointed_by) REFERENCES students(id) ON DELETE SET NULL
+    )
+  `);
+  for (const [roleKey, name] of Object.entries(ROLE_NAMES)) {
+    await getPool().execute('INSERT IGNORE INTO roles (role_key, name) VALUES (?, ?)', [roleKey, name]);
+  }
+  const permissionDescriptions = new Map();
+  for (const permission of Object.values(ROLE_PERMISSIONS).flat()) {
+    if (!permissionDescriptions.has(permission)) {
+      permissionDescriptions.set(permission, permission.replace(/\./g, ' '));
+    }
+  }
+  for (const [permission, description] of permissionDescriptions) {
+    await getPool().execute('INSERT IGNORE INTO permissions (permission_key, description) VALUES (?, ?)', [permission, description]);
+  }
+  for (const [roleKey, permissions] of Object.entries(ROLE_PERMISSIONS)) {
+    for (const permission of permissions) {
+      await getPool().execute(
+        'INSERT IGNORE INTO role_permissions (role_key, permission_key) VALUES (?, ?)',
+        [roleKey, permission]
+      );
+    }
+  }
+  for (const [legacyRole, roleKey] of Object.entries(LEGACY_ROLE_MAP)) {
+    await getPool().execute(
+      `INSERT IGNORE INTO user_roles (user_id, role_key, is_primary)
+       SELECT s.id, ?, IF(primary_role.user_id IS NULL, 1, 0)
+       FROM students s
+       LEFT JOIN user_roles primary_role
+         ON primary_role.user_id = s.id
+        AND primary_role.active = 1
+        AND primary_role.is_primary = 1
+       WHERE LOWER(s.role) = ?`,
+      [roleKey, legacyRole]
+    );
+  }
+
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS departments (
       id INT AUTO_INCREMENT PRIMARY KEY,

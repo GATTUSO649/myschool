@@ -129,45 +129,51 @@
 
     <main class="dashboard-main">
       <section id="dashboard" class="admin-section">
+        <p id="dashboardDataMessage" class="dashboard-data-message" role="status" aria-live="polite">Loading current school data…</p>
         <section class="stats-grid">
           <article class="stat-card accent-teal">
             <span class="stat-label">Total applications</span>
-            <strong id="totalApplications">0</strong>
+            <strong id="totalApplications">—</strong>
             <small>All submitted admissions</small>
           </article>
           <article class="stat-card accent-blue">
             <span class="stat-label">Pending applications</span>
-            <strong id="pendingApplications">0</strong>
+            <strong id="pendingApplications">—</strong>
             <small>Admissions awaiting review</small>
           </article>
           <article class="stat-card accent-green">
             <span class="stat-label">Approved applications</span>
-            <strong id="approvedApplications">0</strong>
+            <strong id="approvedApplications">—</strong>
             <small>Admissions accepted</small>
           </article>
           <article class="stat-card accent-rose">
             <span class="stat-label">Active students</span>
-            <strong id="totalStudents">0</strong>
-            <small>Registered learners</small>
+            <strong id="totalStudents">—</strong>
+            <small>Active student accounts</small>
           </article>
           <article class="stat-card accent-indigo">
             <span class="stat-label">Teachers</span>
-            <strong id="totalTeachers">0</strong>
+            <strong id="totalTeachers">—</strong>
             <small>Active teaching staff</small>
           </article>
           <article class="stat-card accent-gold">
             <span class="stat-label">Total staff</span>
-            <strong id="totalStaff">0</strong>
-            <small>Active school accounts</small>
+            <strong id="totalStaff">—</strong>
+            <small>Active staff accounts</small>
+          </article>
+          <article class="stat-card accent-teal">
+            <span class="stat-label">Departments</span>
+            <strong id="totalDepartments">—</strong>
+            <small>Active academic departments</small>
           </article>
           <article class="stat-card accent-indigo">
             <span class="stat-label">Total billed</span>
-            <strong id="totalCharged">KSh 0</strong>
-            <small>Fees issued this term</small>
+            <strong id="totalCharged">—</strong>
+            <small>Total recorded fee charges</small>
           </article>
           <article class="stat-card accent-lime">
             <span class="stat-label">Collected</span>
-            <strong id="totalPaid">KSh 0</strong>
+            <strong id="totalPaid">—</strong>
             <small>Payments received</small>
           </article>
         </section>
@@ -203,6 +209,27 @@
         <section class="section-grid analytics-grid">
           <div class="dashboard-panel analytics-panel">
             <div class="panel-header">
+              <h3>Applications by status</h3>
+              <span class="panel-pill">Submitted applications</span>
+            </div>
+            <div id="applicationStatusChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Students by curriculum</h3>
+              <span class="panel-pill">Active student accounts</span>
+            </div>
+            <div id="studentCurriculumChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Recent application volume</h3>
+              <span class="panel-pill">Last 12 months with records</span>
+            </div>
+            <div id="applicationTrendChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
               <h3>Finance overview</h3>
               <span class="panel-pill">Paid vs balance</span>
             </div>
@@ -217,10 +244,17 @@
           </div>
           <div class="dashboard-panel analytics-panel">
             <div class="panel-header">
-              <h3>Payment trend</h3>
-              <span class="panel-pill">Fee collections by form</span>
+              <h3>Fee collection by class</h3>
+              <span class="panel-pill">Recorded payments</span>
             </div>
             <div id="paymentTrendChart" class="analytics-chart-shell"></div>
+          </div>
+          <div class="dashboard-panel analytics-panel">
+            <div class="panel-header">
+              <h3>Recent activity</h3>
+              <span class="panel-pill">Latest audit entries</span>
+            </div>
+            <div id="activityFeed" class="activity-feed"></div>
           </div>
         </section>
       </section>
@@ -232,6 +266,7 @@
 
   <script src="/scripts/shared/config.js"></script>
   <script src="/scripts/auth/auth.js"></script>
+  <script src="/vendor/chartjs/chart.umd.js"></script>
   <script src="/scripts/admin/admin-dashboard.js"></script>
   <script src="/scripts/shared/shared-bindings.js"></script>
 </body>

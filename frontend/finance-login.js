@@ -30,6 +30,10 @@ if (financeLoginForm) {
       sessionStorage.setItem('adminAuthToken', data.token);
       sessionStorage.setItem('adminUser', JSON.stringify(data.student));
       sessionStorage.setItem('tokenTimestamp', String(Date.now()));
+      if (data.student?.mustChangePassword) {
+        window.location.replace('/staff/change-password');
+        return;
+      }
       const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
       const allowedRedirects = new Set(['admin-finance.html', 'admin-finance-balances.html', 'admin-finance-payments.html', 'admin-finance-receipts.html', 'admin-finance-statements.html', 'admin-finance-structure.html', 'admin-finance-upload.html']);
       window.location.replace(allowedRedirects.has(requestedRedirect) ? requestedRedirect : 'admin-finance.html');

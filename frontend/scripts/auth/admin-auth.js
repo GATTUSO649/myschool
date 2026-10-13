@@ -285,9 +285,8 @@ if (adminLoginForm) {
         
         showAlert('Admin login successful! Redirecting...', 'success');
         
-        // Redirect to admin dashboard
         setTimeout(() => {
-          window.location.href = 'admin-dashboard.html';
+          window.location.href = data.admin.mustChangePassword ? '/staff/change-password' : 'admin-dashboard.html';
         }, 1000);
       } else {
         // Record failed attempt

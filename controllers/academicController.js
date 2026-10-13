@@ -28,26 +28,40 @@ async function listCbeAssessmentStudents(req, res) {
   const role = String(req.user?.role || '').toLowerCase();
   const year = new Date().getFullYear();
   const settings = await getCbeAssessmentSettings();
-  const rows = role === 'teacher' || role === 'lecturer'
-    ? await query(
+  let rows;
+  let learningAreas = parseConfiguredOptions(settings.cbeLearningAreas);
+  if (role === 'teacher' || role === 'lecturer') {
+    const assignments = await query(
+      `SELECT DISTINCT class_name AS className, subject
+       FROM teacher_assignments
+       WHERE teacher_id = ? AND academic_year = ? AND active = 1`,
+      [req.user.id, year]
+    );
+    const assignedSubjects = new Set(assignments.map((assignment) => String(assignment.subject || '').trim().toLowerCase()));
+    learningAreas = learningAreas.filter((area) => assignedSubjects.has(String(area).trim().toLowerCase()));
+    const classes = [...new Set(assignments.map((assignment) => assignment.className).filter(Boolean))];
+    rows = classes.length && learningAreas.length
+      ? await query(
       `SELECT DISTINCT s.id, s.name, s.admission_number AS admissionNumber, s.class_name AS className
        FROM students s
-       INNER JOIN teacher_assignments ta ON ta.class_name = s.class_name
-       WHERE ta.teacher_id = ? AND ta.academic_year = ? AND ta.active = 1
+       WHERE s.class_name IN (${classes.map(() => '?').join(',')})
          AND s.role = 'student' AND s.active = 1 AND s.curriculum_type = 'CBE'
        ORDER BY s.class_name, s.name`,
-      [req.user.id, year]
+      classes
     )
-    : await query(
+      : [];
+  } else {
+    rows = await query(
       `SELECT id, name, admission_number AS admissionNumber, class_name AS className
        FROM students
        WHERE role = 'student' AND active = 1 AND curriculum_type = 'CBE'
        ORDER BY class_name, name`
     );
+  }
   res.json({
     success: true,
     students: rows,
-    learningAreas: parseConfiguredOptions(settings.cbeLearningAreas),
+    learningAreas,
     performanceDescriptors: parseConfiguredOptions(settings.cbePerformanceDescriptors)
   });
 }
@@ -65,22 +79,33 @@ async function listCbeAssessments(req, res) {
   }
 
   const students = await query(
-    `SELECT id, class_name AS className FROM students WHERE id = ? AND role = 'student' AND curriculum_type = 'CBE' LIMIT 1`,
+    `SELECT id, class_name AS className FROM students
+     WHERE id = ? AND role = 'student' AND active = 1 AND curriculum_type = 'CBE' LIMIT 1`,
     [studentId]
   );
   if (!students.length) {
     return res.json({ success: true, isCbeStudent: false, assessments: [] });
   }
   if (['teacher', 'lecturer'].includes(role)) {
-    const assignment = await query(
-      `SELECT id FROM teacher_assignments
-       WHERE teacher_id = ? AND class_name = ? AND academic_year = ? AND active = 1
-       LIMIT 1`,
-      [req.user.id, students[0].className, new Date().getFullYear()]
+    const assignmentFilter = `AND EXISTS (
+      SELECT 1 FROM teacher_assignments ta
+      WHERE ta.teacher_id = ? AND ta.class_name = ?
+        AND ta.academic_year = ca.academic_year AND ta.active = 1
+        AND LOWER(TRIM(ta.subject)) = LOWER(TRIM(ca.learning_area))
+    )`;
+    const assessments = await query(
+      `SELECT ca.id, ca.academic_year AS academicYear, ca.education_level AS educationLevel,
+              ca.learning_area AS learningArea, ca.assessment_title AS assessmentTitle,
+              ca.performance_descriptor AS performanceDescriptor, ca.evidence, ca.feedback,
+              ca.created_at AS createdAt, assessor.name AS assessedBy
+       FROM cbe_assessments ca
+       LEFT JOIN students assessor ON assessor.id = ca.assessed_by
+       WHERE ca.student_id = ? AND ca.curriculum_type = 'CBE' ${assignmentFilter}
+       ORDER BY ca.created_at DESC, ca.id DESC
+       LIMIT 200`,
+      [studentId, req.user.id, students[0].className]
     );
-    if (!assignment.length) {
-      return res.status(403).json({ success: false, message: 'CBE assessment access is limited to your assigned classes.' });
-    }
+    return res.json({ success: true, isCbeStudent: true, assessments });
   }
 
   const assessments = await query(
@@ -120,11 +145,12 @@ async function createCbeAssessment(req, res) {
     const assignment = await query(
       `SELECT id FROM teacher_assignments
        WHERE teacher_id = ? AND class_name = ? AND academic_year = ? AND active = 1
+         AND LOWER(TRIM(subject)) = LOWER(TRIM(?))
        LIMIT 1`,
-      [req.user.id, students[0].className, academicYear]
+      [req.user.id, students[0].className, academicYear, learningArea]
     );
     if (!assignment.length) {
-      return res.status(403).json({ success: false, message: 'You can only assess CBE learners in your assigned classes.' });
+      return res.status(403).json({ success: false, message: 'You can only assess learning areas assigned to you for this learner and academic year.' });
     }
   }
 
@@ -378,8 +404,9 @@ async function listEntryStudents(req, res) {
       const resultsRows = await query(
         `SELECT student_id, subject, score, grade
          FROM results
-         WHERE academic_year = ? AND term = ? AND exam_type = ? AND student_id IN (${placeholders})`,
-        [academicYear, term, examType, ...studentIds]
+         WHERE academic_year = ? AND term = ? AND exam_type = ? AND student_id IN (${placeholders})
+           ${filters.subject ? 'AND subject = ?' : ''}`,
+        [academicYear, term, examType, ...studentIds, ...(filters.subject ? [filters.subject] : [])]
       );
 
       const resultsByStudent = {};
@@ -423,17 +450,6 @@ async function saveEntryResults(req, res) {
       );
       if (!assignmentRows.length) return res.status(403).json({ success: false, message: 'This class and subject are not assigned to you' });
 
-      const studentIds = entries.map((entry) => entry.student_id || entry.studentId).filter(Boolean);
-      if (studentIds.length) {
-        const placeholders = studentIds.map(() => '?').join(',');
-        const assignedStudents = await query(
-          `SELECT id FROM students WHERE id IN (${placeholders}) AND role = 'student' AND active = 1 AND class_name = ? AND COALESCE(curriculum_type, '8-4-4') = '8-4-4'`,
-          [...studentIds, className]
-        );
-        if (assignedStudents.length !== new Set(studentIds.map(Number)).size) {
-          return res.status(403).json({ success: false, message: 'One or more students are outside your assigned class' });
-        }
-      }
     }
 
     if (!subject || !entries.length) {
@@ -449,11 +465,27 @@ async function saveEntryResults(req, res) {
       }
     }
 
-    const targetStudentIds = [...new Set(entries
-      .map((entry) => Number(entry.student_id || entry.studentId || defaultStudentId))
-      .filter((studentId) => Number.isInteger(studentId) && studentId > 0))];
+    const resolvedEntries = entries.map((entry) => ({
+      ...entry,
+      resolvedStudentId: Number(entry.student_id || entry.studentId || defaultStudentId)
+    }));
+    if (resolvedEntries.some((entry) => !Number.isInteger(entry.resolvedStudentId) || entry.resolvedStudentId <= 0 || !Number.isFinite(Number(entry.score)))) {
+      return res.status(400).json({ success: false, message: 'Every mark entry must include a valid student and score' });
+    }
+    const targetStudentIds = [...new Set(resolvedEntries.map((entry) => entry.resolvedStudentId))];
     if (targetStudentIds.length) {
       const placeholders = targetStudentIds.map(() => '?').join(',');
+      if (['lecturer', 'teacher'].includes(req.user?.role)) {
+        const assignedStudents = await query(
+          `SELECT id FROM students
+           WHERE id IN (${placeholders}) AND role = 'student' AND active = 1
+             AND class_name = ? AND COALESCE(curriculum_type, '8-4-4') = '8-4-4'`,
+          [...targetStudentIds, className]
+        );
+        if (assignedStudents.length !== targetStudentIds.length) {
+          return res.status(403).json({ success: false, message: 'One or more students are outside your assigned class' });
+        }
+      }
       const compatibleStudents = await query(
         `SELECT id FROM students
          WHERE id IN (${placeholders}) AND role = 'student' AND active = 1
@@ -470,13 +502,9 @@ async function saveEntryResults(req, res) {
 
     const saved = [];
     const syncedStudents = new Set();
-    for (const entry of entries) {
-      let studentId = entry.student_id || entry.studentId || null;
-      if (!studentId) {
-        studentId = defaultStudentId;
-      }
+    for (const entry of resolvedEntries) {
+      const studentId = entry.resolvedStudentId;
       const score = Number(entry.score);
-      if (!studentId || !Number.isFinite(score)) continue;
 
       await query('DELETE FROM results WHERE student_id = ? AND subject = ? AND academic_year = ? AND term = ? AND exam_type = ?', [studentId, subject, academicYear, term, examType]);
       const result = await query(
@@ -554,15 +582,42 @@ async function academicDashboard(req, res) {
 async function teacherDashboard(req, res) {
   try {
     const year = Number(req.query.academicYear || new Date().getFullYear());
-    const assignments = await query(`SELECT class_name AS className, subject FROM teacher_assignments WHERE teacher_id = ? AND academic_year = ? AND active = 1`, [req.user.id, year]);
+    const assignments = await query(
+      `SELECT DISTINCT class_name AS className, subject
+       FROM teacher_assignments
+       WHERE teacher_id = ? AND academic_year = ? AND active = 1`,
+      [req.user.id, year]
+    );
     if (!assignments.length) return res.json({ success: true, assignments: [], performance: [], topStudents: [], students: [] });
     const classes = [...new Set(assignments.map((item) => item.className))];
-    const subjects = [...new Set(assignments.map((item) => item.subject))];
     const classPlaceholders = classes.map(() => '?').join(',');
-    const subjectPlaceholders = subjects.map(() => '?').join(',');
-    const performance = await query(`SELECT r.subject, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY r.subject ORDER BY r.subject`, [...classes, ...subjects, year]);
-    const termPerformance = await query(`SELECT r.term, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY r.term ORDER BY CASE r.term WHEN 'Term 1' THEN 1 WHEN 'Term 2' THEN 2 WHEN 'Term 3' THEN 3 ELSE 4 END`, [...classes, ...subjects, year]);
-    const topStudents = await query(`SELECT s.name, s.admission_number AS admissionNumber, s.class_name AS className, AVG(r.score) AS average FROM results r JOIN students s ON s.id = r.student_id WHERE s.class_name IN (${classPlaceholders}) AND r.subject IN (${subjectPlaceholders}) AND r.academic_year = ? GROUP BY s.id ORDER BY average DESC LIMIT 10`, [...classes, ...subjects, year]);
+    const assignedResultScope = `EXISTS (
+      SELECT 1 FROM teacher_assignments ta
+      WHERE ta.teacher_id = ? AND ta.academic_year = ? AND ta.active = 1
+        AND ta.class_name = s.class_name AND ta.subject = r.subject
+    )`;
+    const performance = await query(
+      `SELECT r.subject, AVG(r.score) AS average
+       FROM results r JOIN students s ON s.id = r.student_id
+       WHERE s.role = 'student' AND s.active = 1 AND r.academic_year = ? AND ${assignedResultScope}
+       GROUP BY r.subject ORDER BY r.subject`,
+      [year, req.user.id, year]
+    );
+    const termPerformance = await query(
+      `SELECT r.term, AVG(r.score) AS average
+       FROM results r JOIN students s ON s.id = r.student_id
+       WHERE s.role = 'student' AND s.active = 1 AND r.academic_year = ? AND ${assignedResultScope}
+       GROUP BY r.term
+       ORDER BY CASE r.term WHEN 'Term 1' THEN 1 WHEN 'Term 2' THEN 2 WHEN 'Term 3' THEN 3 ELSE 4 END`,
+      [year, req.user.id, year]
+    );
+    const topStudents = await query(
+      `SELECT s.name, s.admission_number AS admissionNumber, s.class_name AS className, AVG(r.score) AS average
+       FROM results r JOIN students s ON s.id = r.student_id
+       WHERE s.role = 'student' AND s.active = 1 AND r.academic_year = ? AND ${assignedResultScope}
+       GROUP BY s.id ORDER BY average DESC LIMIT 10`,
+      [year, req.user.id, year]
+    );
     const students = await query(`SELECT id, name, admission_number AS admissionNumber, class_name AS className, stream FROM students WHERE role = 'student' AND active = 1 AND class_name IN (${classPlaceholders}) ORDER BY class_name, name`, classes);
     res.json({ success: true, assignments, performance, termPerformance, topStudents, students });
   } catch (error) {
@@ -575,21 +630,44 @@ async function saveStudentAttendance(req, res) {
   try {
     const attendanceDate = String(req.body.attendanceDate || '').trim();
     const entries = Array.isArray(req.body.entries) ? req.body.entries : [];
-    if (!attendanceDate || !entries.length) return res.status(400).json({ success: false, message: 'Attendance date and entries are required' });
+    const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(attendanceDate);
+    const validDate = dateParts && new Date(Date.UTC(Number(dateParts[1]), Number(dateParts[2]) - 1, Number(dateParts[3])))
+      .toISOString().slice(0, 10) === attendanceDate;
+    if (!validDate || !entries.length) return res.status(400).json({ success: false, message: 'A valid attendance date and at least one entry are required' });
+    const normalizedEntries = entries.map((entry) => ({
+      studentId: Number(entry.studentId),
+      className: String(entry.className || '').trim(),
+      status: String(entry.status || '').trim().toLowerCase()
+    }));
+    if (normalizedEntries.some((entry) => !Number.isInteger(entry.studentId) || entry.studentId <= 0 || !entry.className || !['present', 'late', 'absent'].includes(entry.status))) {
+      return res.status(400).json({ success: false, message: 'Each entry must include a valid student, class, and attendance status' });
+    }
+    const entryKeys = normalizedEntries.map((entry) => `${entry.className}\u0000${entry.studentId}`);
+    if (new Set(entryKeys).size !== entryKeys.length) {
+      return res.status(400).json({ success: false, message: 'Duplicate student attendance entries are not allowed' });
+    }
     if (['lecturer', 'teacher'].includes(req.user?.role)) {
-      const classNames = [...new Set(entries.map((entry) => String(entry.className || '').trim()).filter(Boolean))];
-      if (!classNames.length) return res.status(400).json({ success: false, message: 'Assigned class is required' });
+      const classNames = [...new Set(normalizedEntries.map((entry) => entry.className))];
       const placeholders = classNames.map(() => '?').join(',');
       const assignments = await query(
-        `SELECT class_name FROM teacher_assignments WHERE teacher_id = ? AND academic_year = ? AND active = 1 AND class_name IN (${placeholders})`,
+        `SELECT DISTINCT class_name FROM teacher_assignments WHERE teacher_id = ? AND academic_year = ? AND active = 1 AND class_name IN (${placeholders})`,
         [req.user.id, new Date().getFullYear(), ...classNames]
       );
       if (assignments.length !== classNames.length) return res.status(403).json({ success: false, message: 'Attendance is limited to your assigned classes' });
     }
-    for (const entry of entries) {
+    const ownershipPredicate = normalizedEntries.map(() => '(id = ? AND class_name = ?)').join(' OR ');
+    const ownedStudents = await query(
+      `SELECT id, class_name FROM students
+       WHERE role = 'student' AND active = 1 AND (${ownershipPredicate})`,
+      normalizedEntries.flatMap((entry) => [entry.studentId, entry.className])
+    );
+    if (ownedStudents.length !== normalizedEntries.length) {
+      return res.status(403).json({ success: false, message: 'One or more students do not belong to the submitted class' });
+    }
+    for (const entry of normalizedEntries) {
       await query(`INSERT INTO student_attendance (teacher_id, student_id, class_name, attendance_date, status) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status)`, [req.user.id, entry.studentId, entry.className, attendanceDate, entry.status]);
     }
-    res.json({ success: true, message: `Saved ${entries.length} attendance records` });
+    res.json({ success: true, message: `Saved ${normalizedEntries.length} attendance records` });
   } catch (error) {
     console.error('Student attendance error:', error);
     res.status(500).json({ success: false, message: 'Could not save student attendance' });
@@ -599,8 +677,15 @@ async function saveStudentAttendance(req, res) {
 async function saveLessonAttendance(req, res) {
   try {
     const attendanceDate = String(req.body.attendanceDate || '').trim();
-    const status = String(req.body.status || 'present');
-    await query(`INSERT INTO teacher_lesson_attendance (teacher_id, attendance_date, status, notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status), notes = VALUES(notes)`, [req.user.id, attendanceDate, status, req.body.notes || null]);
+    const status = String(req.body.status || '').trim().toLowerCase();
+    const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
+    const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(attendanceDate);
+    const validDate = dateParts && new Date(Date.UTC(Number(dateParts[1]), Number(dateParts[2]) - 1, Number(dateParts[3])))
+      .toISOString().slice(0, 10) === attendanceDate;
+    if (!validDate || !['present', 'late', 'absent'].includes(status) || notes.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Provide a valid date, lesson status, and note under 2,000 characters' });
+    }
+    await query(`INSERT INTO teacher_lesson_attendance (teacher_id, attendance_date, status, notes) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status), notes = VALUES(notes)`, [req.user.id, attendanceDate, status, notes || null]);
     res.json({ success: true, message: 'Lesson attendance saved' });
   } catch (error) {
     console.error('Lesson attendance error:', error);

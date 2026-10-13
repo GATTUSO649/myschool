@@ -642,17 +642,17 @@ async function login(req, res) {
       return res.status(403).json({ success: false, message: 'Administrators must use the admin portal.' });
     }
 
-    if (student && ['admin', 'rba', 'school_admin', 'super_admin', 'superadmin', 'schooladmin'].includes(String(student.role || '').toLowerCase())) {
+    if (student && ['admin', 'rba', 'school_admin', 'super_admin', 'superadmin', 'schooladmin', 'system_admin'].includes(String(student.role || '').toLowerCase())) {
       await logActivity(student.id, 'blocked_admin_login', 'Administrator attempted student portal login', req.ip);
       return res.status(403).json({ success: false, message: 'Administrators must use the admin portal.' });
     }
 
-    if (student && ['finance', 'accountant'].includes(String(student.role || '').toLowerCase()) && requestedPortal !== 'finance') {
+    if (student && ['finance', 'finance_admin', 'accountant'].includes(String(student.role || '').toLowerCase()) && requestedPortal !== 'finance') {
       await logActivity(student.id, 'blocked_finance_login', 'Finance account attempted the general portal login', req.ip);
       return res.status(403).json({ success: false, message: 'Finance staff must use the finance portal.' });
     }
 
-    if (student && String(student.role || '').toLowerCase() === 'ict' && requestedPortal !== 'ict') {
+    if (student && ['ict', 'ict_admin'].includes(String(student.role || '').toLowerCase()) && requestedPortal !== 'ict') {
       await logActivity(student.id, 'blocked_ict_login', 'ICT account attempted the general portal login', req.ip);
       return res.status(403).json({ success: false, message: 'ICT staff must use the ICT portal.' });
     }
@@ -927,14 +927,43 @@ async function changePassword(req, res) {
       return res.status(400).json({ success: false, message: 'Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.' });
     }
 
-    const rows = await query('SELECT password_hash FROM students WHERE id = ? AND active = 1 LIMIT 1', [req.user.id]);
-    if (!rows[0] || !(await bcrypt.compare(currentPassword, rows[0].password_hash || ''))) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    const connection = await db.getPool().getConnection();
+    try {
+      await connection.beginTransaction();
+      const [rows] = await connection.execute(
+        'SELECT password_hash FROM students WHERE id = ? AND active = 1 LIMIT 1 FOR UPDATE',
+        [req.user.id]
+      );
+      if (!rows[0] || !(await bcrypt.compare(currentPassword, rows[0].password_hash || ''))) {
+        await connection.rollback();
+        return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+      }
+      await connection.execute(
+        'UPDATE students SET password_hash = ?, must_change_password = 0 WHERE id = ?',
+        [await bcrypt.hash(newPassword, 12), req.user.id]
+      );
+      if (req.authSessionJti) {
+        await connection.execute(
+          `UPDATE ict_sessions SET revoked_at = NOW()
+           WHERE user_id = ? AND jti <> ? AND revoked_at IS NULL`,
+          [req.user.id, req.authSessionJti]
+        );
+      }
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
 
-    await query('UPDATE students SET password_hash = ?, must_change_password = 0 WHERE id = ?', [await bcrypt.hash(newPassword, 12), req.user.id]);
     await logActivity(req.user.id, 'password_changed', 'User changed their password', req.ip);
-    return res.json({ success: true, message: 'Password changed successfully' });
+    return res.json({
+      success: true,
+      message: 'Password changed successfully',
+      portalRole: req.user.role,
+      roleKeys: req.user.roleKeys
+    });
   } catch (error) {
     console.error('Change password error:', error);
     return res.status(500).json({ success: false, message: 'Password change failed' });
@@ -1023,6 +1052,7 @@ async function adminLogin(req, res) {
         id: refreshed.id,
         role: normalizeRole(refreshed.role),
         username: refreshed.username,
+        jti: crypto.randomUUID(),
         isAdmin: true,
         loginTime: Date.now()
       },

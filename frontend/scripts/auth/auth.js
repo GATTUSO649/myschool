@@ -29,7 +29,6 @@ if (loginForm) {
     const identifier = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
     const rememberMe = document.getElementById('rememberMe').checked;
-    console.log('Login form values:', { identifier, password, rememberMe });
     if (!identifier || !password) {
       showAlert('Please enter both name/email and password', 'error');
       return;
@@ -93,9 +92,8 @@ if (loginForm) {
             const username = data.student && data.student.username;
             const requestedRedirect = new URLSearchParams(window.location.search).get('redirect');
             if (data.student?.mustChangePassword) {
-              const params = new URLSearchParams({ passwordChangeRequired: '1' });
-              if (requestedRedirect) params.set('redirect', requestedRedirect);
-              window.location.href = `settings.html?${params.toString()}`;
+              const studentAccount = ['student', 'parent'].includes(role);
+              window.location.href = studentAccount ? 'settings.html?passwordChangeRequired=1' : '/staff/change-password';
               return;
             }
             const allowedRedirects = new Set(['academic.html', 'teacher-portal.html', 'lecturer-dashboard.html', 'teacher.html']);

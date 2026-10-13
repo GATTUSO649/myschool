@@ -18,6 +18,7 @@ const adminState = {
     logs: []
   }
 };
+const adminCharts = new Map();
 
 const STORAGE_KEYS = {
   reviews: 'adminPortalReviews',
@@ -25,8 +26,7 @@ const STORAGE_KEYS = {
   notifications: 'adminPortalNotifications',
   payments: 'adminPortalPayments',
   academics: 'adminPortalAcademics',
-  logs: 'adminPortalLogs',
-  counts: 'adminPortalCounts'
+  logs: 'adminPortalLogs'
 };
 
 const ADMIN_MARK_SUBJECTS = [
@@ -260,37 +260,25 @@ function savePortalState() {
   writePortalStore(STORAGE_KEYS.logs, adminState.portalItems.logs);
 }
 
-function updateCounter(key, delta) {
-  const counts = JSON.parse(localStorage.getItem(STORAGE_KEYS.counts) || '{}');
-  counts[key] = (Number(counts[key]) || 0) + delta;
-  localStorage.setItem(STORAGE_KEYS.counts, JSON.stringify(counts));
-}
-
 function getStatsSnapshot() {
-  const base = adminState.stats || {};
-  const counts = JSON.parse(localStorage.getItem(STORAGE_KEYS.counts) || '{}');
-  return {
-    totalStudents: Number(base.totalStudents || 0) + Number(counts.students || 0),
-    totalClasses: Number(base.totalClasses || 0),
-    totalApplications: Number(base.applicationCounts?.pending || base.totalApplications || 0) + Number(counts.reviews || 0),
-    totalResults: Number(base.totalResults || 0) + Number(counts.results || 0),
-    applicationCounts: base.applicationCounts || { pending: 0, approved: 0, rejected: 0 }
-  };
+  return adminState.stats || { totalStudents: '—', totalApplications: '—', totalResults: '—' };
 }
 
 function renderStatsCards() {
   const stats = adminState.stats || {};
-  setText('totalStudents', Number(stats.totalStudents || 0));
-  setText('totalTeachers', Number(stats.totalTeachers || 0));
-  setText('totalStaff', Number(stats.totalStaff || 0));
-  setText('totalClasses', Number(stats.totalClasses || 0));
-  setText('totalApplications', Number(stats.totalApplications || 0));
-  setText('pendingApplications', Number(stats.applicationCounts?.pending || 0));
-  setText('approvedApplications', Number(stats.applicationCounts?.approved || 0));
-  setText('rejectedApplications', Number(stats.applicationCounts?.rejected || 0));
-  setText('totalResults', Number(stats.totalResults || 0));
-  setText('totalCharged', `KSh ${Number(stats.totalCharged || 0).toLocaleString()}`);
-  setText('totalPaid', `KSh ${Number(stats.totalPaid || 0).toLocaleString()}`);
+  const value = (count) => stats ? Number(count || 0).toLocaleString() : '—';
+  setText('totalStudents', value(stats.totalStudents));
+  setText('totalTeachers', value(stats.totalTeachers));
+  setText('totalStaff', value(stats.totalStaff));
+  setText('totalDepartments', value(stats.totalDepartments));
+  setText('totalClasses', value(stats.totalClasses));
+  setText('totalApplications', value(stats.totalApplications));
+  setText('pendingApplications', value(stats.applicationCounts?.pending));
+  setText('approvedApplications', value(stats.applicationCounts?.approved));
+  setText('rejectedApplications', value(stats.applicationCounts?.rejected));
+  setText('totalResults', value(stats.totalResults));
+  setText('totalCharged', stats ? money(stats.totalCharged) : '—');
+  setText('totalPaid', stats ? money(stats.totalPaid) : '—');
 }
 
 function renderApplicationSummary() {
@@ -309,158 +297,135 @@ function renderApplicationSummary() {
   }
 }
 
-function renderFinanceOverviewChart() {
-  const chart = document.getElementById('financeOverviewChart');
-  if (!chart) return;
-
-  const billed = Number(adminState.stats?.totalCharged || adminState.stats?.totalBilled || 0);
-  const paid = Number(adminState.stats?.totalPaid || 0);
-  const balance = Math.max(billed - paid, 0);
-
-  if (!billed && !paid && !balance) {
-    chart.innerHTML = '<div class="empty-chart">No finance data is available yet.</div>';
+function renderChart(containerId, config, hasData, emptyMessage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  adminCharts.get(containerId)?.destroy();
+  adminCharts.delete(containerId);
+  if (!hasData) {
+    container.innerHTML = `<div class="chart-empty-state">${escapeHtml(emptyMessage)}</div>`;
+    return;
+  }
+  if (typeof Chart !== 'function') {
+    container.innerHTML = '<div class="chart-error-state">The chart component is unavailable. Reload the page or contact support.</div>';
+    console.error('Chart.js is not available on the administrator dashboard.');
     return;
   }
 
-  const total = billed || paid || balance || 1;
-  const paidPercent = Math.round((paid / total) * 100);
-  const balancePercent = Math.round((balance / total) * 100);
-  // Render a small shaded area chart representing paid vs balance using Chart.js
-  chart.innerHTML = `<div class="finance-overview-card"><canvas id="financeOverviewCanvas" style="width:100%;height:160px"></canvas></div>`;
+  container.innerHTML = '<div class="admin-chart-canvas"><canvas role="img" aria-label="Administrator dashboard chart"></canvas></div>';
   try {
-    const canvas = chart.querySelector('#financeOverviewCanvas');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (chart._chartInstance) chart._chartInstance.destroy();
-      chart._chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['',''],
-          datasets: [{
-            label: 'Paid %',
-            data: [0, paidPercent],
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37,99,235,0.18)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 6,
-            pointBackgroundColor: '#2563eb',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2
-          }]
+    adminCharts.set(containerId, new Chart(container.querySelector('canvas'), {
+      ...config,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 18 } },
+          tooltip: { enabled: true },
+          ...config.options?.plugins
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { display: false },
-            y: { display: false, min: 0, max: 100 }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.parsed.y}%`
-              }
-            }
-          }
-        }
-      });
-    }
-  } catch (e) {
-    // Fallback to previous legend view if Chart.js isn't available
-    chart.innerHTML = `
-      <div class="finance-overview-card">
-        <div class="finance-overview-legend">
-          <div class="finance-legend-row"><span><i class="legend-dot paid"></i> Paid</span><strong>${money(paid)}</strong></div>
-          <div class="finance-legend-row"><span><i class="legend-dot balance"></i> Balance</span><strong>${money(balance)}</strong></div>
-          <div class="finance-legend-row"><span><i class="legend-dot pending"></i> Total billed</span><strong>${money(billed)}</strong></div>
-        </div>
-      </div>
-    `;
+        ...config.options
+      }
+    }));
+  } catch (error) {
+    console.error(`Could not render dashboard chart ${containerId}:`, error);
+    container.innerHTML = '<div class="chart-error-state">This chart could not be displayed. Please reload the page.</div>';
   }
+}
+
+function renderApplicationStatusChart() {
+  const counts = adminState.stats?.applicationCounts;
+  const values = counts ? [counts.pending, counts.approved, counts.rejected].map(Number) : [];
+  renderChart('applicationStatusChart', {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Approved', 'Rejected'],
+      datasets: [{ data: values, backgroundColor: ['#d97706', '#15803d', '#b42318'], borderWidth: 0 }]
+    }
+  }, values.some((value) => value > 0), 'Application status records are not available yet.');
+}
+
+function renderStudentCurriculumChart() {
+  const summary = adminState.stats?.studentsByCurriculum || [];
+  renderChart('studentCurriculumChart', {
+    type: 'doughnut',
+    data: {
+      labels: summary.map((item) => item.curriculum),
+      datasets: [{ data: summary.map((item) => Number(item.count)), backgroundColor: ['#0f4c81', '#15803d', '#94a3b8'], borderWidth: 0 }]
+    }
+  }, summary.some((item) => Number(item.count) > 0), 'Curriculum records are not available yet.');
+}
+
+function renderDashboardChart() {
+  renderApplicationStatusChart();
+  renderStudentCurriculumChart();
+  renderApplicationTrendChart();
+}
+
+function renderApplicationTrendChart() {
+  const summary = adminState.stats?.applicationTrend || [];
+  renderChart('applicationTrendChart', {
+    type: 'line',
+    data: {
+      labels: summary.map((item) => item.month),
+      datasets: [{
+        label: 'Applications',
+        data: summary.map((item) => Number(item.count)),
+        borderColor: '#0f4c81',
+        backgroundColor: 'rgba(15, 76, 129, 0.12)',
+        fill: true,
+        tension: 0.25
+      }]
+    },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  }, summary.length > 0, 'No application history is available for the last 12 months.');
+}
+
+function renderFinanceOverviewChart() {
+  const billed = Number(adminState.stats?.totalCharged || 0);
+  const paid = Number(adminState.stats?.totalPaid || 0);
+  const outstanding = Math.max(billed - paid, 0);
+  const values = [paid, outstanding];
+  renderChart('financeOverviewChart', {
+    type: 'bar',
+    data: {
+      labels: ['Payments received', 'Outstanding charges'],
+      datasets: [{ label: 'KSh', data: values, backgroundColor: ['#15803d', '#d97706'], borderRadius: 6 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { tooltip: { callbacks: { label: (context) => money(context.parsed.x) } } },
+      scales: { x: { beginAtZero: true, ticks: { callback: (value) => money(value) } } }
+    }
+  }, billed > 0 || paid > 0, 'No fee charges or payments are recorded yet.');
 }
 
 function renderAcademicPerformanceChart() {
-  const chart = document.getElementById('academicPerformanceChart');
-  if (!chart) return;
-
   const summary = adminState.stats?.formAverages || [];
-  if (!summary.length) {
-    chart.innerHTML = '<div class="empty-chart">Academic results are not available yet.</div>';
-    return;
-  }
-
-  const maxValue = Math.max(...summary.map((item) => Number(item.average || 0)), 1);
-  chart.innerHTML = `
-    <div class="academic-bar-list">
-      ${summary.map((item) => {
-        const average = Number(item.average || 0);
-        const width = Math.max(6, Math.round((average / maxValue) * 100));
-        return `
-          <div class="academic-bar-row">
-            <div class="academic-bar-label">${escapeHtml(item.className || 'Class')}</div>
-            <div class="academic-bar-track" aria-label="${escapeHtml(item.className || 'Class')} average">
-              <div class="academic-bar-fill" style="width:${width}%"></div>
-            </div>
-            <div class="academic-bar-value">${average.toFixed(1)}%</div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+  renderChart('academicPerformanceChart', {
+    type: 'bar',
+    data: {
+      labels: summary.map((item) => item.className),
+      datasets: [{ label: 'Average score', data: summary.map((item) => Number(item.average)), backgroundColor: '#0f4c81', borderRadius: 6 }]
+    },
+    options: { scales: { y: { beginAtZero: true } } }
+  }, summary.length > 0, 'Academic result records are not available yet.');
 }
 
 function renderFinanceTrendChart() {
-  const chart = document.getElementById('paymentTrendChart');
-  if (!chart) return;
-
   const summary = adminState.stats?.formPaymentSummary || [];
-  if (!summary.length) {
-    chart.innerHTML = '<div class="empty-chart">Payment trend data is not available yet.</div>';
-    return;
-  }
-
-  const cleaned = summary.map((item) => ({
-    label: item.className || 'Class',
-    value: Number(item.paidAmount || 0)
-  }));
-  const maxValue = Math.max(...cleaned.map((item) => item.value), 1);
-  const width = 420;
-  const height = 200;
-  const margin = 28;
-  const points = cleaned.map((item, index) => {
-    const x = margin + ((width - margin * 2) / Math.max(cleaned.length - 1, 1)) * index;
-    const y = height - margin - ((height - margin * 2) * item.value / maxValue);
-    return { ...item, x, y };
-  });
-
-  const polyline = points.map((item) => `${item.x},${item.y}`).join(' ');
-  const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(' ') + ` ${points[points.length - 1].x},${height - margin} ${points[0].x},${height - margin}`;
-
-  chart.innerHTML = `
-    <div class="line-chart-shell">
-      <svg viewBox="0 0 ${width} ${height}" class="line-chart-svg" role="img" aria-label="Payment trend by form">
-        <defs>
-          <linearGradient id="trendGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.35" />
-            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <polygon points="${polygonPoints}" fill="url(#trendGradient)" opacity="0.75"></polygon>
-        <polyline points="${polyline}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-        ${points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#fff" stroke="#2563eb" stroke-width="3"></circle>`).join('')}
-        ${Array.from({ length: 4 }, (_, idx) => {
-          const y = margin + ((height - margin * 2) / 3) * idx;
-          const value = Math.round(maxValue - (maxValue / 3) * idx);
-          return `<line x1="${margin}" y1="${y}" x2="${width - margin}" y2="${y}" stroke="rgba(15, 23, 42, 0.08)" stroke-dasharray="3 6"></line><text x="${margin - 10}" y="${y + 4}" fill="#64748b" font-size="10" text-anchor="end">${money(value)}</text>`;
-        }).join('')}
-      </svg>
-      <div class="line-chart-labels">
-        ${points.map((point) => `<div class="line-chart-label">${escapeHtml(point.label)}</div>`).join('')}
-      </div>
-    </div>
-  `;
+  renderChart('paymentTrendChart', {
+    type: 'bar',
+    data: {
+      labels: summary.map((item) => item.className),
+      datasets: [{ label: 'Payments received', data: summary.map((item) => Number(item.paidAmount)), backgroundColor: '#15803d', borderRadius: 6 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { tooltip: { callbacks: { label: (context) => money(context.parsed.x) } } },
+      scales: { x: { beginAtZero: true, ticks: { callback: (value) => money(value) } } }
+    }
+  }, summary.some((item) => Number(item.paidAmount) > 0), 'No payment records are available by class.');
 }
 
 async function loadAcademicEntryStudents() {
@@ -829,21 +794,18 @@ function openStatement(studentId) {
 function renderActivityFeed() {
   const feed = document.getElementById('activityFeed');
   if (!feed) return;
-  const combined = [
-    ...adminState.portalItems.reviews.slice(-2).map((item) => ({ label: 'Review', detail: `${item.name} • ${item.status}` })),
-    ...adminState.portalItems.payments.slice(-2).map((item) => ({ label: 'Payment', detail: `${item.student} • ${item.amount}` })),
-    ...adminState.portalItems.academics.slice(-2).map((item) => ({ label: 'Academic', detail: item.title }))
-  ].slice(0, 4);
+  const activity = adminState.stats?.recentActivity || [];
 
-  if (!combined.length) {
-    feed.innerHTML = '<div class="mini-card"><strong></strong><span></span></div>';
+  if (!activity.length) {
+    feed.innerHTML = '<div class="empty-chart">No activity has been recorded yet.</div>';
     return;
   }
 
-  feed.innerHTML = combined.map((item) => `
+  feed.innerHTML = activity.map((item) => `
     <div class="mini-card">
-      <strong>${item.label}</strong>
-      <span>${item.detail}</span>
+      <strong>${escapeHtml(item.action || 'Activity')}</strong>
+      <span>${escapeHtml(item.details || '')}</span>
+      <small>${escapeHtml(item.actorName || 'System')} · ${escapeHtml(item.createdAt || '')}</small>
     </div>
   `).join('');
 }
@@ -851,44 +813,80 @@ function renderActivityFeed() {
 async function loadAdminData() {
   if (!checkAuth()) return;
 
-  loadPortalState();
   const student = getStudentInfo() || {};
   setText('adminName', student.name || 'Administrator');
   setText('adminNamePill', student.name || 'Administrator');
   setText('adminSummary', `${student.username || 'admin'} • Secure administration controls`);
+  const dataMessage = document.getElementById('dashboardDataMessage');
+  if (dataMessage) dataMessage.textContent = 'Loading current school data…';
 
   try {
-    const [statsRes, studentsRes] = await Promise.all([
+    const [statsResult, studentsResult] = await Promise.allSettled([
       fetchWithAuth('/admin/stats'),
       fetchWithAuth('/admin/students')
     ]);
 
-    if (statsRes.ok) {
-      const statsData = await statsRes.json();
-      const stats = statsData.stats || {};
-      adminState.stats = stats;
-      adminState.formPaymentSummary = stats.formPaymentSummary || [];
+    const errors = [];
+    if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
+      try {
+        const statsData = await statsResult.value.json();
+        if (!statsData.success || !statsData.stats) throw new Error(statsData.message || 'Dashboard data is unavailable.');
+        adminState.stats = statsData.stats;
+        adminState.formPaymentSummary = statsData.stats.formPaymentSummary || [];
+      } catch (error) {
+        adminState.stats = null;
+        errors.push(error.message || 'Dashboard data is unavailable.');
+      }
+    } else {
+      adminState.stats = null;
+      errors.push(statsResult.status === 'rejected'
+        ? (statsResult.reason?.message || 'Dashboard data could not be reached.')
+        : 'Dashboard data could not be loaded.');
+    }
+
+    if (adminState.stats) {
       renderStatsCards();
+      renderApplicationStatusChart();
+      renderStudentCurriculumChart();
+      renderApplicationTrendChart();
       renderFinanceOverviewChart();
       renderAcademicPerformanceChart();
       renderFinanceTrendChart();
       renderApplicationSummary();
+    } else {
+      renderStatsCards();
+      ['applicationStatusChart', 'studentCurriculumChart', 'applicationTrendChart', 'financeOverviewChart', 'academicPerformanceChart', 'paymentTrendChart']
+        .forEach((id) => {
+          const chart = document.getElementById(id);
+          if (chart) chart.innerHTML = '<div class="chart-error-state">Dashboard data could not be loaded.</div>';
+        });
     }
 
-    if (studentsRes.ok) {
-      const studentsData = await studentsRes.json();
-      adminState.students = studentsData.students || [];
-      renderStudents();
-      renderAcademicsPage();
+    if (studentsResult.status === 'fulfilled' && studentsResult.value.ok) {
+      try {
+        const studentsData = await studentsResult.value.json();
+        if (!studentsData.success || !Array.isArray(studentsData.students)) throw new Error(studentsData.message || 'Student data could not be loaded.');
+        adminState.students = studentsData.students;
+        renderStudents();
+        renderAcademicsPage();
+      } catch (error) {
+        errors.push(error.message || 'Student data could not be loaded.');
+        const body = document.getElementById('studentsTableBody');
+        if (body) body.innerHTML = '<tr><td colspan="9">Student records could not be loaded.</td></tr>';
+      }
+    } else {
+      errors.push(studentsResult.status === 'rejected'
+        ? (studentsResult.reason?.message || 'Student data could not be reached.')
+        : 'Student data could not be loaded.');
+      const body = document.getElementById('studentsTableBody');
+      if (body) body.innerHTML = '<tr><td colspan="9">Student records could not be loaded.</td></tr>';
     }
+    renderActivityFeed();
+    if (dataMessage) dataMessage.textContent = errors.join(' ');
   } catch (error) {
     console.error('Admin portal load error:', error);
-    renderStatsCards();
-    renderDashboardChart();
+    if (dataMessage) dataMessage.textContent = 'School data could not be loaded. Please reload the page.';
   }
-
-  renderFinanceOverviewChart();
-  renderAcademicPerformanceChart();
 }
 
 function renderStudents() {
@@ -1376,7 +1374,6 @@ async function handleButtonAction(action) {
       onSubmit: (data) => {
         adminState.portalItems.reviews.push({ ...data, createdAt: new Date().toLocaleString() });
         savePortalState();
-        updateCounter('reviews', 1);
         renderStatsCards();
         renderDashboardChart();
         renderActivityFeed();
@@ -1412,7 +1409,6 @@ async function handleButtonAction(action) {
       onSubmit: (data) => {
         adminState.portalItems.academics.push({ ...data, createdAt: new Date().toLocaleString() });
         savePortalState();
-        updateCounter('results', 1);
         renderStatsCards();
         renderDashboardChart();
         renderActivityFeed();
@@ -2135,7 +2131,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await response.json();
       if (response.ok) {
-        updateCounter('students', 1);
         showAlert(data.message || 'Student created successfully', 'success');
         form.reset();
         refreshStudentSubjectField();

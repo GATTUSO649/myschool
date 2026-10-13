@@ -17,6 +17,10 @@ document.getElementById('ictLoginForm')?.addEventListener('submit', async (event
     const rawRole = String(data.student?.rawRole || '').toLowerCase();
     if (String(data.student?.role || '').toLowerCase() !== 'ict' && rawRole !== 'super_admin') throw new Error('This account is not assigned to the ICT portal.');
     sessionStorage.setItem('authToken', data.token); sessionStorage.setItem('student', JSON.stringify(data.student)); sessionStorage.setItem('authSessionExpiresAt', String(Date.now() + 10 * 60 * 1000));
+    if (data.student?.mustChangePassword) {
+      window.location.replace('/staff/change-password');
+      return;
+    }
     window.location.replace('ict-portal.html');
   } catch (error) { status.textContent = error.message || 'Unable to sign in'; document.getElementById('ictPassword').value = ''; }
   finally { button.disabled = false; button.textContent = 'Sign in'; }

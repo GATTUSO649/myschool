@@ -20,14 +20,100 @@ const EDITABLE_TABLES = new Set([
 
 async function getStats(req, res) {
   try {
-    const studentsRows = await query('SELECT COUNT(*) AS count FROM students WHERE active = 1');
-    const teachersRows = await query("SELECT COUNT(*) AS count FROM students WHERE active = 1 AND role IN ('lecturer', 'teacher')");
-    const staffRows = await query("SELECT COUNT(*) AS count FROM students WHERE active = 1 AND role NOT IN ('student', 'parent')");
+    const studentsRows = await query("SELECT COUNT(*) AS count FROM students WHERE active = 1 AND role = 'student'");
+    const teachersRows = await query(`
+      SELECT COUNT(DISTINCT s.id) AS count
+      FROM students s
+      LEFT JOIN user_roles ur ON ur.user_id = s.id AND ur.active = 1
+      WHERE s.active = 1
+        AND (ur.role_key = 'teacher'
+          OR (ur.user_id IS NULL AND LOWER(s.role) IN ('lecturer', 'teacher')))
+    `);
+    const staffRows = await query(`
+      SELECT COUNT(DISTINCT s.id) AS count
+      FROM students s
+      LEFT JOIN user_roles ur ON ur.user_id = s.id AND ur.active = 1
+      WHERE s.active = 1
+        AND ((ur.user_id IS NOT NULL AND ur.role_key NOT IN ('student', 'parent'))
+          OR (ur.user_id IS NULL AND LOWER(s.role) NOT IN ('student', 'parent')))
+    `);
     const classesRows = await query('SELECT COUNT(*) AS count FROM classes WHERE active = 1');
+    const departmentsRows = await query('SELECT COUNT(*) AS count FROM departments WHERE active = 1');
     const applicationsRows = await query('SELECT COUNT(*) AS count FROM applications');
     const pendingAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'pending'");
     const approvedAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'approved'");
     const rejectedAppsRows = await query("SELECT COUNT(*) AS count FROM applications WHERE status = 'rejected'");
+    const curriculumRows = await query(`
+      SELECT CASE
+          WHEN UPPER(TRIM(curriculum_type)) = 'CBE' THEN 'CBE'
+          WHEN UPPER(REPLACE(TRIM(curriculum_type), ' ', '')) IN ('8-4-4', '844') THEN '8-4-4'
+          ELSE 'Unclassified'
+        END AS curriculum,
+        COUNT(*) AS count
+      FROM students
+      WHERE active = 1 AND role = 'student'
+      GROUP BY curriculum
+      ORDER BY curriculum
+    `);
+    const applicationTrendRows = await query(`
+      SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS count
+      FROM applications
+      WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 11 MONTH)
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      ORDER BY month
+    `);
+    const staffRoleRows = await query(`
+      SELECT role, COUNT(DISTINCT user_id) AS count
+      FROM (
+        SELECT ur.user_id, ur.role_key AS role
+        FROM user_roles ur
+        JOIN students s ON s.id = ur.user_id AND s.active = 1
+        WHERE ur.active = 1 AND ur.role_key NOT IN ('student', 'parent')
+        UNION ALL
+        SELECT s.id AS user_id,
+          CASE LOWER(s.role)
+            WHEN 'admin' THEN 'school_admin'
+            WHEN 'rba' THEN 'school_admin'
+            WHEN 'super_admin' THEN 'system_admin'
+            WHEN 'finance' THEN 'finance_admin'
+            WHEN 'accountant' THEN 'finance_admin'
+            WHEN 'ict' THEN 'ict_admin'
+            WHEN 'lecturer' THEN 'teacher'
+            ELSE LOWER(s.role)
+          END AS role
+        FROM students s
+        WHERE s.active = 1 AND LOWER(s.role) NOT IN ('student', 'parent')
+          AND NOT EXISTS (
+            SELECT 1 FROM user_roles active_role
+            WHERE active_role.user_id = s.id AND active_role.active = 1
+          )
+      ) staff_roles
+      GROUP BY role
+      ORDER BY role
+    `);
+    const departmentRows = await query(`
+      SELECT d.name AS department, COUNT(DISTINCT s.id) AS count
+      FROM departments d
+      LEFT JOIN department_staff ds ON ds.department_id = d.id
+      LEFT JOIN students s ON s.id = ds.staff_id AND s.active = 1
+      WHERE d.active = 1
+      GROUP BY d.id, d.name
+      ORDER BY d.name
+    `);
+    const monthlyPaymentRows = await query(`
+      SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, SUM(amount) AS amount
+      FROM fee_payments
+      WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 11 MONTH)
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      ORDER BY month
+    `);
+    const recentActivityRows = await query(`
+      SELECT al.action, al.details, al.created_at AS createdAt, s.name AS actorName
+      FROM activity_logs al
+      LEFT JOIN students s ON s.id = al.user_id
+      ORDER BY al.created_at DESC
+      LIMIT 6
+    `);
     const resultsRows = await query('SELECT COUNT(*) AS count FROM results');
     const chargedRows = await query('SELECT COALESCE(SUM(amount), 0) AS totalCharged FROM fee_charges');
     const paidRows = await query('SELECT COALESCE(SUM(amount), 0) AS totalPaid FROM fee_payments');
@@ -74,6 +160,7 @@ async function getStats(req, res) {
         totalTeachers: Number(teachersRows[0]?.count || 0),
         totalStaff: Number(staffRows[0]?.count || 0),
         totalClasses: Number(classesRows[0]?.count || 0),
+        totalDepartments: Number(departmentsRows[0]?.count || 0),
         totalApplications: Number(applicationsRows[0]?.count || 0),
         totalResults: Number(resultsRows[0]?.count || 0),
         totalCharged: Number(chargedRows[0]?.totalCharged || 0),
@@ -83,6 +170,27 @@ async function getStats(req, res) {
           approved: Number(approvedAppsRows[0]?.count || 0),
           rejected: Number(rejectedAppsRows[0]?.count || 0)
         },
+        studentsByCurriculum: curriculumRows.map((row) => ({
+          curriculum: row.curriculum,
+          count: Number(row.count || 0)
+        })),
+        applicationTrend: applicationTrendRows.map((row) => ({
+          month: row.month,
+          count: Number(row.count || 0)
+        })),
+        staffRoleDistribution: staffRoleRows.map((row) => ({
+          role: row.role,
+          count: Number(row.count || 0)
+        })),
+        departmentDistribution: departmentRows.map((row) => ({
+          department: row.department,
+          count: Number(row.count || 0)
+        })),
+        monthlyPayments: monthlyPaymentRows.map((row) => ({
+          month: row.month,
+          amount: Number(row.amount || 0)
+        })),
+        recentActivity: recentActivityRows,
         formPaymentSummary,
         formAverages
       }

@@ -31,7 +31,7 @@
       sessionStorage.setItem('departmentId', String(data.department.id));
       sessionStorage.setItem('department', JSON.stringify(data.department));
       sessionStorage.setItem('authSessionExpiresAt', String(Date.now() + 30 * 60 * 1000));
-      window.location.href = data.student.mustChangePassword ? 'settings.html' : `department-portal.html?id=${encodeURIComponent(data.department.id)}`;
+      window.location.href = data.student.mustChangePassword ? '/staff/change-password' : `department-portal.html?id=${encodeURIComponent(data.department.id)}`;
     } catch (error) {
       loginStatus.textContent = error.message || 'Department login failed.';
     } finally {
