@@ -37,7 +37,11 @@ async function renderICTPage() {
   const page = document.body.dataset.ictPage || 'ict-dashboard.html';
   const user = JSON.parse(sessionStorage.getItem('student') || 'null');
   const rawRole = String(user?.rawRole || '').toLowerCase();
-  if (String(user?.role || '').toLowerCase() !== 'ict' && rawRole !== 'super_admin') { window.location.replace('ict-login.html'); return; }
+  const roles = [user?.role, ...(Array.isArray(user?.roles) ? user.roles : []), ...(Array.isArray(user?.roleKeys) ? user.roleKeys : [])]
+    .map((role) => String(role || '').toLowerCase());
+  const isAdmin = roles.some((role) => ['admin', 'super_admin', 'superadmin', 'school_admin', 'schooladmin', 'rba'].includes(role))
+    || ['admin', 'super_admin', 'superadmin', 'school_admin', 'schooladmin', 'rba'].includes(rawRole);
+  if (!roles.includes('ict') && !isAdmin) { window.location.replace('ict-login.html'); return; }
   document.getElementById('ictStaffName').textContent = user?.name || user?.username || 'ICT staff';
   document.querySelector('.ict-sidebar').innerHTML = renderICTPageNav(page);
   document.getElementById('ictLogout').addEventListener('click', (event) => { event.preventDefault(); logout(); });

@@ -460,6 +460,13 @@
   max-width: 1680px;
 }
 
+.admin-staff-page .staff-columns {
+  display: grid;
+  grid-template-columns: minmax(310px, .85fr) minmax(0, 1.55fr);
+  align-items: start;
+  gap: 18px;
+}
+
 .admin-staff-page .staff-page-intro {
   position: relative;
   padding: clamp(22px, 3vw, 30px);
@@ -510,6 +517,85 @@
   box-shadow: 0 5px 17px rgba(17, 44, 65, .055);
 }
 
+.admin-staff-page .staff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  white-space: normal;
+}
+
+.admin-staff-page .staff-actions button {
+  min-height: 35px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: .75rem;
+  font-weight: 750;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.admin-staff-page #createStaffButton,
+.admin-staff-page #saveRolesButton {
+  border-color: #17643c;
+  background: #176f43;
+  color: #fff;
+}
+
+.admin-staff-page #createStaffButton:hover,
+.admin-staff-page #saveRolesButton:hover {
+  background: #105633;
+  transform: translateY(-1px);
+}
+
+.admin-staff-page #refreshStaff {
+  min-height: 38px;
+  border-color: #c8d8e6;
+  background: #eef5fb;
+  color: #285477;
+}
+
+.admin-staff-page #refreshStaff:hover {
+  border-color: #9ab8ce;
+  background: #e0edf6;
+}
+
+.admin-staff-page .staff-actions [data-edit-roles] {
+  border-color: #cdd9f4;
+  background: #f0f4ff;
+  color: #35539a;
+}
+
+.admin-staff-page .staff-actions [data-edit-roles]:hover {
+  background: #e4ebff;
+}
+
+.admin-staff-page .staff-actions [data-appointments] {
+  border-color: #d8d0ee;
+  background: #f6f2fc;
+  color: #684a91;
+}
+
+.admin-staff-page .staff-actions [data-appointments]:hover {
+  background: #eee7f8;
+}
+
+.admin-staff-page .staff-actions [data-toggle-status][data-active="true"] {
+  border-color: #f0d3ca;
+  background: #fff3ef;
+  color: #a4402c;
+}
+
+.admin-staff-page .staff-actions [data-toggle-status][data-active="false"] {
+  border-color: #cbe4d2;
+  background: #eff9f1;
+  color: #276a3f;
+}
+
+.admin-staff-page .staff-actions button:hover {
+  transform: translateY(-1px);
+}
+
 .admin-staff-page .staff-card-heading h2 {
   color: #173149;
   font-size: 1.08rem;
@@ -556,6 +642,12 @@
 
 @media (max-width: 1120px) {
   .department-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-staff-page .staff-columns {
     grid-template-columns: minmax(0, 1fr);
   }
 }

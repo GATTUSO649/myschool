@@ -2589,3 +2589,86 @@ body.admin-dashboard-page .dashboard-main table td,
 body.admin-dashboard-page .dashboard-main table th {
   overflow-wrap: anywhere;
 }
+
+body.admin-dashboard-page .student-sidebar {
+  padding: 18px 14px;
+}
+
+body.admin-dashboard-page .student-sidebar .sidebar-brand {
+  margin-bottom: 18px;
+  color: #f4f9ff;
+  font-size: .85rem;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+body.admin-dashboard-page .admin-nav-group {
+  margin: 0 0 5px;
+  padding: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+body.admin-dashboard-page .admin-nav-group > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #ccdae8;
+  cursor: pointer;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  list-style: none;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+body.admin-dashboard-page .admin-nav-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+body.admin-dashboard-page .admin-nav-group > summary::after {
+  content: "+";
+  color: #a9c8d2;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+body.admin-dashboard-page .admin-nav-group[open] > summary::after {
+  content: "\2212";
+}
+
+body.admin-dashboard-page .admin-nav-group > summary:hover,
+body.admin-dashboard-page .admin-nav-group > summary:focus-visible {
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
+  outline: none;
+}
+
+body.admin-dashboard-page .admin-nav-group > .sidebar-link {
+  margin: 0 0 3px;
+  padding: 9px 10px 9px 14px;
+  border-radius: 8px;
+  color: #d9e6ef;
+  font-size: .8rem;
+  line-height: 1.25;
+}
+
+body.admin-dashboard-page .admin-nav-group > .sidebar-link:hover,
+body.admin-dashboard-page .admin-nav-group > .sidebar-link.active {
+  border-color: rgba(128, 218, 156, .24);
+  background: rgba(19, 129, 60, .3);
+  color: #fff;
+}
+
+body.admin-dashboard-page .admin-nav-logout {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+body.admin-dashboard-page .admin-nav-logout .sidebar-link {
+  color: #f2caca;
+}

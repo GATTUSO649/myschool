@@ -48,7 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof checkAuth === 'function' && !checkAuth()) return;
   const user = JSON.parse(sessionStorage.getItem('student') || 'null');
   const rawRole = String(user?.rawRole || '').toLowerCase();
-  if (String(user?.role || '').toLowerCase() !== 'ict' && rawRole !== 'super_admin') { window.location.replace('staff-portals.html'); return; }
+  const roles = [user?.role, ...(Array.isArray(user?.roles) ? user.roles : []), ...(Array.isArray(user?.roleKeys) ? user.roleKeys : [])]
+    .map((role) => String(role || '').toLowerCase());
+  const isAdmin = roles.some((role) => ['admin', 'super_admin', 'superadmin', 'school_admin', 'schooladmin', 'rba'].includes(role))
+    || ['admin', 'super_admin', 'superadmin', 'school_admin', 'schooladmin', 'rba'].includes(rawRole);
+  if (!roles.includes('ict') && !isAdmin) { window.location.replace('staff-portals.html'); return; }
   const staffName = document.getElementById('ictStaffName');
   const workingArea = document.getElementById('ictWorkingArea');
   if (staffName) staffName.textContent = user.name || user.username || 'ICT staff';
