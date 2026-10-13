@@ -83,33 +83,62 @@ function normalizeAdminSidebar() {
   const page = currentAdminPage();
   const params = new URLSearchParams(window.location.search);
   const activeForm = params.get('form');
-  const formLinks = [1, 2, 3, 4].map((form) => {
-    const active = ['admin-management.html', 'admin-transcripts.html'].includes(page) && activeForm === String(form) ? ' active' : '';
-    return `<a class="sidebar-link${active}" href="admin-management.html?form=${form}">Form ${form}</a>`;
-  }).join('');
+  const groups = [
+    ['Main', [['admin-dashboard.html', 'Dashboard', page === 'admin-dashboard.html']]],
+    ['Students', [
+      ...[1, 2, 3, 4].map((form) => [
+        `admin-management.html?form=${form}`,
+        `Form ${form}`,
+        page === 'admin-management.html' && activeForm === String(form)
+      ]),
+      ['admin-students.html', 'All Students', page === 'admin-students.html'],
+      ['admin-applications.html', 'Applications', page === 'admin-applications.html'],
+      ['admin-transcripts.html', 'Transcripts', page === 'admin-transcripts.html']
+    ]],
+    ['School', [
+      ['admin-departments.html', 'Departments', page === 'admin-departments.html'],
+      ['department-roles.html', 'Department roles', page === 'department-roles.html'],
+      ['department-portal.html', 'Department portal', page === 'department-portal.html'],
+      ['admin-academics.html', 'Academics', page === 'admin-academics.html'],
+      ['admin-stream-entry.html', 'Stream entry', page === 'admin-stream-entry.html'],
+      ['admin-uploads.html', 'Uploads', page === 'admin-uploads.html']
+    ]],
+    ['Finance', [
+      ['admin-finance.html', 'Finance overview', page === 'admin-finance.html'],
+      ['admin-finance-balances.html', 'Balances', page === 'admin-finance-balances.html'],
+      ['admin-finance-payments.html', 'Payments', page === 'admin-finance-payments.html'],
+      ['admin-finance-receipts.html', 'Receipt ledger', page === 'admin-finance-receipts.html'],
+      ['admin-finance-structure.html', 'Fee structures', page === 'admin-finance-structure.html'],
+      ['admin-finance-statements.html', 'Statements', page === 'admin-finance-statements.html'],
+      ['admin-finance-upload.html', 'Finance documents', page === 'admin-finance-upload.html']
+    ]],
+    ['Administration', [
+      ['admin-roles.html', 'Roles & staff', page === 'admin-roles.html' || page === 'admin-staff.html'],
+      ['admin-announcements.html', 'Announcements', page === 'admin-announcements.html'],
+      ['admin-notifications.html', 'Notifications', page === 'admin-notifications.html'],
+      ['admin-reports.html', 'Reports', page === 'admin-reports.html'],
+      ['admin-logs.html', 'Audit logs', page === 'admin-logs.html'],
+      ['admin-database.html', 'Database', page === 'admin-database.html'],
+      ['admin-security.html', 'Security', page === 'admin-security.html'],
+      ['admin-settings.html', 'Settings', page === 'admin-settings.html']
+    ]]
+  ];
+
+  const renderLinks = (links) => links.map(([href, label, active]) => (
+    `<a class="sidebar-link${active ? ' active' : ''}" href="${href}">${label}</a>`
+  )).join('');
 
   sidebar.innerHTML = `
     <div class="sidebar-brand">Admin Control</div>
+    ${groups.map(([heading, links]) => `
+      <div class="sidebar-section">
+        <h3>${heading}</h3>
+        ${renderLinks(links)}
+      </div>
+    `).join('')}
     <div class="sidebar-section">
-      <h3>Main</h3>
-      <a class="sidebar-link${page === 'admin-dashboard.html' ? ' active' : ''}" href="admin-dashboard.html">Dashboard</a>
-    </div>
-    <div class="sidebar-section">
-      <h3>Student Management</h3>
-      ${formLinks}
-    </div>
-    <div class="sidebar-section">
-      <h3>Records</h3>
-      <a class="sidebar-link${page === 'admin-roles.html' ? ' active' : ''}" href="admin-roles.html">Roles & staff</a>
-      <a class="sidebar-link${page === 'department-roles.html' ? ' active' : ''}" href="department-roles.html">Department roles</a>
-      <a class="sidebar-link${page === 'admin-students.html' ? ' active' : ''}" href="admin-students.html">All Students</a>
-      <a class="sidebar-link${page === 'admin-applications.html' ? ' active' : ''}" href="admin-applications.html">Applications</a>
-      <a class="sidebar-link${page.startsWith('admin-finance') ? ' active' : ''}" href="admin-finance.html">Finance</a>
-      <a class="sidebar-link${page === 'admin-database.html' ? ' active' : ''}" href="admin-database.html">Database</a>
-    </div>
-    <div class="sidebar-section">
-      <h3>System</h3>
-      <a class="sidebar-link${page === 'admin-settings.html' ? ' active' : ''}" href="admin-settings.html">Settings</a>
+      <h3>Shortcuts</h3>
+      <a class="sidebar-link" href="dashboard.html">Student portal</a>
       <a class="sidebar-link" href="#" data-admin-logout>Logout</a>
     </div>
   `;
