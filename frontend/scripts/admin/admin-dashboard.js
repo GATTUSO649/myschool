@@ -83,44 +83,80 @@ function normalizeAdminSidebar() {
   const page = currentAdminPage();
   const params = new URLSearchParams(window.location.search);
   const activeForm = params.get('form');
+  const isActive = (...pages) => pages.includes(page);
   const groups = [
-    ['Main', [['admin-dashboard.html', 'Dashboard', page === 'admin-dashboard.html']]],
-    ['Students', [
-      ...[1, 2, 3, 4].map((form) => [
-        `admin-management.html?form=${form}`,
-        `Form ${form}`,
-        page === 'admin-management.html' && activeForm === String(form)
-      ]),
-      ['admin-students.html', 'All Students', page === 'admin-students.html'],
-      ['admin-applications.html', 'Applications', page === 'admin-applications.html'],
-      ['admin-transcripts.html', 'Transcripts', page === 'admin-transcripts.html']
+    ['Overview', [
+      ['/admin-dashboard.html', 'Dashboard', isActive('admin-dashboard.html')]
     ]],
-    ['School', [
-      ['admin-departments.html', 'Departments', page === 'admin-departments.html'],
-      ['department-roles.html', 'Department roles', page === 'department-roles.html'],
-      ['department-portal.html', 'Department portal', page === 'department-portal.html'],
-      ['admin-academics.html', 'Academics', page === 'admin-academics.html'],
-      ['admin-stream-entry.html', 'Stream entry', page === 'admin-stream-entry.html'],
-      ['admin-uploads.html', 'Uploads', page === 'admin-uploads.html']
+    ['Admissions & Students', [
+      ['/admin-applications.html', 'Applications', isActive('admin-applications.html')],
+      ['/admin-students.html', 'All students', isActive('admin-students.html')],
+      ...[1, 2, 3, 4].map((form) => [
+        `/admin-management.html?form=${form}`,
+        `Form ${form}`,
+        page === 'admin-management.html' && (activeForm || '1') === String(form)
+      ]),
+      ['/admin-transcripts.html', 'Transcripts', isActive('admin-transcripts.html')]
+    ]],
+    ['Academics', [
+      ['/admin-academics.html', 'Academic records', isActive('admin-academics.html')],
+      ['/admin-stream-entry.html', 'Stream entry', isActive('admin-stream-entry.html')],
+      ['/admin-uploads.html', 'Uploads & documents', isActive('admin-uploads.html')]
+    ]],
+    ['Departments', [
+      ['/admin-departments.html', 'Departments', isActive('admin-departments.html')],
+      ['/department-roles.html', 'Department roles', isActive('department-roles.html')],
+      ['/department-portal.html', 'Department portal', isActive('department-portal.html')]
     ]],
     ['Finance', [
-      ['admin-finance.html', 'Finance overview', page === 'admin-finance.html'],
-      ['admin-finance-balances.html', 'Balances', page === 'admin-finance-balances.html'],
-      ['admin-finance-payments.html', 'Payments', page === 'admin-finance-payments.html'],
-      ['admin-finance-receipts.html', 'Receipt ledger', page === 'admin-finance-receipts.html'],
-      ['admin-finance-structure.html', 'Fee structures', page === 'admin-finance-structure.html'],
-      ['admin-finance-statements.html', 'Statements', page === 'admin-finance-statements.html'],
-      ['admin-finance-upload.html', 'Finance documents', page === 'admin-finance-upload.html']
+      ['/admin-finance.html', 'Finance overview', isActive('admin-finance.html')],
+      ['/admin-finance-balances.html', 'Balances', isActive('admin-finance-balances.html')],
+      ['/admin-finance-payments.html', 'Record payment', isActive('admin-finance-payments.html')],
+      ['/admin-finance-receipts.html', 'Receipt ledger', isActive('admin-finance-receipts.html')],
+      ['/admin-finance-structure.html', 'Fee structures', isActive('admin-finance-structure.html')],
+      ['/admin-finance-statements.html', 'Statements', isActive('admin-finance-statements.html')],
+      ['/admin-finance-upload.html', 'Finance documents', isActive('admin-finance-upload.html')],
+      ['/finance.html', 'Finance portal', isActive('finance.html')],
+      ['/feestructure.html', 'Fee structure', isActive('feestructure.html')],
+      ['/feestructure_view.html', 'Fee structure details', isActive('feestructure_view.html')],
+      ['/feestatement.html', 'Fee statement', isActive('feestatement.html')],
+      ['/paymentreceipts.html', 'Payment receipts', isActive('paymentreceipts.html')],
+      ['/receipt_view.html', 'Receipt details', isActive('receipt_view.html')]
     ]],
     ['Administration', [
-      ['admin-roles.html', 'Roles & staff', page === 'admin-roles.html' || page === 'admin-staff.html'],
-      ['admin-announcements.html', 'Announcements', page === 'admin-announcements.html'],
-      ['admin-notifications.html', 'Notifications', page === 'admin-notifications.html'],
-      ['admin-reports.html', 'Reports', page === 'admin-reports.html'],
-      ['admin-logs.html', 'Audit logs', page === 'admin-logs.html'],
-      ['admin-database.html', 'Database', page === 'admin-database.html'],
-      ['admin-security.html', 'Security', page === 'admin-security.html'],
-      ['admin-settings.html', 'Settings', page === 'admin-settings.html']
+      ['/admin-roles.html', 'Roles & permissions', isActive('admin-roles.html')],
+      ['/admin-staff.html', 'Staff management', isActive('admin-staff.html')],
+      ['/admin-announcements.html', 'Announcements', isActive('admin-announcements.html')],
+      ['/admin-notifications.html', 'Notifications', isActive('admin-notifications.html')],
+      ['/admin-reports.html', 'Reports', isActive('admin-reports.html')],
+      ['/admin-logs.html', 'Audit logs', isActive('admin-logs.html')],
+      ['/admin-database.html', 'Database', isActive('admin-database.html')],
+      ['/admin-security.html', 'Security', isActive('admin-security.html')],
+      ['/admin-settings.html', 'Settings', isActive('admin-settings.html')]
+    ]],
+    ['ICT & System Operations', [
+      ['/ict-portal.html', 'ICT portal', isActive('ict-portal.html')],
+      ['/ict-dashboard.html', 'ICT dashboard', isActive('ict-dashboard.html')],
+      ['/ict-health.html', 'System health', isActive('ict-health.html')],
+      ['/ict-activity.html', 'Activity monitor', isActive('ict-activity.html')],
+      ['/ict-users.html', 'ICT users', isActive('ict-users.html')],
+      ['/ict-permissions.html', 'ICT roles & permissions', isActive('ict-permissions.html')],
+      ['/ict-sessions.html', 'Active sessions', isActive('ict-sessions.html')],
+      ['/ict-security.html', 'Security center', isActive('ict-security.html')],
+      ['/ict-audit.html', 'ICT audit logs', isActive('ict-audit.html')],
+      ['/ict-configuration.html', 'Portal configuration', isActive('ict-configuration.html')],
+      ['/ict-logs.html', 'System logs', isActive('ict-logs.html')],
+      ['/ict-integrations.html', 'API & integrations', isActive('ict-integrations.html')],
+      ['/ict-updates.html', 'System updates', isActive('ict-updates.html')],
+      ['/ict-database.html', 'ICT database', isActive('ict-database.html')],
+      ['/ict-backups.html', 'Backups & recovery', isActive('ict-backups.html')],
+      ['/ict-storage.html', 'File storage', isActive('ict-storage.html')],
+      ['/ict-email.html', 'Email & notifications', isActive('ict-email.html')],
+      ['/ict-messages.html', 'System messages', isActive('ict-messages.html')],
+      ['/ict-maintenance.html', 'Maintenance mode', isActive('ict-maintenance.html')],
+      ['/ict-tickets.html', 'Support tickets', isActive('ict-tickets.html')],
+      ['/ict-history.html', 'Maintenance history', isActive('ict-history.html')],
+      ['/ict-profile.html', 'ICT profile', isActive('ict-profile.html')]
     ]]
   ];
 
@@ -137,8 +173,8 @@ function normalizeAdminSidebar() {
       </div>
     `).join('')}
     <div class="sidebar-section">
-      <h3>Shortcuts</h3>
-      <a class="sidebar-link" href="dashboard.html">Student portal</a>
+      <h3>Account</h3>
+      <a class="sidebar-link" href="/dashboard.html">Student portal</a>
       <a class="sidebar-link" href="#" data-admin-logout>Logout</a>
     </div>
   `;
