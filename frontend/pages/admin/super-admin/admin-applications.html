@@ -8,9 +8,11 @@
   <link rel="stylesheet" href="/styles/student/dashboard.css">
   <link rel="stylesheet" href="/styles/admin/admin-dashboard.css">
   <link rel="stylesheet" href="/styles/shared/responsive.css">
+  <link rel="stylesheet" href="/styles/admin/admin-operations.css">
 </head>
-<body class="admin-dashboard-page has-site-footer">
+<body class="admin-dashboard-page has-site-footer admin-applications-page">
   <header class="dashboard-header">
+    <button class="sidebar-toggle-btn mobile-sidebar-toggle" type="button" data-toggle-sidebar aria-label="Toggle admin navigation">Menu</button>
     <div class="header-content">
       <div class="brand-bar">
         <div class="school-name"><span class="cresent-brand">CRESENT</span> HIGH SCHOOL</div>
@@ -27,23 +29,27 @@
     <aside class="student-sidebar">
       <div class="sidebar-brand">Admin Control</div>
       <div class="sidebar-section">
-        <h3>Core</h3>
-        <a class="sidebar-link" href="admin-dashboard.html">Dashboard</a>
-        <a class="sidebar-link active" href="admin-applications.html">Applications</a>
-        <a class="sidebar-link" href="admin-students.html">Students</a>
-        <a class="sidebar-link" href="admin-academics.html">Academics</a>
-        <a class="sidebar-link" href="admin-uploads.html">Uploads</a>
-        <a class="sidebar-link" href="admin-finance.html">Finance</a>
-        <a class="sidebar-link" href="admin-settings.html">Settings</a>
+        <h3>Administration</h3>
+        <a class="sidebar-link" href="/admin-dashboard.html">Dashboard</a>
+        <a class="sidebar-link active" href="/admin-applications.html" aria-current="page">Applications</a>
+        <a class="sidebar-link" href="/admin-students.html">Students</a>
+        <a class="sidebar-link" href="/admin-staff.html">Staff management</a>
+        <a class="sidebar-link" href="/admin-roles.html">Roles and access</a>
+        <a class="sidebar-link" href="/admin-departments.html">Departments</a>
+        <a class="sidebar-link" href="/admin-settings.html">Settings</a>
       </div>
+      <div class="sidebar-section"><h3>Portals</h3><a class="sidebar-link" href="/admin-academics.html">Academics</a><a class="sidebar-link" href="/admin-finance.html">Finance</a></div>
+      <div class="sidebar-section"><a class="sidebar-link" href="#" data-admin-logout>Logout</a></div>
     </aside>
 
     <main class="dashboard-main">
       <section class="admin-section">
+        <nav class="admin-page-breadcrumb" aria-label="Breadcrumb"><a href="/admin-dashboard.html">Administration</a><span aria-hidden="true">/</span><span aria-current="page">Applications</span></nav>
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Applications</p>
-            <h2>Admissions management</h2>
+            <p class="eyebrow">Admissions workflow</p>
+            <h1>Applications</h1>
+            <p class="applications-subtitle">Review submissions, confirm student placement, and communicate application decisions.</p>
           </div>
           <button class="primary-button" data-admin-action="create-review">New review</button>
         </div>
@@ -97,8 +103,9 @@
           </div>
           <div class="table-wrapper">
             <table class="admin-table">
+              <caption class="admin-visually-hidden">Admissions review queue and application decisions</caption>
               <thead>
-                <tr><th>Applicant / reference</th><th>Curriculum</th><th>Previous education</th><th>Intended level / confirm placement</th><th>Pathway preference</th><th>Stream</th><th>Parent</th><th>Phone</th><th>Documents</th><th>Submitted</th><th>Status</th><th>Action</th></tr>
+                <tr><th scope="col">Applicant / reference</th><th scope="col">Curriculum</th><th scope="col">Previous education</th><th scope="col">Intended level / confirm placement</th><th scope="col">Pathway preference</th><th scope="col">Stream</th><th scope="col">Parent</th><th scope="col">Phone</th><th scope="col">Documents</th><th scope="col">Submitted</th><th scope="col">Status</th><th scope="col">Action</th></tr>
               </thead>
               <tbody>
                 <tr><td colspan="12">Loading applications...</td></tr>

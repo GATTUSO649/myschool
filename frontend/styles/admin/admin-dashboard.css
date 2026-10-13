@@ -2558,3 +2558,34 @@ body.admin-dashboard-page .dashboard-footer {
     font-size: 0.88rem;
   }
 }
+
+body.admin-dashboard-page .dashboard-main h1:not(.page-intro h1) {
+  color: #173149;
+  letter-spacing: -.025em;
+}
+
+body.admin-dashboard-page .dashboard-main h2,
+body.admin-dashboard-page .dashboard-main h3 {
+  letter-spacing: -.012em;
+}
+
+body.admin-dashboard-page .dashboard-main .panel-header,
+body.admin-dashboard-page .dashboard-main .section-heading {
+  gap: 14px;
+}
+
+body.admin-dashboard-page .dashboard-main button:disabled,
+body.admin-dashboard-page .dashboard-main input:disabled,
+body.admin-dashboard-page .dashboard-main select:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+body.admin-dashboard-page .dashboard-main table caption {
+  padding: 0;
+}
+
+body.admin-dashboard-page .dashboard-main table td,
+body.admin-dashboard-page .dashboard-main table th {
+  overflow-wrap: anywhere;
+}

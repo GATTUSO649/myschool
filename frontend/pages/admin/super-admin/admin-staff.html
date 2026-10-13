@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="/styles/shared/site-common.css">
   <link rel="stylesheet" href="/styles/admin/admin-dashboard.css">
   <link rel="stylesheet" href="/styles/shared/responsive.css">
+  <link rel="stylesheet" href="/styles/admin/admin-operations.css">
 </head>
-<body class="admin-dashboard-page has-site-footer">
+<body class="admin-dashboard-page has-site-footer admin-staff-page">
   <header class="dashboard-header">
     <div class="header-content">
       <button class="sidebar-toggle-btn mobile-sidebar-toggle" type="button" data-toggle-sidebar aria-label="Toggle navigation">Menu</button>
@@ -35,10 +36,12 @@
     </aside>
     <main class="dashboard-main">
       <section class="admin-section staff-management">
+        <nav class="admin-page-breadcrumb" aria-label="Breadcrumb"><a href="/admin-dashboard.html">Administration</a><span aria-hidden="true">/</span><span aria-current="page">Staff management</span></nav>
         <header class="dashboard-panel page-intro staff-page-intro">
           <p class="eyebrow">Administration / People</p>
           <h1>Staff management</h1>
-          <p class="footer-note">Appoint staff once, assign only the responsibilities they need, and keep their access and appointment history visible.</p>
+          <p class="footer-note">Manage staff appointments, role assignments and account access in one place.</p>
+          <a class="admin-page-action" href="/admin-roles.html">Manage portal access</a>
         </header>
 
         <div class="staff-columns">
@@ -69,7 +72,8 @@
             <p id="directoryMessage" class="staff-message" role="status" aria-live="polite"></p>
             <div class="staff-table-wrap">
               <table class="staff-table">
-                <thead><tr><th>Staff member</th><th>Roles</th><th>Department</th><th>Account</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+                <caption class="admin-visually-hidden">Staff directory with assigned roles, account status, and actions</caption>
+                <thead><tr><th scope="col">Staff member</th><th scope="col">Roles</th><th scope="col">Department</th><th scope="col">Account</th><th scope="col">Last sign-in</th><th scope="col">Actions</th></tr></thead>
                 <tbody id="staffTableBody"><tr><td colspan="6">Loading staff…</td></tr></tbody>
               </table>
             </div>
