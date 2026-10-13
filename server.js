@@ -142,8 +142,20 @@ function wrapAsyncRoutes(router) {
   return router;
 }
 
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'Cresent High School Portal API is running' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await query('SELECT 1 FROM ict_sessions, students, user_roles, role_permissions LIMIT 0');
+    res.json({
+      success: true,
+      message: 'Cresent High School Portal API and authentication database are ready'
+    });
+  } catch (error) {
+    console.error('Readiness check failed:', error.code || error.name || 'DATABASE_ERROR');
+    res.status(503).json({
+      success: false,
+      message: 'The portal database or authentication schema is unavailable'
+    });
+  }
 });
 
 app.post('/api/auth/login', authLimiter, (req, res, next) => {

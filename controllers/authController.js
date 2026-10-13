@@ -70,10 +70,18 @@ function signToken(student) {
 async function recordSession(token, user, req) {
   try {
     const decoded = jwt.decode(token);
-    if (!decoded?.jti) return;
+    if (!decoded?.jti) {
+      const error = new Error('Session token is missing its identifier');
+      error.code = 'SESSION_REGISTRY_UNAVAILABLE';
+      throw error;
+    }
     await query('INSERT INTO ict_sessions (jti, user_id, role, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)', [decoded.jti, user.id || null, normalizeRole(user.role), req.ip, String(req.headers['user-agent'] || '').slice(0, 255)]);
   } catch (error) {
-    console.warn('Session registry update failed:', error.message || error);
+    console.error('Session registry update failed:', error.code || error.name || 'DATABASE_ERROR');
+    if (error.code === 'SESSION_REGISTRY_UNAVAILABLE') throw error;
+    const sessionError = new Error('Authentication session could not be registered');
+    sessionError.code = 'SESSION_REGISTRY_UNAVAILABLE';
+    throw sessionError;
   }
 }
 
@@ -700,6 +708,9 @@ async function login(req, res) {
       student: publicStudent(refreshed)
     });
   } catch (error) {
+    if (error.code === 'SESSION_REGISTRY_UNAVAILABLE') {
+      return res.status(503).json({ success: false, message: 'Authentication is temporarily unavailable. Please try again.' });
+    }
     console.error('Login error:', error);
     return res.status(500).json({ success: false, message: 'Login failed' });
   }
@@ -730,6 +741,9 @@ async function departmentLogin(req, res) {
     res.cookie('departmentSessionToken', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 60 * 1000, path: '/' });
     res.json({ success: true, token, student: publicStudent(staff), department: { id: staff.department_id, name: staff.department_name, code: staff.department_code } });
   } catch (error) {
+    if (error.code === 'SESSION_REGISTRY_UNAVAILABLE') {
+      return res.status(503).json({ success: false, message: 'Authentication is temporarily unavailable. Please try again.' });
+    }
     console.error('Department login error:', error);
     res.status(500).json({ success: false, message: 'Department login failed' });
   }
@@ -1076,6 +1090,9 @@ async function adminLogin(req, res) {
       message: 'Admin login successful'
     });
   } catch (error) {
+    if (error.code === 'SESSION_REGISTRY_UNAVAILABLE') {
+      return res.status(503).json({ success: false, message: 'Authentication is temporarily unavailable. Please try again.' });
+    }
     console.error('Admin login error:', error);
     return res.status(500).json({ success: false, message: 'Admin login failed' });
   }
